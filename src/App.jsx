@@ -51,6 +51,23 @@ export default function App() {
     {id:3,module:'Current Module',quiz:'Quiz 3',score:76},
   ]))
   const [newGrade,setNewGrade] = useState({quiz:'',score:''})
+  const [editingGrade,setEditingGrade] = useState(null)
+  const [gradeDraft,setGradeDraft] = useState({quiz:'',score:''})
+  const [routineEditorMode,setRoutineEditorMode] = useState('edit')
+  const [editingRoutine,setEditingRoutine] = useState(null)
+  const [routineDraft,setRoutineDraft] = useState({time:'',title:'',xp:20,stat:'DIS',repeat:'daily',active:true})
+  const [module,setModule] = useState(() => load('module', {
+    name:'Current Module',
+    examDate:'',
+    topics:[
+      {id:1,name:'Foundations',score:82},
+      {id:2,name:'Mechanisms',score:76},
+      {id:3,name:'Clinical application',score:91},
+    ]
+  }))
+  const [topicDraft,setTopicDraft] = useState({name:'',score:''})
+  const [editingTopic,setEditingTopic] = useState(null)
+  const [boss,setBoss] = useState(() => load('boss', {active:false,defeated:false,attempts:0}))
 
   useEffect(()=>localStorage.setItem('life-rpg-quests',JSON.stringify(quests)),[quests])
   useEffect(()=>localStorage.setItem('life-rpg-xp',JSON.stringify(xp)),[xp])
