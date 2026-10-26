@@ -77,11 +77,36 @@ export default function App() {
     setNewQuest('');setShowQuest(false);notify('New quest added to your journal.')
   }
   function toggleRoutine(id){setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:!x.done}:x))}
+  function openRoutineEditor(item){
+    setEditingRoutine(item.id); setRoutineDraft({time:item.time,title:item.title})
+  }
+  function saveRoutine(e){
+    e.preventDefault()
+    if(!routineDraft.time.trim()||!routineDraft.title.trim())return
+    setRoutine(xs=>xs.map(x=>x.id===editingRoutine?{...x,time:routineDraft.time.trim(),title:routineDraft.title.trim()}:x))
+    setEditingRoutine(null); notify('Routine quest updated.')
+  }
+  function deleteRoutine(id){
+    setRoutine(xs=>xs.filter(x=>x.id!==id)); setEditingRoutine(null); notify('Routine quest removed.')
+  }
   function addGrade(e){
     e.preventDefault(); const score=Number(newGrade.score)
     if(!newGrade.quiz||!Number.isFinite(score)||score<0||score>100)return
     setGrades(xs=>[...xs,{id:Date.now(),module:'Current Module',quiz:newGrade.quiz,score}])
     setNewGrade({quiz:'',score:''});notify('Quiz recorded in the Grand Archive.')
+  }
+  function openGradeEditor(g){
+    setEditingGrade(g.id); setGradeDraft({quiz:g.quiz,score:String(g.score)})
+  }
+  function saveGrade(e){
+    e.preventDefault()
+    const score=Number(gradeDraft.score)
+    if(!gradeDraft.quiz.trim()||!Number.isFinite(score)||score<0||score>100)return
+    setGrades(xs=>xs.map(g=>g.id===editingGrade?{...g,quiz:gradeDraft.quiz.trim(),score}:g))
+    setEditingGrade(null); notify('Quiz score updated.')
+  }
+  function deleteGrade(id){
+    setGrades(xs=>xs.filter(g=>g.id!==id)); setEditingGrade(null); notify('Quiz record removed.')
   }
   function buyReward(r){
     if(gold<r.cost){notify('Not enough gold yet — keep adventuring!');return}
@@ -110,14 +135,16 @@ export default function App() {
 
       {active==='dashboard'&&<Dashboard quests={quests} stats={stats} xp={xp} progress={progress} completed={completed} finishQuest={finishQuest} setShowQuest={setShowQuest} worlds={WORLDS} setActive={setActive}/>}
       {active==='quests'&&<QuestPage quests={quests} finishQuest={finishQuest} setShowQuest={setShowQuest}/>}
-      {active==='planner'&&<RoutinePage routine={routine} toggleRoutine={toggleRoutine}/>}
-      {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade}/>}
+      {active==='planner'&&<RoutinePage routine={routine} toggleRoutine={toggleRoutine} openRoutineEditor={openRoutineEditor}/>}
+      {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor}/>}
       {active==='body'&&<BodyPage setActive={setActive}/>}
       {active==='map'&&<MapPage worlds={WORLDS} setActive={setActive}/>}
       {active==='character'&&<CharacterPage level={level} xp={xp} stats={stats}/>}
       {active==='inventory'&&<InventoryPage gold={gold} rewards={REWARDS} buyReward={buyReward}/>}
       
       {showQuest&&<div className="modal-backdrop" onClick={()=>setShowQuest(false)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setShowQuest(false)}><X/></button><span className="eyebrow">NEW QUEST</span><h2>Add a quest to your journal</h2><form onSubmit={addQuest}><input autoFocus value={newQuest} onChange={e=>setNewQuest(e.target.value)} placeholder="e.g. Walk to class instead of taking the bus"/><button className="primary" type="submit">Accept Quest <Sword size={16}/></button></form></div></div>}
+      {editingRoutine&&<div className="modal-backdrop" onClick={()=>setEditingRoutine(null)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setEditingRoutine(null)}><X/></button><span className="eyebrow">EDIT ROUTINE QUEST</span><h2>Change this ritual</h2><form onSubmit={saveRoutine}><label>Time<input autoFocus value={routineDraft.time} onChange={e=>setRoutineDraft({...routineDraft,time:e.target.value})}/></label><label>Quest<input value={routineDraft.title} onChange={e=>setRoutineDraft({...routineDraft,title:e.target.value})}/></label><div className="modal-actions"><button className="ghost" type="button" onClick={()=>deleteRoutine(editingRoutine)}>Delete</button><button className="primary" type="submit">Save Changes <Check size={16}/></button></div></form></div></div>}
+      {editingGrade&&<div className="modal-backdrop" onClick={()=>setEditingGrade(null)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setEditingGrade(null)}><X/></button><span className="eyebrow">EDIT QUIZ RECORD</span><h2>Correct your archive</h2><form onSubmit={saveGrade}><label>Quiz name<input autoFocus value={gradeDraft.quiz} onChange={e=>setGradeDraft({...gradeDraft,quiz:e.target.value})}/></label><label>Score %<input type="number" min="0" max="100" value={gradeDraft.score} onChange={e=>setGradeDraft({...gradeDraft,score:e.target.value})}/></label><div className="modal-actions"><button className="ghost" type="button" onClick={()=>deleteGrade(editingGrade)}>Delete</button><button className="primary" type="submit">Save Score <Check size={16}/></button></div></form></div></div>}
       {toast&&<div className="toast"><Trophy size={18}/><span>{toast}</span></div>}
     </main>
   </div>
@@ -152,9 +179,9 @@ function Quest({q,finishQuest}){const Icon=q.type==='body'?Heart:q.type==='mind'
 
 function QuestPage({quests,finishQuest,setShowQuest}){return <div className="content"><PageIntro eyebrow="ADVENTURER'S JOURNAL" title="All quests" text="Turn the things you already want to do into tiny victories." action="+ New Quest" onAction={()=>setShowQuest(true)}/><div className="quest-list full">{quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>)}</div></div>}
 
-function RoutinePage({routine,toggleRoutine}){const done=routine.filter(x=>x.done).length;return <div className="content"><PageIntro eyebrow="ADVENTURER'S KEEP" title="Today's routine" text="Your real-life schedule becomes a questline."/><div className="routine-summary panel"><div><span className="eyebrow">DAILY PROGRESS</span><strong>{done}/{routine.length}</strong><span>rituals completed</span></div><div className="xp-bar"><i style={{width:done/routine.length*100+'%'}}/></div></div><div className="routine-list">{routine.map(item=><button className={'routine-row panel '+(item.done?'done':'')} key={item.id} onClick={()=>toggleRoutine(item.id)}><span className="routine-time">{item.time}</span><span className="routine-check">{item.done?<Check size={15}/>:''}</span><span className="routine-title">{item.title}</span><span className="routine-xp">+20 XP</span></button>)}</div></div>}
+function RoutinePage({routine,toggleRoutine,openRoutineEditor}){const done=routine.filter(x=>x.done).length;return <div className="content"><PageIntro eyebrow="ADVENTURER'S KEEP" title="Today's routine" text="Your real-life schedule becomes a questline."/><div className="routine-summary panel"><div><span className="eyebrow">DAILY PROGRESS</span><strong>{done}/{routine.length}</strong><span>rituals completed</span></div><div className="xp-bar"><i style={{width:(routine.length?done/routine.length*100:0)+'%'}}/></div></div><div className="routine-list">{routine.map(item=><div className={'routine-row panel '+(item.done?'done':'')} key={item.id}><button className="routine-main" onClick={()=>toggleRoutine(item.id)}><span className="routine-time">{item.time}</span><span className="routine-check">{item.done?<Check size={15}/>:''}</span><span className="routine-title">{item.title}</span><span className="routine-xp">+20 XP</span></button><button className="row-edit" onClick={()=>openRoutineEditor(item)} aria-label={'Edit '+item.title}>Edit</button></div>)}</div></div>}
 
-function StudyPage({grades,newGrade,setNewGrade,addGrade}){const avg=Math.round(grades.reduce((a,g)=>a+g.score,0)/Math.max(grades.length,1));return <div className="content"><PageIntro eyebrow="GRAND ARCHIVE" title="Medical school command center" text="Turn quiz scores into a living map of what needs another pass."/><div className="study-grid"><div className="panel mastery"><span className="eyebrow">MODULE MASTERY</span><strong>{avg}%</strong><div className="xp-bar"><i style={{width:avg+'%'}}/></div><p>Boss battle readiness</p><button className="primary" onClick={()=>alert('Boss Battle mode is next: we’ll turn weak topics into study quests.')}>Prepare for Boss Battle <Sword size={15}/></button></div><div className="panel grade-form"><span className="eyebrow">RECORD A QUIZ</span><form onSubmit={addGrade}><input placeholder="Quiz name" value={newGrade.quiz} onChange={e=>setNewGrade({...newGrade,quiz:e.target.value})}/><input type="number" min="0" max="100" placeholder="Score %" value={newGrade.score} onChange={e=>setNewGrade({...newGrade,score:e.target.value})}/><button className="primary">Record Score <Plus size={15}/></button></form></div></div><div className="grade-list">{grades.map(g=><div className="grade-row panel" key={g.id}><BookOpen size={17}/><span>{g.quiz}<small>{g.module}</small></span><strong className={g.score>=90?'great':g.score<80?'needs':''}>{g.score}%</strong></div>)}</div></div>}
+function StudyPage({grades,newGrade,setNewGrade,addGrade,openGradeEditor}){const avg=Math.round(grades.reduce((a,g)=>a+g.score,0)/Math.max(grades.length,1));return <div className="content"><PageIntro eyebrow="GRAND ARCHIVE" title="Medical school command center" text="Turn quiz scores into a living map of what needs another pass."/><div className="study-grid"><div className="panel mastery"><span className="eyebrow">MODULE MASTERY</span><strong>{avg}%</strong><div className="xp-bar"><i style={{width:avg+'%'}}/></div><p>Boss battle readiness</p><button className="primary" onClick={()=>alert('Boss Battle mode is next: we’ll turn weak topics into study quests.')}>Prepare for Boss Battle <Sword size={15}/></button></div><div className="panel grade-form"><span className="eyebrow">RECORD A QUIZ</span><form onSubmit={addGrade}><input placeholder="Quiz name" value={newGrade.quiz} onChange={e=>setNewGrade({...newGrade,quiz:e.target.value})}/><input type="number" min="0" max="100" placeholder="Score %" value={newGrade.score} onChange={e=>setNewGrade({...newGrade,score:e.target.value})}/><button className="primary">Record Score <Plus size={15}/></button></form></div></div><div className="grade-list">{grades.map(g=><div className="grade-row panel" key={g.id}><BookOpen size={17}/><span>{g.quiz}<small>{g.module}</small></span><strong className={g.score>=90?'great':g.score<80?'needs':''}>{g.score}%</strong><button className="row-edit" onClick={()=>openGradeEditor(g)}>Edit</button></div>)}</div></div>}
 
 function BodyPage({setActive}){return <div className="content"><PageIntro eyebrow="VERDANT WILDS" title="Body & vitality" text="Build strength, movement, nourishment and energy without making the scale the scoreboard."/><div className="body-grid"><BodyCard icon={Footprints} title="Movement" value="0 / 20 min" text="Log a walk or run" onClick={()=>setActive('quests')}/><BodyCard icon={Dumbbell} title="Training" value="0 sessions" text="Plan a workout" onClick={()=>setActive('planner')}/><BodyCard icon={Heart} title="Nourishment" value="Protein quest" text="Complete today's balanced-meal quest" onClick={()=>setActive('quests')}/><BodyCard icon={Moon} title="Recovery" value="Tonight" text="Protect your sleep" onClick={()=>setActive('planner')}/></div><div className="gentle-note panel"><Sparkles size={18}/><span><b>The rule of the Verdant Wilds:</b> progress comes from repeatable behaviors. A normal fluctuation in weight never costs XP.</span></div></div>}
 
