@@ -74,7 +74,8 @@ const NPC_DIALOGUE = {
   'Pip the Trainer': ['Strength is built by showing up again, not by punishing yourself.','A ten-minute walk still counts as leaving the dungeon.'],
   'Elara the Tailor': ['Prepare Future You a little gift tonight: make tomorrow easier.','Your outfit is equipment too. Wear something that makes you feel like the main character.'],
   'Rowan the Gardener': ['Feed the hero, do not negotiate with hunger all day.','A colorful plate is a small garden on the road.'],
-  'Nessa the Innkeeper': ['Every adventurer needs a tavern where they can pause.','Water first, then back to the road when you are ready.']
+  'Nessa the Innkeeper': ['Every adventurer needs a tavern where they can pause.','Water first, then back to the road when you are ready.'],
+  'Lyra the Stargazer': ['The stars are not a map until you learn how to read them.','The Grove only reveals itself to travelers who have earned their way beyond the familiar roads.']
 }
 const NPC_UNLOCKS = {
   'Mira the Healer': {level:1,role:'Healer',icon:'🧝‍♀️'},
@@ -86,6 +87,13 @@ const NPC_UNLOCKS = {
 }
 
 
+
+const DISCOVERY_INFO = {
+  'moonwell': {level:3,icon:'💧',name:'Moonwell',desc:'A quiet place to reset.',reward:'Unlocks the Moonwell recovery stop.'},
+  'old-bridge': {level:5,icon:'🌉',name:'Old Bridge',desc:'A forgotten crossing beyond the familiar road.',reward:'Unlocks a new route on the realm map.'},
+  'starlit-grove': {level:7,icon:'🌌',name:'Starlit Grove',desc:'A hidden reflection spot beneath an open sky.',reward:'Introduces Lyra, the Stargazer.'},
+  'market-square': {level:10,icon:'🏮',name:'Market Square',desc:'A bustling market beyond the Keep.',reward:'Unlocks the traveling market and new equipment.'}
+}
 
 const EXTRA_ACHIEVEMENTS = {
   'chain-complete': {name:'Questkeeper',icon:'📜',desc:'Completed a full multi-step quest chain.'},
@@ -421,7 +429,10 @@ export default function App() {
   }
   function discoverRealm(id){
     if(discoveries.includes(id))return
-    setDiscoveries(d=>[...d,id]);setXp(v=>v+35);setGold(g=>g+15+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! +35 XP · +15 gold')
+    const place=DISCOVERY_INFO[id]
+    if(!place)return
+    if(level<place.level){notify(place.name+' reveals itself at hero level '+place.level+'. Keep adventuring!');return}
+    setDiscoveries(d=>[...d,id]);setXp(v=>v+35);setGold(g=>g+15+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! '+place.name+' · +35 XP · +15 gold')
   }
   function talkToNpc(name){
     const lines=NPC_DIALOGUE[name]||[];setSelectedNpc({name,line:lines[(new Date().getDate()+name.length)%lines.length]})
@@ -676,12 +687,14 @@ function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inven
 function RealmPage({level,timeLabel,isNight,town,upgradeTown,questChains,completeChainStep,realmBosses,strikeRealmBoss,equipment,equipmentCatalog,buyEquipment,equipItem,companions,discoveries,discoverRealm,setActive}){
  const buildings=[['guild','🏛️','Adventurer Guild','Unlocks new quests & Discipline'],['tavern','🍵','Moonlit Tavern','Rest, dialogue & Spirit'],['garden','🌿','Healing Garden','Vitality training'],['library','📚','Grand Library','Intelligence training']]
  const npcs=Object.keys(NPC_DIALOGUE)
- const places=[['moonwell','💧','Moonwell','A quiet place to reset'],['old-bridge','🌉','Old Bridge','Take a new route'],['starlit-grove','🌌','Starlit Grove','A hidden reflection spot'],['market-square','🏮','Market Square','Browse the realm']]
+ const places=Object.entries(DISCOVERY_INFO)
  return <div className="content realm-page">
   <PageIntro eyebrow="THE LIVING REALM" title="Town & Guild" text="This is your home base. Build it, meet its people, follow quest chains, gear up, and hunt the bosses beyond the walls."/>
   <div className={'realm-banner panel '+(isNight?'night':'')}><div><span className="eyebrow">{timeLabel}</span><h2>Adventurer's Keep · Level {town.level}</h2><p>The realm changes with you. Your town, companions, equipment, discoveries, and victories all persist in your save.</p></div><div className="realm-level">HERO LVL <b>{level}</b></div></div>
   <section><div className="section-head"><div><span className="eyebrow">YOUR TOWN</span><h2>Build the Keep</h2></div><span className="muted">Upgrades permanently improve your hero</span></div><div className="town-grid">{buildings.map(([id,icon,name,desc])=>{const lvl=town.buildings[id]||0;const cost=100+lvl*75;return <div className="town-building panel" key={id}><div className="town-icon">{icon}</div><div><b>{name}</b><small>{desc}</small><span>Level {lvl}</span></div><button className="primary" disabled={false} onClick={()=>upgradeTown(id)}>Upgrade · {cost} ◈</button></div>})}</div></section>
-  <section className="realm-section"><div className="section-head"><div><span className="eyebrow">EXPLORATION</span><h2>Mark new places on the map</h2></div></div><div className="discovery-grid">{places.map(([id,icon,name,desc])=>{const found=discoveries.includes(id);return <button className={'discovery-card panel '+(found?'found':'')} key={id} onClick={()=>discoverRealm(id)}><span>{icon}</span><div><b>{name}</b><small>{found?'Discovered · +35 XP claimed':desc}</small></div><strong>{found?'✓':'+ Discover'}</strong></button>})}</div><button className="ghost realm-map-button" onClick={()=>setActive('map')}><Map size={15}/> Open World Map</button></section>
+  <section className="realm-section"><div className="section-head"><div><span className="eyebrow">EXPLORATION</span><h2>Discover the unknown</h2><p className="muted">New places require hero levels before you can find them.</p></div></div><div className="discovery-grid">{places.map(([id,place])=>{const found=discoveries.includes(id);const locked=level<place.level&&!found;return <button className={'discovery-card panel '+(found?'found ':'')+(locked?'locked':'')} key={id} disabled={locked||found} onClick={()=>discoverRealm(id)}><span>{locked?'🔒':place.icon}</span><div><b>{place.name}</b><small>{found?place.reward:locked?'Requires Hero Level '+place.level:place.desc}</small></div><strong>{found?'✓':locked?'LVL '+place.level:'+ Discover'}</strong></button>})}</div><button className="ghost realm-map-button" onClick={()=>setActive('map')}><Map size={15}/> Open World Map</button></section>
+  {discoveries.includes('starlit-grove')&&<section className="realm-section discovered-npc panel"><div className="section-head"><div><span className="eyebrow">NEW ARRIVAL</span><h2>Lyra the Stargazer</h2><p>Finding the Starlit Grove brought a new face to the realm.</p></div><span className="npc-avatar">🌌</span></div><div className="npc-speech">“{NPC_DIALOGUE['Lyra the Stargazer'][0]}”</div></section>}
+  {discoveries.includes('market-square')&&<section className="realm-section"><div className="section-head"><div><span className="eyebrow">MARKET SQUARE · UNLOCKED</span><h2>Traveling Market</h2><p className="muted">New gear becomes available after you discover the market.</p></div></div><div className="equipment-grid">{equipmentCatalog.map(item=>{const owned=equipment.owned.includes(item.id);const equipped=equipment.equipped[item.slot]===item.id;return <div className="panel equipment-card" key={item.id}><span className="reward-icon">{item.icon}</span><h3>{item.name}</h3><p>{item.desc}</p><small>+{Object.entries(item.bonus).map(([k,v])=>v+' '+k).join(' · ')}</small>{owned?<button className="ghost" onClick={()=>equipItem(item)}>{equipped?'Unequip':'Equip'}</button>:<button className="primary" onClick={()=>buyEquipment(item)}>Buy · {item.cost} ◈</button>}</div>})}</div></section>}
 
  </div>
 }
