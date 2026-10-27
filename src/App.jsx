@@ -26,6 +26,14 @@ const REWARDS = [
   {name:'New Book', cost:90, icon:'📖'}, {name:'Little Treat', cost:120, icon:'🍰'}
 ]
 
+const ACHIEVEMENT_INFO = {
+  'main-character': {name:'Main Character Energy',icon:'🌟',desc:'Cleared every daily quest in one day.'},
+  'boss-slayer': {name:'Boss Slayer',icon:'⚔️',desc:'Defeated the Knowledge Warden.'},
+  'three-day-flame': {name:'Three-Day Flame',icon:'🔥',desc:'Kept a 3-day adventure streak.'},
+  'week-warrior': {name:'Week Warrior',icon:'👑',desc:'Kept a 7-day adventure streak.'},
+  'pr-hunter': {name:'PR Hunter',icon:'💪',desc:'Set a new strength record.'}
+}
+
 const load = (key, fallback) => {
   try { return JSON.parse(localStorage.getItem('life-rpg-'+key)) ?? fallback } catch { return fallback }
 }
@@ -103,6 +111,7 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-inventory',JSON.stringify(inventory)),[inventory])
   useEffect(()=>localStorage.setItem('life-rpg-event',JSON.stringify(event)),[event])
   useEffect(()=>{const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;const last=load('routine-date',null);if(last!==today){setRoutine(xs=>xs.map(x=>({...x,done:false,xpAwarded:false})));localStorage.setItem('life-rpg-routine-date',JSON.stringify(today))}},[])
+  useEffect(()=>{const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(daily.date!==today)setDaily(x=>({...x,date:today,completed:[],bonusClaimed:false}))},[daily.date])
   useEffect(()=>{
     const d=new Date(); const currentDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
     if(event.date===currentDate)return
@@ -137,10 +146,15 @@ export default function App() {
   function completeDaily(id){
     if(daily.completed.includes(id))return
     const q=dailyQuests.find(x=>x.id===id);if(!q)return
-    const next=[...daily.completed,id];setDaily(d=>({...d,completed:next}))
+    const next=[...daily.completed,id]
+    const d0=new Date();d0.setDate(d0.getDate()-1);const yesterday=`${d0.getFullYear()}-${String(d0.getMonth()+1).padStart(2,'0')}-${String(d0.getDate()).padStart(2,'0')}`
+    const streak=daily.lastCompletedDate===todayKey?(daily.streak||0):daily.lastCompletedDate===yesterday?(daily.streak||0)+1:1
+    setDaily(d=>({...d,completed:next,streak,lastCompletedDate:todayKey}))
+    if(streak>=3)unlockAchievement('three-day-flame')
+    if(streak>=7)unlockAchievement('week-warrior')
     setXp(v=>v+q.xp);setGold(g=>g+q.gold)
     if(next.length===dailyQuests.length&&!daily.bonusClaimed){setDaily(d=>({...d,bonusClaimed:true}));setXp(v=>v+100);setGold(g=>g+50);unlockAchievement('main-character');notify('DAILY ADVENTURE COMPLETE! +100 bonus XP · +50 gold')}
-    else notify(`${q.title} complete! +${q.xp} XP · +${q.gold} gold`)
+    else notify(`${q.title} complete! +${q.xp} XP · +${q.gold} gold · ${streak}-day streak`)
   }
   function resolveEvent(option){
     if(event.resolved)return
@@ -214,8 +228,8 @@ export default function App() {
     if(weight>Number(ex.best||0)){
       const gain=Math.max(1,Math.round((weight-Number(ex.best||0))/5))
       setWorkouts(xs=>xs.map(w=>w.id===workoutId?{...w,exercises:w.exercises.map(e=>e.id===exerciseId?{...e,best:weight}:e)}:w))
-      setXp(v=>v+50);setGold(g=>g+15);setStatBonus(s=>({...s,VIT:(s.VIT||0)+gain}))
-      notify('NEW PR! '+ex.name+' at '+weight+' lb · +50 XP · +15 gold')
+      setXp(v=>v+50);setGold(g=>g+15);setStatBonus(s=>({...s,VIT:(s.VIT||0)+gain}));unlockAchievement('pr-hunter')
+      notify('NEW PR! '+ex.name+' at '+weight+' lb · +50 XP · +15 gold · VIT +'+gain)
     }else notify(ex.name+' logged at '+weight+' lb. Keep building.')
   }
   function addExercise(e){e.preventDefault();if(!workoutDraft.name.trim())return;setWorkouts(xs=>xs.map(w=>w.id===activeWorkout?{...w,exercises:[...w.exercises,{id:Date.now(),name:workoutDraft.name.trim(),sets:Number(workoutDraft.sets)||3,reps:Number(workoutDraft.reps)||10,weight:Number(workoutDraft.weight)||0,best:Number(workoutDraft.weight)||0}]}:w));setWorkoutDraft({name:'',sets:3,reps:10,weight:0});setShowWorkoutForm(false);notify('Exercise added to the split.')}
@@ -275,14 +289,14 @@ function Dashboard({quests,stats,xp,progress,completed,finishQuest,setShowQuest,
     <Quick icon={CalendarDays} title="Today's Routine" value="2 / 5 done" onClick={()=>setActive('planner')}/>
     <Quick icon={GraduationCap} title="Module Mastery" value="83% average" onClick={()=>setActive('study')}/>
     <Quick icon={Dumbbell} title="Body Quest" value="3 active goals" onClick={()=>setActive('body')}/>
-    <Quick icon={Flame} title="Adventure Streak" value="4 days" onClick={()=>notify('Streak system is ready for your daily check-ins.')}/>
+    <Quick icon={Flame} title="Adventure Streak" value={(daily.streak||0)+' days'} onClick={()=>setActive('inventory')}/>
   </section>
 
   <section className="section-head"><div><span className="eyebrow">TODAY'S JOURNAL</span><h2>Active quests</h2></div><button className="ghost" onClick={()=>setShowQuest(true)}>+ New Quest</button></section>
   <div className="quest-list">{quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>)}</div>
 
   <section className="lower-grid"><div className="panel stats-panel"><div className="card-heading"><span>CHARACTER STATS</span><Sparkles size={16}/></div>{stats.map(([label,value,name,Icon])=><div className="stat-line" key={label}><Icon size={16}/><b>{label}</b><span>{name}</span><strong>{value}</strong></div>)}</div>
-  <div className="panel progress-panel"><div className="card-heading"><span>ADVENTURE LOG</span><Flame size={16}/></div><div className="streak"><span className="streak-number">4</span><div><b>day streak</b><span>Keep the flame alive.</span></div><Flame size={30}/></div><div className="week">{['M','T','W','T','F','S','S'].map((d,i)=><div key={i} className={i<4?'done-day':''}><span>{d}</span><i>{i<4?'✓':'·'}</i></div>)}</div><div className="reward-note"><Trophy size={16}/><span><b>{completed}</b> quests completed today. Complete 2 more for the Explorer’s Bonus.</span></div></div></section>
+  <div className="panel progress-panel"><div className="card-heading"><span>ADVENTURE LOG</span><Flame size={16}/></div><div className="streak"><span className="streak-number">{daily.streak||0}</span><div><b>day streak</b><span>{daily.completed.length?'The flame is alive today.':'Complete a daily quest to light the flame.'}</span></div><Flame size={30}/></div><div className="week">{['M','T','W','T','F','S','S'].map((d,i)=><div key={i} className={i<4?'done-day':''}><span>{d}</span><i>{i<4?'✓':'·'}</i></div>)}</div><div className="reward-note"><Trophy size={16}/><span><b>{completed}</b> quests completed today. Complete 2 more for the Explorer’s Bonus.</span></div></div></section>
 
   <section className="section-head world-head"><div><span className="eyebrow">THE REALM</span><h2>Choose your path</h2></div><button className="ghost" onClick={()=>setActive('map')}>Open Map <Map size={14}/></button></section>
   <div className="world-grid">{worlds.slice(0,3).map(w=><WorldCard key={w.id} world={w} onClick={()=>setActive(w.id==='body'?'body':w.id==='study'?'study':'planner')}/>)}</div>
@@ -310,6 +324,6 @@ function MapPage({worlds,setActive,level}){return <div className="content"><Page
 function WorldCard({world,onClick,large=false,locked=false}){const Icon=world.icon;return <button className={'world-card panel '+(large?'large ':'')+(locked?'locked':'')} onClick={onClick} disabled={locked}><div className="world-art"><Icon size={large?38:28}/><span>{world.stat}</span></div><div><h3>{locked?'🔒 ':''}{world.name}</h3><p>{locked?'Unlock at level '+world.unlockLevel:world.desc}</p></div><span className="circle-btn">{locked?'🔒':<ChevronRight size={17}/>}</span></button>}
 
 function CharacterPage({character,level,xp,stats,openCharacterEditor}){return <div className="content"><div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:(xp%250)/250*100+'%'}}/></div><span>{xp%250} / 250 XP</span></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div><div className="stat-cards">{stats.map(([label,value,name,Icon])=><div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name}</small></div>)}</div><div className="panel character-rules"><span className="eyebrow">HOW YOUR HERO GROWS</span><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> glow-up quests</div></div></div>}
-function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements}){return <div className="content"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures and companions make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?companions.join(' · '):'No companion yet.'}</small></div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card"><b>🏆 Achievements</b><strong>{achievements.length}</strong><small>{achievements.length?achievements.join(' · '):'Hidden achievements await.'}</small></div></div></section></div>}
+function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements}){const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]).filter(Boolean);return <div className="content"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?companions.join(' · '):'No companion yet.'}</small></div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys(ACHIEVEMENT_INFO).length}</strong><div className="achievement-list">{Object.entries(ACHIEVEMENT_INFO).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></div></section></div>}
 
 function PageIntro({eyebrow,title,text,action,onAction}){return <div className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2><p>{text}</p></div>{action&&<button className="primary" onClick={onAction}>{action}</button>}</div>}
