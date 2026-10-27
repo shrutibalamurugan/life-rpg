@@ -50,3 +50,7 @@
   .daily-grid{grid-template-columns:1fr}.daily-quest{min-height:58px}.event-panel{display:block}.event-options{margin-top:12px}.event-options button{flex:1}
   .achievement-strip>div{display:grid;grid-template-columns:1fr 1fr}.collection-grid{grid-template-columns:1fr}
 }
+
+
+.achievements-card{grid-column:span 1}.achievement-list{display:grid;gap:6px;margin-top:10px}.achievement-list span{display:grid;grid-template-columns:22px 1fr;column-gap:6px;padding:8px;background:#18141c;border:1px solid #332b39;font-size:9px;line-height:1.3}.achievement-list span b{grid-column:2;color:var(--cream)}.achievement-list span small{grid-column:2;margin-top:2px}.achievement-list .earned{border-color:#8b734d}.achievement-list .earned>b{color:var(--gold)}.achievement-list .locked{opacity:.42;filter:grayscale(.7)}
+@media(max-width:600px){.achievements-card{grid-column:auto}.achievement-list span{font-size:8px}}
