@@ -288,12 +288,12 @@ export default function App() {
   const completed=quests.filter(q=>q.done).length
   const todayKey=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})()
   const dailyQuests=[
-    {id:'study',title:'Enter the Grand Archive',subtitle:'Complete a focused study block',xp:35,gold:10,icon:'📜'},
-    {id:'body',title:'Train in the Verdant Wilds',subtitle:'Move for 20+ minutes or complete a workout',xp:35,gold:10,icon:'⚔️'},
+    {id:'study',title:'Enter the Grand Archive',subtitle:'Complete a focused study block',xp:35,gold:10,icon:'📜',linkedQuestId:2},
+    {id:'body',title:'Train in the Verdant Wilds',subtitle:'Move for 20+ minutes or complete a workout',xp:35,gold:10,icon:'⚔️',linkedQuestId:1},
     {id:'ritual',title:'Tend the Adventurer',subtitle:'Complete one routine ritual',xp:25,gold:8,icon:'🕯️'},
-    {id:'nourish',title:'Nourish the Hero',subtitle:'Have a balanced meal with protein',xp:25,gold:8,icon:'🥗'},
+    {id:'nourish',title:'Nourish the Hero',subtitle:'Have a balanced meal with protein',xp:25,gold:8,icon:'🥗',linkedQuestId:3},
     {id:'explore',title:'Step Beyond the Keep',subtitle:'Visit somewhere new or take a new route',xp:40,gold:12,icon:'🗺️'},
-    {id:'rest',title:'Rest at Camp',subtitle:'Protect a real bedtime / wind-down',xp:25,gold:8,icon:'🌙'},
+    {id:'rest',title:'Rest at Camp',subtitle:'Protect a real bedtime / wind-down',xp:25,gold:8,icon:'🌙',linkedQuestId:4},
   ]
   const dailyDone=dailyQuests.filter(q=>daily.completed.includes(q.id)).length
   const VILLAGER_QUEST_POOLS=[
@@ -429,7 +429,12 @@ export default function App() {
 
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
-    setQuests(xs=>xs.map(x=>x.id===id?{...x,done:true}:x)); setXp(x=>x+q.xp); setGold(g=>g+q.gold+companionGoldBonus)
+    setQuests(xs=>xs.map(x=>x.id===id?{...x,done:true}:x))
+    const linkedDaily=dailyQuests.find(d=>d.linkedQuestId===id)
+    if(linkedDaily&&!daily.completed.includes(linkedDaily.id)){
+      setDaily(d=>({...d,completed:[...d.completed,linkedDaily.id]}))
+    }
+    setXp(x=>x+q.xp); setGold(g=>g+q.gold+companionGoldBonus)
     notify(`Quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
   function addQuest(e){
@@ -540,7 +545,7 @@ function Dashboard({quests,stats,xp,gold,progress,completed,finishQuest,setShowQ
 
  return <div className="content">
   <section className="daily-adventure panel"><div><span className="eyebrow">TODAY'S ADVENTURE</span><h2>The Wandering Mage's Journey</h2><p>Complete real-life quests to earn XP, gold, discoveries, and level up.</p></div><div className="daily-progress"><b>{dailyDone}/{dailyQuests.length}</b><span>quests complete</span><div className="xp-bar"><i style={{width:(dailyDone/dailyQuests.length*100)+'%'}}/></div></div></section>
-  <section className="daily-quests"><div className="section-head"><div><span className="eyebrow">QUESTBOARD</span><h2>Today's adventure</h2></div><span className="muted">Full clear = bonus XP</span></div><div className="daily-grid">{dailyQuests.map(q=><button key={q.id} className={'daily-quest panel '+(daily.completed.includes(q.id)?'done':'')} onClick={()=>completeDaily(q.id)}><span className="daily-icon">{q.icon}</span><span><b>{q.title}</b><small>{q.subtitle}</small></span><strong>+{q.xp}</strong>{daily.completed.includes(q.id)&&<Check size={16}/>}</button>)}</div></section>
+  <section className="daily-quests"><div className="section-head"><div><span className="eyebrow">QUESTBOARD</span><h2>Today's adventure</h2></div><span className="muted">Full clear = bonus XP</span></div><div className="daily-grid">{dailyQuests.filter(q=>!daily.completed.includes(q.id)).map(q=><button key={q.id} className="daily-quest panel" onClick={()=>q.linkedQuestId?finishQuest(q.linkedQuestId):completeDaily(q.id)}><span className="daily-icon">{q.icon}</span><span><b>{q.title}</b><small>{q.subtitle}</small></span><strong>+{q.xp}</strong></button>)}{dailyQuests.every(q=>daily.completed.includes(q.id))&&<div className="daily-board-clear panel"><Check size={18}/><b>Quest Board cleared for today.</b><span>Return tomorrow for a new adventure.</span></div>}</div></section>
   <section className="event-panel panel"><div><span className="eyebrow">✨ RANDOM ENCOUNTER</span><h2>{event.title||'A quiet road...'}</h2><p>{event.body||'The realm is waiting for your next discovery.'}</p></div><div className="event-options">{event.resolved?<div className="event-complete">✓ Encounter resolved. The road will offer a new choice tomorrow.</div>:(event.options||[{label:'Explore',reward:{xp:25},message:'You found 25 XP!'}]).map((o,i)=><button key={i} className="ghost" onClick={()=>resolveEvent(o)}>{o.label}{o.reward?.xp?' · +'+o.reward.xp+' XP':''}{o.reward?.gold?' · +'+o.reward.gold+' gold':''}</button>)}</div></section>
   <section className="hero-grid"><div className="hero-card panel"><div className="hero-copy"><span className="eyebrow">CURRENT QUESTLINE</span><h2>Become the hero<br/><em>of your own story.</em></h2><p>Build your body, sharpen your mind, tend your spirit, and make ordinary days feel like an adventure.</p><button className="primary" onClick={()=>document.querySelector('.quest-list')?.scrollIntoView({behavior:'smooth'})}>Continue Adventure <ChevronRight size={17}/></button></div><div className="hero-orb"><div className="pixel-sun">✦</div><div className="mountain m1"/><div className="mountain m2"/></div></div>
   <div className="character-card panel"><div className="card-heading"><span>CHARACTER</span><UserRound size={16}/></div><div className="big-avatar">{character.avatar}</div><h3>{character.name}</h3><span className="class-name">{character.className.toUpperCase()}</span><div className="xp-label"><span>LEVEL {Math.floor(xp/250)+1}</span><span>{xp%250} / 250 XP</span></div><div className="xp-bar"><i style={{width:progress+'%'}}/></div><div className="stat-row">{stats.slice(0,3).map(([s,v])=><div key={s}><b>{s}</b><span>{v}</span></div>)}</div><div className="gold-mini"><span>GOLD</span><b>◈ {gold}</b></div></div></section>
