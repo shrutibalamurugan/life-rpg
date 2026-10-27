@@ -593,17 +593,20 @@ function MapPage({worlds,setActive,level}){
    <div className="map-compass">✦<span>N</span></div>
    <div className="map-title">THE REALM OF BECOMING</div>
    <div className="map-level">HERO LEVEL {level}</div>
-   <div className="map-path path-one"/>
-   <div className="map-path path-two"/>
-   <div className="map-path path-three"/>
-   <div className="map-mountain mountain-one">⌃⌃⌃</div>
-   <div className="map-mountain mountain-two">⌃⌃⌃⌃</div>
-   <div className="map-forest forest-one">♠♠<br/>♠♠</div>
-   <div className="map-forest forest-two">♠♠♠<br/>♠♠</div>
-   <div className="map-water water-one"/>
-   <div className="map-lake">≈≈≈<br/>≈≈≈</div>
-   <div className="map-ruins">▥<br/><span>RUINS</span></div>
-   <div className="map-camp">⌂<span>YOUR CAMP</span></div>
+   <div className="map-river river-main"/>
+   <div className="map-cliff cliff-east"/>
+   <div className="map-cliff cliff-north"/>
+   <div className="map-field field-one"/><div className="map-field field-two"/><div className="map-field field-three"/>
+   <div className="map-path path-one"/><div className="map-path path-two"/><div className="map-path path-three"/>
+   <div className="map-forest forest-one">🌲🌲🌲<br/>🌲🌲🌲</div>
+   <div className="map-forest forest-two">🌲🌲<br/>🌲🌲🌲</div>
+   <div className="map-forest forest-three">🌳🌲🌳</div>
+   <div className="map-mountain mountain-one">▲ ▲<br/> ▲▲</div>
+   <div className="map-mountain mountain-two">▲▲ ▲<br/> ▲▲</div>
+   <div className="map-village"><span className="village-banner">ADVENTURER'S KEEP</span><i>🏠</i><i>🏡</i><i>🏠</i><i>⛪</i><i>🏠</i><i>🏡</i><i>🏠</i><i>🏠</i></div>
+   <div className="map-market">🏪</div>
+   <div className="map-ruins">🏚️<span>OLD RUINS</span></div>
+   <div className="map-camp">⛺<span>YOUR CAMP</span></div>
    {worlds.map(w=>{
     const unlocked=level>=(w.unlockLevel||1)
     return <button
