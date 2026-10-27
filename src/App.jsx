@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Backpack, BookOpen, CalendarDays, Check, ChevronRight, Compass, Crown, Flame,
   Heart, Map, Plus, ScrollText, Settings, Shield, Sparkles, Sword, Trophy,
-  UserRound, X, Dumbbell, GraduationCap, Moon, Coffee, Footprints
+  UserRound, X, Dumbbell, GraduationCap, Moon, Coffee, Footprints, Cloud, LogOut
 } from 'lucide-react'
+import { supabase } from './lib/supabase'
 
 const QUESTS = [
   { id: 1, title: 'Morning Expedition', subtitle: 'Move your body for 20+ minutes', xp: 40, gold: 12, type: 'body', stat: 'VIT' },
@@ -39,6 +40,11 @@ const load = (key, fallback) => {
 }
 
 export default function App() {
+  const [session,setSession]=useState(null)
+  const [authLoading,setAuthLoading]=useState(true)
+  const [cloudHydrated,setCloudHydrated]=useState(false)
+  const applyingRemoteRef=useRef(false)
+  const saveTimerRef=useRef(null)
   const [quests,setQuests] = useState(() => load('quests', QUESTS))
   const [xp,setXp] = useState(() => load('xp',245))
   const [gold,setGold] = useState(() => load('gold',86))
@@ -95,6 +101,69 @@ export default function App() {
   const [inventory,setInventory] = useState(() => load('inventory', []))
   const [event,setEvent] = useState(() => load('event', {date:'',title:'',body:'',options:[],resolved:false}))
   const [villagerQuests,setVillagerQuests] = useState(() => load('villager-quests', {date:'',active:[],completed:[]}))
+
+  useEffect(()=>{
+    let mounted=true
+    supabase.auth.getSession().then(({data})=>{if(mounted){setSession(data.session);setAuthLoading(false)}}).catch(()=>mounted&&setAuthLoading(false))
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,next)=>{if(mounted){setSession(next);if(!next){setCloudHydrated(false);setAuthLoading(false)}}})
+    return ()=>{mounted=false;subscription.unsubscribe()}
+  },[])
+
+  const applyCloudSave=(data)=>{
+    if(!data||typeof data!=='object')return
+    applyingRemoteRef.current=true
+    if(data.quests)setQuests(data.quests)
+    if(typeof data.xp==='number')setXp(data.xp)
+    if(typeof data.gold==='number')setGold(data.gold)
+    if(data.routine)setRoutine(data.routine)
+    if(data.grades)setGrades(data.grades)
+    if(data.module)setModule(data.module)
+    if(data.boss)setBoss(data.boss)
+    if(data.character)setCharacter(data.character)
+    if(data.statBonus)setStatBonus(data.statBonus)
+    if(data.workouts)setWorkouts(data.workouts)
+    if(data.daily)setDaily(data.daily)
+    if(data.achievements)setAchievements(data.achievements)
+    if(data.companions)setCompanions(data.companions)
+    if(data.inventory)setInventory(data.inventory)
+    if(data.event)setEvent(data.event)
+    if(data.villagerQuests)setVillagerQuests(data.villagerQuests)
+  }
+
+  useEffect(()=>{
+    if(!session)return
+    let cancelled=false
+    ;(async()=>{
+      const {data,error}=await supabase.from('game_saves').select('data').eq('user_id',session.user.id).maybeSingle()
+      if(cancelled)return
+      if(error){console.error(error);setCloudHydrated(true);return}
+      if(data?.data)applyCloudSave(data.data)
+      setCloudHydrated(true)
+    })()
+    return ()=>{cancelled=true}
+  },[session?.user?.id])
+
+  const cloudData={version:1,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests}
+
+  useEffect(()=>{
+    if(!session||!cloudHydrated)return
+    if(applyingRemoteRef.current){applyingRemoteRef.current=false;return}
+    clearTimeout(saveTimerRef.current)
+    saveTimerRef.current=setTimeout(async()=>{
+      const {error}=await supabase.from('game_saves').upsert({user_id:session.user.id,data:cloudData,updated_at:new Date().toISOString()},{onConflict:'user_id'})
+      if(error)console.error('Cloud save failed',error)
+    },400)
+    return ()=>clearTimeout(saveTimerRef.current)
+  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests])
+
+  useEffect(()=>{
+    if(!session)return
+    const channel=supabase.channel('life-rpg-'+session.user.id)
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'game_saves',filter:'user_id=eq.'+session.user.id},payload=>{
+        if(payload.new?.data){applyCloudSave(payload.new.data);setCloudHydrated(true)}
+      }).subscribe()
+    return ()=>{supabase.removeChannel(channel)}
+  },[session?.user?.id])
 
   useEffect(()=>localStorage.setItem('life-rpg-quests',JSON.stringify(quests)),[quests])
   useEffect(()=>localStorage.setItem('life-rpg-xp',JSON.stringify(xp)),[xp])
@@ -302,6 +371,8 @@ export default function App() {
     ['map','World Map',Map],['character','Character',UserRound],['inventory','Rewards',Backpack]
   ]
 
+  if(authLoading)return <AuthLoadingScreen />
+  if(!session)return <AuthScreen />
   return <div className="app-shell">
     <aside className="sidebar">
       <div className="brand"><div className="brand-mark">✦</div><div><strong>Life RPG</strong><span>YOUR ADVENTURE</span></div></div>
@@ -313,7 +384,7 @@ export default function App() {
     <main className="main">
       <header className="topbar">
         <div><span className="eyebrow">MONDAY · THE ADVENTURE CONTINUES</span><h1>{nav.find(n=>n[0]===active)?.[1]||'Camp'}</h1></div>
-        <div className="top-actions"><div className="currency">◈ <b>{gold}</b></div><div className="level-pill"><span>LVL</span><b>{level}</b></div></div>
+        <div className="top-actions"><div className="cloud-status"><Cloud size={13}/> <span>Cloud save</span></div><div className="currency">◈ <b>{gold}</b></div><div className="level-pill"><span>LVL</span><b>{level}</b></div><button className="signout-button" onClick={()=>supabase.auth.signOut()} title="Sign out"><LogOut size={14}/></button></div>
       </header>
 
       {active==='dashboard'&&<Dashboard quests={quests} stats={stats} xp={xp} progress={progress} completed={completed} finishQuest={finishQuest} setShowQuest={setShowQuest} worlds={WORLDS} setActive={setActive} character={character} dailyQuests={dailyQuests} daily={daily} dailyDone={dailyDone} completeDaily={completeDaily} event={event} resolveEvent={resolveEvent}/>}
@@ -358,6 +429,13 @@ function Dashboard({quests,stats,xp,progress,completed,finishQuest,setShowQuest,
   <section className="section-head world-head"><div><span className="eyebrow">THE REALM</span><h2>Choose your path</h2></div><button className="ghost" onClick={()=>setActive('map')}>Open Map <Map size={14}/></button></section>
   <div className="world-grid">{worlds.slice(0,3).map(w=><WorldCard key={w.id} world={w} onClick={()=>setActive(w.id==='body'?'body':w.id==='study'?'study':'planner')}/>)}</div>
  </div>
+}
+
+function AuthLoadingScreen(){return <div className="auth-screen"><div className="auth-card panel"><div className="brand-mark">✦</div><span className="eyebrow">THE REALM AWAKENS</span><h1>Loading your adventure…</h1><p>Checking your cloud save.</p></div></div>}
+function AuthScreen(){
+ const [mode,setMode]=useState('signin'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('')
+ const submit=async e=>{e.preventDefault();setBusy(true);setMessage('');const r=mode==='signin'?await supabase.auth.signInWithPassword({email,password}):await supabase.auth.signUp({email,password});if(r.error)setMessage(r.error.message);else if(mode==='signup'&&!r.data.session)setMessage('Check your email to confirm your account, then sign in.');setBusy(false)}
+ return <div className="auth-screen"><div className="auth-card panel"><div className="auth-brand"><div className="brand-mark">✦</div><div><strong>Life RPG</strong><span>YOUR ADVENTURE</span></div></div><span className="eyebrow">{mode==='signin'?'WELCOME BACK, ADVENTURER':'BEGIN YOUR ADVENTURE'}</span><h1>{mode==='signin'?'Continue your quest':'Create your account'}</h1><p>Your save follows you between your phone, laptop, and browsers.</p><form onSubmit={submit}><label>Email<input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>Password<input type="password" autoComplete={mode==='signin'?'current-password':'new-password'} minLength="6" value={password} onChange={e=>setPassword(e.target.value)} required/></label>{message&&<div className="auth-message">{message}</div>}<button className="primary auth-submit" disabled={busy}>{busy?'Entering the realm…':mode==='signin'?'Enter the Realm':'Create Account'} <Sword size={16}/></button></form><button className="ghost auth-switch" onClick={()=>{setMode(mode==='signin'?'signup':'signin');setMessage('')}}>{mode==='signin'?'New adventurer? Create an account':'Already have an account? Sign in'}</button></div></div>
 }
 
 function Quick({icon:Icon,title,value,onClick}){return <button className="quick-card panel" onClick={onClick}><Icon size={19}/><span><b>{title}</b><small>{value}</small></span><ChevronRight size={15}/></button>}
