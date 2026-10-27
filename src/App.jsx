@@ -598,15 +598,15 @@ function MapPage({worlds,setActive,level}){
    <div className="map-cliff cliff-north"/>
    <div className="map-field field-one"/><div className="map-field field-two"/><div className="map-field field-three"/>
    <div className="map-path path-one"/><div className="map-path path-two"/><div className="map-path path-three"/>
-   <div className="map-forest forest-one">🌲🌲🌲<br/>🌲🌲🌲</div>
-   <div className="map-forest forest-two">🌲🌲<br/>🌲🌲🌲</div>
-   <div className="map-forest forest-three">🌳🌲🌳</div>
-   <div className="map-mountain mountain-one">▲ ▲<br/> ▲▲</div>
-   <div className="map-mountain mountain-two">▲▲ ▲<br/> ▲▲</div>
-   <div className="map-village"><span className="village-banner">ADVENTURER'S KEEP</span><i>🏠</i><i>🏡</i><i>🏠</i><i>⛪</i><i>🏠</i><i>🏡</i><i>🏠</i><i>🏠</i></div>
-   <div className="map-market">🏪</div>
-   <div className="map-ruins">🏚️<span>OLD RUINS</span></div>
-   <div className="map-camp">⛺<span>YOUR CAMP</span></div>
+   <div className="pixel-forest forest-one"><i/><i/><i/><i/><i/></div>
+   <div className="pixel-forest forest-two"><i/><i/><i/><i/><i/></div>
+   <div className="pixel-forest forest-three"><i/><i/><i/></div>
+   <div className="pixel-mountains mountain-one"><i/><i/><i/></div>
+   <div className="pixel-mountains mountain-two"><i/><i/><i/><i/></div>
+   <div className="pixel-village"><span className="village-banner">ADVENTURER'S KEEP</span><i/><i/><i/><i/><i/><i/><i/><i/></div>
+   <div className="pixel-market"><i/><span>MARKET</span></div>
+   <div className="pixel-ruins"><i/><i/><span>OLD RUINS</span></div>
+   <div className="pixel-camp"><i/><span>YOUR CAMP</span></div>
    {worlds.map(w=>{
     const unlocked=level>=(w.unlockLevel||1)
     return <button
