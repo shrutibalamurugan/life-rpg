@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Backpack, BookOpen, CalendarDays, Check, ChevronRight, Compass, Crown, Flame,
   Heart, Map, Plus, ScrollText, Settings, Shield, Sparkles, Sword, Trophy,
