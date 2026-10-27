@@ -35,6 +35,56 @@ const ACHIEVEMENT_INFO = {
   'pr-hunter': {name:'PR Hunter',icon:'💪',desc:'Set a new strength record.'}
 }
 
+
+
+const EQUIPMENT_CATALOG = [
+  {id:'ember-staff',name:'Emberwood Staff',slot:'weapon',icon:'🔥',cost:120,bonus:{INT:2},desc:'A warm staff that rewards focused study.'},
+  {id:'moon-cloak',name:'Moonlit Cloak',slot:'armor',icon:'🌙',cost:140,bonus:{SPI:2},desc:'Soft armor for quiet nights and recovery.'},
+  {id:'traveler-boots',name:'Traveler Boots',slot:'accessory',icon:'🥾',cost:100,bonus:{VIT:1,DIS:1},desc:'Made for walks, runs, and new roads.'},
+  {id:'golden-charm',name:'Golden Charm',slot:'accessory',icon:'✨',cost:180,bonus:{RAD:2},desc:'A little radiance for the Hall of Becoming.'},
+]
+
+const QUEST_CHAINS = [
+  {id:'first-chapter',title:'The First Chapter',villager:'Mira the Healer',icon:'📜',desc:'Prove that small acts of care can change the whole realm.',steps:[
+    {title:'Rest at the Healer’s Shrine',task:'Take 10 intentional minutes away from schoolwork.',xp:25,gold:20},
+    {title:'Carry a Kind Thought',task:'Write down one thing you handled well today.',xp:30,gold:25},
+    {title:'Return to the Shrine',task:'Complete your normal bedtime wind-down.',xp:40,gold:35}
+  ]},
+  {id:'archive-chronicle',title:'The Lost Chronicle',villager:'Tomas the Scholar',icon:'📚',desc:'Recover a forgotten page by training your recall.',steps:[
+    {title:'Find the First Page',task:'Complete 20 flashcards or practice questions.',xp:30,gold:25},
+    {title:'Decode the Margin',task:'Review 5 questions you previously missed.',xp:35,gold:30},
+    {title:'Seal the Chronicle',task:'Explain one difficult topic without looking at notes.',xp:50,gold:45}
+  ]},
+  {id:'road-beyond',title:'Road Beyond the Keep',villager:'Pip the Trainer',icon:'🧭',desc:'Open a new road by moving through the world.',steps:[
+    {title:'Leave the Gate',task:'Take a 10-minute walk or movement break.',xp:25,gold:20},
+    {title:'Reach the Waystone',task:'Complete a workout or 20+ minutes of movement.',xp:40,gold:35},
+    {title:'Mark the Map',task:'Visit a new place or take a genuinely new route.',xp:55,gold:50}
+  ]}
+]
+
+const REALM_BOSSES = [
+  {id:'procrastination-wyrm',name:'The Procrastination Wyrm',icon:'🐉',stat:'DIS',unlock:1,maxHp:500,desc:'A beast that grows stronger whenever Future You is left a problem.',reward:'+120 XP · +60 gold'},
+  {id:'mirror-witch',name:'The Mirror Witch',icon:'🪞',stat:'RAD',unlock:5,maxHp:650,desc:'Defeat the voice that says you must be perfect before you can feel good.',reward:'+160 XP · +80 gold'},
+  {id:'fog-doubt',name:'The Fog of Doubt',icon:'🌫️',stat:'SPI',unlock:10,maxHp:800,desc:'A misty boss guarding the Astral Sanctum.',reward:'+220 XP · +100 gold'}
+]
+
+const NPC_DIALOGUE = {
+  'Mira the Healer': ['You do not need to earn rest. Rest is part of the adventure.','Take care of the hero carrying all these quests.'],
+  'Tomas the Scholar': ['A page studied well is worth more than ten pages skimmed.','Return to the Archive with one question you genuinely want answered.'],
+  'Pip the Trainer': ['Strength is built by showing up again, not by punishing yourself.','A ten-minute walk still counts as leaving the dungeon.'],
+  'Elara the Tailor': ['Prepare Future You a little gift tonight: make tomorrow easier.','Your outfit is equipment too. Wear something that makes you feel like the main character.'],
+  'Rowan the Gardener': ['Feed the hero, do not negotiate with hunger all day.','A colorful plate is a small garden on the road.'],
+  'Nessa the Innkeeper': ['Every adventurer needs a tavern where they can pause.','Water first, then back to the road when you are ready.']
+}
+
+
+const EXTRA_ACHIEVEMENTS = {
+  'chain-complete': {name:'Questkeeper',icon:'📜',desc:'Completed a full multi-step quest chain.'},
+  'town-builder': {name:'Founder of the Keep',icon:'🏘️',desc:'Upgraded the Adventurer Guild.'},
+  'realm-slayer': {name:'Realm Slayer',icon:'🐉',desc:'Defeated a world boss.'},
+  'pathfinder': {name:'Pathfinder',icon:'🧭',desc:'Discovered a new place on the realm map.'}
+}
+
 const load = (key, fallback) => {
   try { return JSON.parse(localStorage.getItem('life-rpg-'+key)) ?? fallback } catch { return fallback }
 }
@@ -101,6 +151,14 @@ export default function App() {
   const [inventory,setInventory] = useState(() => load('inventory', []))
   const [event,setEvent] = useState(() => load('event', {date:'',title:'',body:'',options:[],resolved:false}))
   const [villagerQuests,setVillagerQuests] = useState(() => load('villager-quests', {date:'',active:[],completed:[]}))
+  const [town,setTown] = useState(() => load('town', {level:1,xp:0,buildings:{guild:1,tavern:1,garden:0,library:0}}))
+  const [questChains,setQuestChains] = useState(() => load('quest-chains', QUEST_CHAINS.map(c=>({...c,progress:0,completed:false}))))
+  const [realmBosses,setRealmBosses] = useState(() => load('realm-bosses', REALM_BOSSES.map(b=>({...b,hp:b.maxHp,defeated:false}))))
+  const [equipment,setEquipment] = useState(() => load('equipment', {owned:[],equipped:{weapon:null,armor:null,accessory:null}}))
+  const [discoveries,setDiscoveries] = useState(() => load('discoveries', []))
+  const [selectedNpc,setSelectedNpc] = useState(null)
+  const [realmTime,setRealmTime] = useState(() => new Date())
+
 
   useEffect(()=>{
     let mounted=true
@@ -128,6 +186,11 @@ export default function App() {
     if(data.inventory)setInventory(data.inventory)
     if(data.event)setEvent(data.event)
     if(data.villagerQuests)setVillagerQuests(data.villagerQuests)
+    if(data.town)setTown(data.town)
+    if(data.questChains)setQuestChains(data.questChains)
+    if(data.realmBosses)setRealmBosses(data.realmBosses)
+    if(data.equipment)setEquipment(data.equipment)
+    if(data.discoveries)setDiscoveries(data.discoveries)
   }
 
   useEffect(()=>{
@@ -143,7 +206,7 @@ export default function App() {
     return ()=>{cancelled=true}
   },[session?.user?.id])
 
-  const cloudData={version:1,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests}
+  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -154,7 +217,7 @@ export default function App() {
       if(error)console.error('Cloud save failed',error)
     },400)
     return ()=>clearTimeout(saveTimerRef.current)
-  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests])
+  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries])
 
   useEffect(()=>{
     if(!session)return
@@ -181,6 +244,12 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-inventory',JSON.stringify(inventory)),[inventory])
   useEffect(()=>localStorage.setItem('life-rpg-event',JSON.stringify(event)),[event])
   useEffect(()=>localStorage.setItem('life-rpg-villager-quests',JSON.stringify(villagerQuests)),[villagerQuests])
+  useEffect(()=>localStorage.setItem('life-rpg-town',JSON.stringify(town)),[town])
+  useEffect(()=>localStorage.setItem('life-rpg-quest-chains',JSON.stringify(questChains)),[questChains])
+  useEffect(()=>localStorage.setItem('life-rpg-realm-bosses',JSON.stringify(realmBosses)),[realmBosses])
+  useEffect(()=>localStorage.setItem('life-rpg-equipment',JSON.stringify(equipment)),[equipment])
+  useEffect(()=>localStorage.setItem('life-rpg-discoveries',JSON.stringify(discoveries)),[discoveries])
+  useEffect(()=>{const timer=setInterval(()=>setRealmTime(new Date()),60000);return()=>clearInterval(timer)},[])
   useEffect(()=>{const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;const last=load('routine-date',null);if(last!==today){setRoutine(xs=>xs.map(x=>({...x,done:false,xpAwarded:false})));localStorage.setItem('life-rpg-routine-date',JSON.stringify(today))}},[])
   useEffect(()=>{const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(daily.date!==today)setDaily(x=>({...x,date:today,completed:[],bonusClaimed:false}))},[daily.date])
   useEffect(()=>{
@@ -196,10 +265,14 @@ export default function App() {
   },[event.date])
 
   const level=Math.floor(xp/250)+1, levelXp=xp%250, progress=levelXp/250*100
+  const gearBonus=useMemo(()=>Object.values(equipment.equipped||{}).reduce((out,id)=>{const item=EQUIPMENT_CATALOG.find(x=>x.id===id);if(item)Object.entries(item.bonus).forEach(([k,v])=>out[k]=(out[k]||0)+v);return out},{}) ,[equipment.equipped])
+  const townBonus=useMemo(()=>({VIT:(town.buildings.garden||0),INT:(town.buildings.library||0),SPI:(town.buildings.tavern||0)-1,RAD:0,DIS:(town.buildings.guild||0)-1}),[town.buildings])
   const stats=useMemo(()=>[
-    ['VIT',7+(statBonus.VIT||0),'Vitality',Heart],['INT',12+(statBonus.INT||0),'Intelligence',BookOpen],['SPI',9+(statBonus.SPI||0),'Spirit',Sparkles],
-    ['RAD',6+(statBonus.RAD||0),'Radiance',Crown],['DIS',8+(statBonus.DIS||0),'Discipline',Shield]
-  ],[statBonus])
+    ['VIT',7+(statBonus.VIT||0)+(gearBonus.VIT||0)+(townBonus.VIT||0),'Vitality',Heart],['INT',12+(statBonus.INT||0)+(gearBonus.INT||0)+(townBonus.INT||0),'Intelligence',BookOpen],['SPI',9+(statBonus.SPI||0)+(gearBonus.SPI||0)+(townBonus.SPI||0),'Spirit',Sparkles],
+    ['RAD',6+(statBonus.RAD||0)+(gearBonus.RAD||0)+(townBonus.RAD||0),'Radiance',Crown],['DIS',8+(statBonus.DIS||0)+(gearBonus.DIS||0)+(townBonus.DIS||0),'Discipline',Shield]
+  ],[statBonus,gearBonus,townBonus])
+  const timeHour=realmTime.getHours(); const isNight=timeHour<7||timeHour>=19; const timeLabel=isNight?'🌙 Nightfall':'☀️ Daylight';
+  const companionGoldBonus=companions.includes('🦊 Moss the Fox')?5:0
   const completed=quests.filter(q=>q.done).length
   const todayKey=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})()
   const dailyQuests=[
@@ -267,7 +340,7 @@ export default function App() {
     setDaily(d=>({...d,completed:next,streak,lastCompletedDate:todayKey}))
     if(streak>=3)unlockAchievement('three-day-flame')
     if(streak>=7)unlockAchievement('week-warrior')
-    setXp(v=>v+q.xp);setGold(g=>g+q.gold)
+    setXp(v=>v+q.xp);setGold(g=>g+q.gold+companionGoldBonus)
     if(next.length===dailyQuests.length&&!daily.bonusClaimed){setDaily(d=>({...d,bonusClaimed:true}));setXp(v=>v+100);setGold(g=>g+50);unlockAchievement('main-character');notify('DAILY ADVENTURE COMPLETE! +100 bonus XP · +50 gold')}
     else notify(`${q.title} complete! +${q.xp} XP · +${q.gold} gold · ${streak}-day streak`)
   }
@@ -296,9 +369,55 @@ export default function App() {
     setVillagerQuests(v=>({...v,active:v.active.filter(x=>x!==id),completed:[...v.completed,id]}))
     setXp(v=>v+q.xp);setGold(g=>g+q.gold);notify(`${q.villager} thanks you! +${q.xp} XP · +${q.gold} gold`)
   }
+
+  function completeChainStep(chainId){
+    const chain=questChains.find(c=>c.id===chainId); if(!chain||chain.completed)return
+    const step=chain.steps[chain.progress]; if(!step)return
+    const nextProgress=chain.progress+1; const finished=nextProgress>=chain.steps.length
+    setQuestChains(xs=>xs.map(c=>c.id===chainId?{...c,progress:nextProgress,completed:finished}:c))
+    setXp(v=>v+step.xp+(finished?75:0)); setGold(g=>g+step.gold+(finished?50:0)+companionGoldBonus)
+    if(finished){setTown(t=>({...t,xp:t.xp+100}));unlockAchievement('chain-complete');notify('QUEST CHAIN COMPLETE! The realm remembers your deeds. +75 bonus XP')}
+    else notify('Quest step complete! '+step.title+' · +'+step.xp+' XP')
+  }
+  function upgradeTown(building){
+    const names={guild:'Adventurer Guild',tavern:'Moonlit Tavern',garden:'Healing Garden',library:'Grand Library'}
+    const current=town.buildings[building]||0; const cost=100+(current*75)
+    if(gold<cost){notify('You need '+cost+' gold to upgrade the '+names[building]+'.');return}
+    setGold(g=>g-cost); setTown(t=>({...t,level:Math.max(t.level, current+2),xp:t.xp+cost,buildings:{...t.buildings,[building]:current+1}}))
+    if(building==='guild'&&current===0)unlockAchievement('town-builder')
+    notify(names[building]+' upgraded! The town grows around you.')
+  }
+  function strikeRealmBoss(id){
+    const boss=realmBosses.find(b=>b.id===id); if(!boss||boss.defeated)return
+    if(level<boss.unlock){notify('This boss awakens at level '+boss.unlock+'.');return}
+    const statValue=stats.find(s=>s[0]===boss.stat)?.[1]||1
+    const damage=Math.max(25,Math.round(statValue*8))
+    const hp=Math.max(0,boss.hp-damage); const defeated=hp===0
+    setRealmBosses(xs=>xs.map(b=>b.id===id?{...b,hp,defeated}:b))
+    if(defeated){const reward=REALM_BOSSES.find(b=>b.id===id);setXp(v=>v+120+(boss.unlock*20));setGold(g=>g+60+(boss.unlock*10)+companionGoldBonus);unlockAchievement('realm-slayer');notify(boss.name+' defeated! '+reward.reward)}
+    else notify(boss.name+' takes '+damage+' damage.')
+  }
+  function buyEquipment(item){
+    if(equipment.owned.includes(item.id)){notify('You already own the '+item.name+'.');return}
+    if(gold<item.cost){notify('Not enough gold for '+item.name+'.');return}
+    setGold(g=>g-item.cost);setEquipment(e=>({...e,owned:[...e.owned,item.id]}));notify(item.name+' added to your armory.')
+  }
+  function equipItem(item){
+    if(!equipment.owned.includes(item.id))return
+    setEquipment(e=>({...e,equipped:{...e.equipped,[item.slot]:e.equipped[item.slot]===item.id?null:item.id}}))
+    notify(item.name+(equipment.equipped[item.slot]===item.id?' unequipped.':' equipped!'))
+  }
+  function discoverRealm(id){
+    if(discoveries.includes(id))return
+    setDiscoveries(d=>[...d,id]);setXp(v=>v+35);setGold(g=>g+15+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! +35 XP · +15 gold')
+  }
+  function talkToNpc(name){
+    const lines=NPC_DIALOGUE[name]||[];setSelectedNpc({name,line:lines[(new Date().getDate()+name.length)%lines.length]})
+  }
+
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
-    setQuests(xs=>xs.map(x=>x.id===id?{...x,done:true}:x)); setXp(x=>x+q.xp); setGold(g=>g+q.gold)
+    setQuests(xs=>xs.map(x=>x.id===id?{...x,done:true}:x)); setXp(x=>x+q.xp); setGold(g=>g+q.gold+companionGoldBonus)
     notify(`Quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
   function addQuest(e){
@@ -306,7 +425,7 @@ export default function App() {
     setQuests(xs=>[...xs,{id:Date.now(),title:newQuest.trim(),subtitle:'Custom quest from your adventurer’s journal',xp:25,gold:5,type:'custom',stat:'DIS',done:false}])
     setNewQuest('');setShowQuest(false);notify('New quest added to your journal.')
   }
-  function toggleRoutine(id){const item=routine.find(x=>x.id===id);if(!item||item.active===false)return;const next=!item.done;setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:next,xpAwarded:next?true:false}:x));if(next&&!item.xpAwarded){setXp(v=>v+(item.xp||20));notify(`Ritual complete! +${item.xp||20} XP · ${item.stat||'DIS'} strengthened`)}}
+  function toggleRoutine(id){const item=routine.find(x=>x.id===id);if(!item||item.active===false)return;const next=!item.done;setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:next,xpAwarded:next?true:false}:x));if(next&&!item.xpAwarded){setXp(v=>v+(item.xp||20));setGold(g=>g+companionGoldBonus);notify(`Ritual complete! +${item.xp||20} XP · ${item.stat||'DIS'} strengthened`)}}
   function openRoutineEditor(item){setRoutineEditorMode('edit');setEditingRoutine(item.id);setRoutineDraft({time:item.time,title:item.title,xp:item.xp||20,stat:item.stat||'DIS',repeat:item.repeat||'daily',active:item.active!==false})}
   function openRoutineCreator(){setRoutineEditorMode('add');setEditingRoutine(null);setRoutineDraft({time:'',title:'',xp:20,stat:'DIS',repeat:'daily',active:true})}
   function saveRoutine(e){e.preventDefault();if(!routineDraft.time.trim()||!routineDraft.title.trim())return;const clean={time:routineDraft.time.trim(),title:routineDraft.title.trim(),xp:Number(routineDraft.xp)||20,stat:routineDraft.stat,repeat:routineDraft.repeat,active:routineDraft.active};if(routineEditorMode==='add'){setRoutine(xs=>[...xs,{id:Date.now(),...clean,done:false}]);notify('New routine quest added.')}else{setRoutine(xs=>xs.map(x=>x.id===editingRoutine?{...x,...clean}:x));notify('Routine quest updated.')}setEditingRoutine(null)}
@@ -366,7 +485,7 @@ export default function App() {
   }
 
   const nav=[
-    ['dashboard','Camp',Sword],['quests','Quests',ScrollText],['planner','Routine',CalendarDays],
+    ['dashboard','Camp',Sword],['quests','Quests',ScrollText],['planner','Routine',CalendarDays],['realm','Realm',Crown],
     ['study','Grand Archive',GraduationCap],['body','Verdant Wilds',Dumbbell],
     ['map','World Map',Map],['character','Character',UserRound],['inventory','Rewards',Backpack]
   ]
@@ -507,6 +626,25 @@ function MapPage({worlds,setActive,level}){
 function WorldCard({world,onClick,large=false,locked=false}){const Icon=world.icon;return <button className={'world-card panel '+(large?'large ':'')+(locked?'locked':'')} onClick={onClick} disabled={locked}><div className="world-art"><Icon size={large?38:28}/><span>{world.stat}</span></div><div><h3>{locked?'🔒 ':''}{world.name}</h3><p>{locked?'Unlock at level '+world.unlockLevel:world.desc}</p></div><span className="circle-btn">{locked?'🔒':<ChevronRight size={17}/>}</span></button>}
 
 function CharacterPage({character,level,xp,stats,openCharacterEditor}){return <div className="content"><div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:(xp%250)/250*100+'%'}}/></div><span>{xp%250} / 250 XP</span></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div><div className="stat-cards">{stats.map(([label,value,name,Icon])=><div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name}</small></div>)}</div><div className="panel character-rules"><span className="eyebrow">HOW YOUR HERO GROWS</span><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> glow-up quests</div></div></div>}
-function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements}){const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]).filter(Boolean);return <div className="content"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?companions.join(' · '):'No companion yet.'}</small></div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys(ACHIEVEMENT_INFO).length}</strong><div className="achievement-list">{Object.entries(ACHIEVEMENT_INFO).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section></div>}
+function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements}){const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]||EXTRA_ACHIEVEMENTS[id]).filter(Boolean);return <div className="content"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?companions.join(' · '):'No companion yet.'}</small></div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section></div>}
+
+
+function RealmPage({level,timeLabel,isNight,town,upgradeTown,questChains,completeChainStep,realmBosses,strikeRealmBoss,equipment,equipmentCatalog,buyEquipment,equipItem,companions,discoveries,discoverRealm,talkToNpc,setActive}){
+ const buildings=[['guild','🏛️','Adventurer Guild','Unlocks new quests & Discipline'],['tavern','🍵','Moonlit Tavern','Rest, dialogue & Spirit'],['garden','🌿','Healing Garden','Vitality training'],['library','📚','Grand Library','Intelligence training']]
+ const npcs=Object.keys(NPC_DIALOGUE)
+ const places=[['moonwell','💧','Moonwell','A quiet place to reset'],['old-bridge','🌉','Old Bridge','Take a new route'],['starlit-grove','🌌','Starlit Grove','A hidden reflection spot'],['market-square','🏮','Market Square','Browse the realm']]
+ return <div className="content realm-page">
+  <PageIntro eyebrow="THE LIVING REALM" title="Town & Guild" text="This is your home base. Build it, meet its people, follow quest chains, gear up, and hunt the bosses beyond the walls."/>
+  <div className={'realm-banner panel '+(isNight?'night':'')}><div><span className="eyebrow">{timeLabel}</span><h2>Adventurer's Keep · Level {town.level}</h2><p>The realm changes with you. Your town, companions, equipment, discoveries, and victories all persist in your save.</p></div><div className="realm-level">HERO LVL <b>{level}</b></div></div>
+  <section><div className="section-head"><div><span className="eyebrow">YOUR TOWN</span><h2>Build the Keep</h2></div><span className="muted">Upgrades permanently improve your hero</span></div><div className="town-grid">{buildings.map(([id,icon,name,desc])=>{const lvl=town.buildings[id]||0;const cost=100+lvl*75;return <div className="town-building panel" key={id}><div className="town-icon">{icon}</div><div><b>{name}</b><small>{desc}</small><span>Level {lvl}</span></div><button className="primary" disabled={false} onClick={()=>upgradeTown(id)}>Upgrade · {cost} ◈</button></div>})}</div></section>
+  <section className="realm-section"><div className="section-head"><div><span className="eyebrow">THE VILLAGE</span><h2>Talk to the villagers</h2></div></div><div className="npc-grid">{npcs.map(name=><button className="npc-card panel" key={name} onClick={()=>talkToNpc(name)}><span>{name.includes('Mira')?'🧝‍♀️':name.includes('Tomas')?'📚':name.includes('Pip')?'🏃':name.includes('Elara')?'🧵':name.includes('Rowan')?'🌿':'🍵'}</span><div><b>{name}</b><small>Tap to hear today's advice</small></div><ChevronRight size={15}/></button>)}</div></section>
+  <section className="realm-section"><div className="section-head"><div><span className="eyebrow">QUEST CHAINS</span><h2>Stories with consequences</h2></div></div><div className="chain-grid">{questChains.map(c=>{const step=c.steps[c.progress];return <div className={'chain-card panel '+(c.completed?'completed':'')} key={c.id}><div className="chain-head"><span>{c.icon}</span><div><b>{c.title}</b><small>{c.villager}</small></div><strong>{c.completed?'✓':c.progress+'/'+c.steps.length}</strong></div><p>{c.desc}</p>{!c.completed&&step&&<><div className="chain-step"><b>{step.title}</b><small>{step.task}</small></div><button className="primary" onClick={()=>completeChainStep(c.id)}>Mark Step Complete · +{step.xp} XP</button></>}{c.completed&&<div className="chain-complete">✦ Questline complete — the story is yours now.</div>}</div>})}</div></section>
+  <section className="realm-section"><div className="section-head"><div><span className="eyebrow">WORLD BOSSES</span><h2>Hunt beyond the walls</h2></div></div><div className="boss-grid">{realmBosses.map(b=>{const locked=level<b.unlock;return <div className={'realm-boss panel '+(b.defeated?'defeated':'')} key={b.id}><div className="boss-title"><span>{b.icon}</span><div><b>{b.name}</b><small>{locked?'Unlock at level '+b.unlock:b.desc}</small></div></div><div className="boss-hp"><span>{b.defeated?'DEFEATED':locked?'LOCKED':'HP '+b.hp+' / '+b.maxHp}</span><div><i style={{width:(b.defeated?0:Math.max(0,b.hp/b.maxHp*100))+'%'}}/></div></div><button className="primary" disabled={locked||b.defeated} onClick={()=>strikeRealmBoss(b.id)}>{b.defeated?'Victory Claimed':locked?'Locked':'Strike Boss'}</button></div>})}</div></section>
+  <section className="realm-section"><div className="section-head"><div><span className="eyebrow">ARMORY</span><h2>Equipment that actually does something</h2></div><span className="muted">Owned gear changes your stats</span></div><div className="equipment-grid">{equipmentCatalog.map(item=>{const owned=equipment.owned.includes(item.id);const equipped=equipment.equipped[item.slot]===item.id;return <div className={'gear-card panel '+(equipped?'equipped':'')} key={item.id}><span className="gear-icon">{item.icon}</span><div><b>{item.name}</b><small>{item.desc}</small><span>{Object.entries(item.bonus).map(([k,v])=>k+' +'+v).join(' · ')}</span></div>{owned?<button className="ghost" onClick={()=>equipItem(item)}>{equipped?'Unequip':'Equip'}</button>:<button className="primary" onClick={()=>buyEquipment(item)}>Buy · {item.cost} ◈</button>}</div>})}</div></section>
+  <section className="realm-section"><div className="section-head"><div><span className="eyebrow">COMPANIONS</span><h2>Your party</h2></div></div><div className="party-card panel"><div className="party-avatar">{companions.length?'🦊':'🧭'}</div><div><b>{companions.length?'Moss the Fox':'No companion yet'}</b><p>{companions.length?'Moss is curious, loyal, and finds +5 bonus gold when you complete quests.':'The fox encounter can recruit your first companion.'}</p></div></div></section>
+  <section className="realm-section"><div className="section-head"><div><span className="eyebrow">EXPLORATION</span><h2>Mark new places on the map</h2></div></div><div className="discovery-grid">{places.map(([id,icon,name,desc])=>{const found=discoveries.includes(id);return <button className={'discovery-card panel '+(found?'found':'')} key={id} onClick={()=>discoverRealm(id)}><span>{icon}</span><div><b>{name}</b><small>{found?'Discovered · +35 XP claimed':desc}</small></div><strong>{found?'✓':'+ Discover'}</strong></button>})}</div><button className="ghost realm-map-button" onClick={()=>setActive('map')}><Map size={15}/> Open World Map</button></section>
+  {selectedNpc&&<div className="modal-backdrop" onClick={()=>setSelectedNpc(null)}><div className="modal npc-dialog" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedNpc(null)}><X/></button><span className="eyebrow">VILLAGER'S FIRE</span><h2>{selectedNpc.name}</h2><p>“{selectedNpc.line}”</p><button className="primary" onClick={()=>setSelectedNpc(null)}>Return to the realm</button></div></div>}
+ </div>
+}
 
 function PageIntro({eyebrow,title,text,action,onAction}){return <div className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2><p>{text}</p></div>{action&&<button className="primary" onClick={onAction}>{action}</button>}</div>}
