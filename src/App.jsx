@@ -104,15 +104,16 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-event',JSON.stringify(event)),[event])
   useEffect(()=>{const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;const last=load('routine-date',null);if(last!==today){setRoutine(xs=>xs.map(x=>({...x,done:false,xpAwarded:false})));localStorage.setItem('life-rpg-routine-date',JSON.stringify(today))}},[])
   useEffect(()=>{
-    if(event.date===todayKey)return
+    const d=new Date(); const currentDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    if(event.date===currentDate)return
     const encounters=[
       {title:'A Fox in the Moonlight',body:'A clever fox watches you from the road. It seems to recognize an adventurer.',options:[{label:'Follow it',reward:{xp:50},message:'The fox leads you to a hidden XP cache! +50 XP'},{label:'Offer food',reward:{pet:'🦊 Moss the Fox'},message:'Moss the Fox has joined your party!'}]},
       {title:'The Wandering Merchant',body:'A traveling merchant opens a mysterious chest.',options:[{label:'Trade stories',reward:{gold:40},message:'The merchant rewards your courage. +40 gold'},{label:'Study the map',reward:{item:'🗺️ Map Fragment'},message:'You discovered a map fragment!'}]},
       {title:'A Hidden Training Ground',body:'You discover an old training circle beneath the trees.',options:[{label:'Train',reward:{xp:60},message:'Your training pays off. +60 XP'},{label:'Rest here',reward:{xp:25},message:'A peaceful rest restores your spirit. +25 XP'}]}
     ]
     const e=encounters[new Date().getDate()%encounters.length]
-    setEvent({...e,date:todayKey,resolved:false})
-  },[todayKey,event.date])
+    setEvent({...e,date:currentDate,resolved:false})
+  },[event.date])
 
   const level=Math.floor(xp/250)+1, levelXp=xp%250, progress=levelXp/250*100
   const stats=useMemo(()=>[
