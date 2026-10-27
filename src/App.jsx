@@ -104,7 +104,7 @@ export default function App() {
   const [cloudHydrated,setCloudHydrated]=useState(false)
   const applyingRemoteRef=useRef(false)
   const saveTimerRef=useRef(null)
-  const [quests,setQuests] = useState(() => load('quests', QUESTS))
+  const [quests,setQuests] = useState(() => load('quests', []).filter(q=>![1,2,3,4].includes(q.id)))
   const [xp,setXp] = useState(() => load('xp',245))
   const [gold,setGold] = useState(() => load('gold',86))
   const [active,setActive] = useState('dashboard')
@@ -180,7 +180,7 @@ export default function App() {
   const applyCloudSave=(data)=>{
     if(!data||typeof data!=='object')return
     applyingRemoteRef.current=true
-    if(data.quests)setQuests(data.quests)
+    if(data.quests)setQuests(data.quests.filter(q=>![1,2,3,4].includes(q.id)))
     if(typeof data.xp==='number')setXp(data.xp)
     if(typeof data.gold==='number')setGold(data.gold)
     if(data.routine)setRoutine(data.routine)
@@ -429,7 +429,7 @@ export default function App() {
 
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
-    setQuests(xs=>xs.map(x=>x.id===id?{...x,done:true}:x))
+    setQuests(xs=>xs.filter(x=>x.id!==id))
     setXp(x=>x+q.xp); setGold(g=>g+q.gold+companionGoldBonus)
     notify(`Journal quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
@@ -541,7 +541,7 @@ function Dashboard({quests,stats,xp,gold,progress,completed,finishQuest,setShowQ
 
  return <div className="content">
   <section className="daily-adventure panel"><div><span className="eyebrow">TODAY'S ADVENTURE</span><h2>The Wandering Mage's Journey</h2><p>Complete real-life quests to earn XP, gold, discoveries, and level up.</p></div><div className="daily-progress"><b>{dailyDone}/{dailyQuests.length}</b><span>quests complete</span><div className="xp-bar"><i style={{width:(dailyDone/dailyQuests.length*100)+'%'}}/></div></div></section>
-  <section className="daily-quests"><div className="section-head"><div><span className="eyebrow">QUESTBOARD</span><h2>Today's adventure</h2></div><span className="muted">Full clear = bonus XP</span></div><div className="daily-grid">{dailyQuests.filter(q=>!daily.completed.includes(q.id)).map(q=><button key={q.id} className="daily-quest panel" onClick={()=>completeDaily(q.id)}><span className="daily-icon">{q.icon}</span><span><b>{q.title}</b><small>{q.subtitle}</small></span><strong>+{q.xp}</strong></button>)}{dailyQuests.every(q=>daily.completed.includes(q.id))&&<div className="daily-board-clear panel"><Check size={18}/><b>Quest Board cleared for today.</b><span>Return tomorrow for a new adventure.</span></div>}</div></section>
+  <section className="daily-quests"><div className="section-head"><div><span className="eyebrow">QUESTBOARD</span><h2>Today's adventure</h2></div><span className="muted">Full clear = bonus XP</span></div><div className="daily-grid">{dailyQuests.map(q=><button key={q.id} className="daily-quest panel" onClick={()=>completeDaily(q.id)}><span className="daily-icon">{q.icon}</span><span><b>{q.title}</b><small>{q.subtitle}</small></span><strong>+{q.xp}</strong></button>)}{dailyQuests.every(q=>daily.completed.includes(q.id))&&<div className="daily-board-clear panel"><Check size={18}/><b>Quest Board cleared for today.</b><span>Return tomorrow for a new adventure.</span></div>}</div></section>
   <section className="event-panel panel"><div><span className="eyebrow">✨ RANDOM ENCOUNTER</span><h2>{event.title||'A quiet road...'}</h2><p>{event.body||'The realm is waiting for your next discovery.'}</p></div><div className="event-options">{event.resolved?<div className="event-complete">✓ Encounter resolved. The road will offer a new choice tomorrow.</div>:(event.options||[{label:'Explore',reward:{xp:25},message:'You found 25 XP!'}]).map((o,i)=><button key={i} className="ghost" onClick={()=>resolveEvent(o)}>{o.label}{o.reward?.xp?' · +'+o.reward.xp+' XP':''}{o.reward?.gold?' · +'+o.reward.gold+' gold':''}</button>)}</div></section>
   <section className="hero-grid"><div className="hero-card panel"><div className="hero-copy"><span className="eyebrow">CURRENT QUESTLINE</span><h2>Become the hero<br/><em>of your own story.</em></h2><p>Build your body, sharpen your mind, tend your spirit, and make ordinary days feel like an adventure.</p><button className="primary" onClick={()=>document.querySelector('.quest-list')?.scrollIntoView({behavior:'smooth'})}>Continue Adventure <ChevronRight size={17}/></button></div><div className="hero-orb"><div className="pixel-sun">✦</div><div className="mountain m1"/><div className="mountain m2"/></div></div>
   <div className="character-card panel"><div className="card-heading"><span>CHARACTER</span><UserRound size={16}/></div><div className="big-avatar">{character.avatar}</div><h3>{character.name}</h3><span className="class-name">{character.className.toUpperCase()}</span><div className="xp-label"><span>LEVEL {Math.floor(xp/250)+1}</span><span>{xp%250} / 250 XP</span></div><div className="xp-bar"><i style={{width:progress+'%'}}/></div><div className="stat-row">{stats.slice(0,3).map(([s,v])=><div key={s}><b>{s}</b><span>{v}</span></div>)}</div><div className="gold-mini"><span>GOLD</span><b>◈ {gold}</b></div></div></section>
