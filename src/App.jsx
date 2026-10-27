@@ -94,6 +94,7 @@ export default function App() {
   const [companions,setCompanions] = useState(() => load('companions', []))
   const [inventory,setInventory] = useState(() => load('inventory', []))
   const [event,setEvent] = useState(() => load('event', {date:'',title:'',body:'',options:[],resolved:false}))
+  const [villagerQuests,setVillagerQuests] = useState(() => load('villager-quests', {date:'',active:[],completed:[]}))
 
   useEffect(()=>localStorage.setItem('life-rpg-quests',JSON.stringify(quests)),[quests])
   useEffect(()=>localStorage.setItem('life-rpg-xp',JSON.stringify(xp)),[xp])
@@ -110,6 +111,7 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-companions',JSON.stringify(companions)),[companions])
   useEffect(()=>localStorage.setItem('life-rpg-inventory',JSON.stringify(inventory)),[inventory])
   useEffect(()=>localStorage.setItem('life-rpg-event',JSON.stringify(event)),[event])
+  useEffect(()=>localStorage.setItem('life-rpg-villager-quests',JSON.stringify(villagerQuests)),[villagerQuests])
   useEffect(()=>{const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;const last=load('routine-date',null);if(last!==today){setRoutine(xs=>xs.map(x=>({...x,done:false,xpAwarded:false})));localStorage.setItem('life-rpg-routine-date',JSON.stringify(today))}},[])
   useEffect(()=>{const d=new Date();const today=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;if(daily.date!==today)setDaily(x=>({...x,date:today,completed:[],bonusClaimed:false}))},[daily.date])
   useEffect(()=>{
@@ -140,6 +142,15 @@ export default function App() {
     {id:'rest',title:'Rest at Camp',subtitle:'Protect a real bedtime / wind-down',xp:25,gold:8,icon:'🌙'},
   ]
   const dailyDone=dailyQuests.filter(q=>daily.completed.includes(q.id)).length
+  const VILLAGER_QUESTS=[
+    {id:'mira-selfcare',villager:'Mira the Healer',avatar:'🧝‍♀️',request:'Take a 10-minute self-care break',detail:'Step away from your work, breathe, stretch, shower, journal, or simply rest.',xp:20,gold:30,type:'spirit'},
+    {id:'tomas-flashcards',villager:'Tomas the Scholar',avatar:'📚',request:'Complete 30 flashcards',detail:'Give your memory a proper training session in the Grand Archive.',xp:30,gold:40,type:'mind'},
+    {id:'pip-jumping',villager:'Pip the Trainer',avatar:'🏃',request:'Do 50 jumping jacks',detail:'A tiny burst of movement to wake up your adventurer.',xp:20,gold:25,type:'body'},
+    {id:'elara-outfit',villager:'Elara the Tailor',avatar:'🧵',request:'Lay out tomorrow’s outfit',detail:'Make tomorrow morning easier by choosing your clothes tonight.',xp:15,gold:20,type:'life'},
+    {id:'rowan-produce',villager:'Rowan the Gardener',avatar:'🌿',request:'Eat one fruit or vegetable',detail:'Visit the market, kitchen, dining hall, or wherever your next healthy bite awaits.',xp:15,gold:20,type:'body'},
+    {id:'nessa-water',villager:'Nessa the Innkeeper',avatar:'🍵',request:'Drink two full bottles of water',detail:'Refill your canteen twice and keep your adventurer fueled.',xp:20,gold:25,type:'body'}
+  ]
+  useEffect(()=>{if(villagerQuests.date!==todayKey)setVillagerQuests({date:todayKey,active:[],completed:[]})},[villagerQuests.date,todayKey])
 
   function notify(message){setToast(message);window.clearTimeout(window.__lifeToast);window.__lifeToast=window.setTimeout(()=>setToast(''),2600)}
   function unlockAchievement(id){setAchievements(a=>a.includes(id)?a:[...a,id])}
@@ -169,6 +180,17 @@ export default function App() {
     const d=drops[Math.floor(Math.random()*drops.length)],r=d.reward
     if(r.xp)setXp(v=>v+r.xp);if(r.gold)setGold(g=>g+r.gold);if(r.pet)setCompanions(p=>p.includes(r.pet)?p:[...p,r.pet]);if(r.item)setInventory(i=>[...i,r.item])
     notify('MYSTERY CHEST: '+d.text)
+  }
+  function acceptVillagerQuest(id){
+    if(villagerQuests.active.includes(id)||villagerQuests.completed.includes(id))return
+    if(villagerQuests.active.length>=3){notify('Your quest log can hold 3 villager quests at once.');return}
+    setVillagerQuests(v=>({...v,active:[...v.active,id]}));notify('Quest accepted! A villager is counting on you.')
+  }
+  function completeVillagerQuest(id){
+    if(!villagerQuests.active.includes(id)||villagerQuests.completed.includes(id))return
+    const q=VILLAGER_QUESTS.find(x=>x.id===id);if(!q)return
+    setVillagerQuests(v=>({...v,active:v.active.filter(x=>x!==id),completed:[...v.completed,id]}))
+    setXp(v=>v+q.xp);setGold(g=>g+q.gold);notify(`${q.villager} thanks you! +${q.xp} XP · +${q.gold} gold`)
   }
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
@@ -307,7 +329,18 @@ function Quick({icon:Icon,title,value,onClick}){return <button className="quick-
 
 function Quest({q,finishQuest}){const Icon=q.type==='body'?Heart:q.type==='mind'?BookOpen:q.type==='spirit'?Sparkles:ScrollText;return <div className={'quest-row '+(q.done?'done':'')}><button className="check" onClick={()=>finishQuest(q.id)}>{q.done?<Check size={17}/>:''}</button><div className="quest-icon"><Icon size={18}/></div><div className="quest-info"><b>{q.title}</b><span>{q.subtitle}</span></div><div className="quest-reward"><b>+{q.xp} XP</b><span>◈ {q.gold}</span></div><span className="quest-type">{q.type}</span></div>}
 
-function QuestPage({quests,finishQuest,setShowQuest}){return <div className="content"><PageIntro eyebrow="ADVENTURER'S JOURNAL" title="All quests" text="Turn the things you already want to do into tiny victories." action="+ New Quest" onAction={()=>setShowQuest(true)}/><div className="quest-list full">{quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>)}</div></div>}
+function QuestPage({quests,finishQuest,setShowQuest,villagerQuests,villagerQuestList,acceptVillagerQuest,completeVillagerQuest}){
+ const active=villagerQuestList.filter(q=>villagerQuests.active.includes(q.id));
+ return <div className="content"><PageIntro eyebrow="ADVENTURER'S JOURNAL" title="All quests" text="Turn the things you already want to do into tiny victories." action="+ New Quest" onAction={()=>setShowQuest(true)}/>
+  <section className="villager-section"><div className="section-head"><div><span className="eyebrow">QUESTS FROM THE REALM</span><h2>Help the villagers</h2></div><span className="muted">Choose up to 3 at once</span></div>
+   {active.length>0&&<div className="villager-active"><div className="villager-active-title">🛡️ ACTIVE VILLAGER QUESTS</div>{active.map(q=><VillagerQuestCard key={q.id} q={q} state="active" onClick={()=>completeVillagerQuest(q.id)}/>)}</div>}
+   <div className="villager-grid">{villagerQuestList.map(q=><VillagerQuestCard key={q.id} q={q} state={villagerQuests.completed.includes(q.id)?'completed':villagerQuests.active.includes(q.id)?'active':'available'} onClick={()=>q&&acceptVillagerQuest(q.id)}/>)}</div>
+  </section>
+  <div className="section-head"><div><span className="eyebrow">ADVENTURER'S JOURNAL</span><h2>My quests</h2></div></div><div className="quest-list full">{quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>)}</div>
+ </div>
+}
+
+function VillagerQuestCard({q,state,onClick}){const buttonText=state==='available'?'Accept Quest':state==='active'?'Mark Complete':'Helped Today ✓';return <div className={'villager-card panel '+state}><div className="villager-avatar">{q.avatar}</div><div className="villager-copy"><b>{q.villager}</b><strong>{q.request}</strong><small>{q.detail}</small></div><div className="villager-reward"><b>+{q.gold} ◈</b><span>+{q.xp} XP</span><button className={state==='available'?'primary':'ghost'} disabled={state!=='available'&&state!=='active'} onClick={onClick}>{buttonText}</button></div></div>}
 
 function RoutinePage({routine,toggleRoutine,openRoutineEditor,openRoutineCreator}){const day=new Date().getDay();const due=routine.filter(x=>x.active!==false&&((x.repeat||'daily')==='daily'||((x.repeat||'daily')==='weekdays'&&day>=1&&day<=5)||((x.repeat||'daily')==='weekends'&&(day===0||day===6))));const active=routine.filter(x=>x.active!==false);const done=active.filter(x=>x.done).length;return <div className="content"><PageIntro eyebrow="ADVENTURER'S KEEP" title="Today's routine" text="Your real-life schedule becomes a questline." action="+ Add Ritual" onAction={openRoutineCreator}/><div className="routine-summary panel"><div><span className="eyebrow">DAILY PROGRESS</span><strong>{done}/{active.length}</strong><span>rituals completed · completion grants XP</span></div><div className="xp-bar"><i style={{width:(active.length?done/active.length*100:0)+'%'}}/></div></div><div className="routine-list">{routine.map(item=><div className={'routine-row panel '+(item.done?'done ':'')+(item.active===false?'inactive':'')} key={item.id}><button className="routine-main" onClick={()=>toggleRoutine(item.id)}><span className="routine-time">{item.time}</span><span className="routine-check">{item.done?<Check size={15}/>:''}</span><span className="routine-title"><b>{item.title}</b><small>{item.repeat||'daily'} · +{item.xp||20} XP · {item.stat||'DIS'}</small></span></button><button className="row-edit" onClick={()=>openRoutineEditor(item)}>Edit</button></div>)}</div></div>}
 
