@@ -465,7 +465,44 @@ function BodyPage({workouts,activeWorkout,setActiveWorkout,updateExercise,logWor
 }
 function BodyCard({icon:Icon,title,value,text,onClick}){return <button className="body-card panel" onClick={onClick}><Icon size={24}/><span className="eyebrow">{title}</span><strong>{value}</strong><small>{text}</small><ChevronRight size={15}/></button>}
 
-function MapPage({worlds,setActive,level}){return <div className="content"><PageIntro eyebrow="WORLD MAP" title="The Realm of Becoming" text="Every region represents a part of the life you're building. New regions awaken as your hero levels up."/><div className="map-grid">{worlds.map(w=>{const unlocked=level>=(w.unlockLevel||1);return <WorldCard key={w.id} world={w} large locked={!unlocked} onClick={()=>unlocked&&setActive(w.id==='body'?'body':w.id==='study'?'study':w.id==='life'?'planner':'dashboard')}/>})}</div></div>}
+function MapPage({worlds,setActive,level}){
+ const destinations={body:'body',study:'study',life:'planner',glow:'dashboard',spirit:'dashboard',explore:'dashboard'}
+ return <div className="content">
+  <PageIntro eyebrow="WORLD MAP" title="The Realm of Becoming" text="Choose a destination, adventurer. Click a region on the map to travel there."/>
+  <div className="realm-map-wrap panel">
+   <div className="map-compass">✦<span>N</span></div>
+   <div className="map-title">THE REALM OF BECOMING</div>
+   <div className="map-level">HERO LEVEL {level}</div>
+   <div className="map-path path-one"/>
+   <div className="map-path path-two"/>
+   <div className="map-path path-three"/>
+   <div className="map-mountain mountain-one">⌃⌃⌃</div>
+   <div className="map-mountain mountain-two">⌃⌃⌃⌃</div>
+   <div className="map-forest forest-one">♠♠<br/>♠♠</div>
+   <div className="map-forest forest-two">♠♠♠<br/>♠♠</div>
+   <div className="map-water water-one"/>
+   <div className="map-lake">≈≈≈<br/>≈≈≈</div>
+   <div className="map-ruins">▥<br/><span>RUINS</span></div>
+   <div className="map-camp">⌂<span>YOUR CAMP</span></div>
+   {worlds.map(w=>{
+    const unlocked=level>=(w.unlockLevel||1)
+    return <button
+      key={w.id}
+      className={'map-zone map-zone-'+w.id+(unlocked?'':' locked')}
+      disabled={!unlocked}
+      onClick={()=>unlocked&&setActive(destinations[w.id]||'dashboard')}
+      title={unlocked?w.desc:'Unlock at level '+w.unlockLevel}
+    >
+      <span className="map-zone-icon">{w.id==='body'?'🌲':w.id==='study'?'📚':w.id==='spirit'?'🔮':w.id==='glow'?'✨':w.id==='life'?'🏰':'🧭'}</span>
+      <strong>{unlocked?'': '🔒 '}{w.name}</strong>
+      <small>{unlocked?w.desc:'Level '+w.unlockLevel}</small>
+    </button>
+   })}
+   <div className="map-legend"><span><i className="legend-dot unlocked-dot"/>Unlocked</span><span><i className="legend-dot locked-dot"/>Locked</span><span>Click a region to travel</span></div>
+  </div>
+  <div className="map-tip panel"><Compass size={17}/><span><b>Traveler's note:</b> The shortcuts on your Camp remain the fastest route. The World Map is for exploring the realm.</span></div>
+ </div>
+}
 
 function WorldCard({world,onClick,large=false,locked=false}){const Icon=world.icon;return <button className={'world-card panel '+(large?'large ':'')+(locked?'locked':'')} onClick={onClick} disabled={locked}><div className="world-art"><Icon size={large?38:28}/><span>{world.stat}</span></div><div><h3>{locked?'🔒 ':''}{world.name}</h3><p>{locked?'Unlock at level '+world.unlockLevel:world.desc}</p></div><span className="circle-btn">{locked?'🔒':<ChevronRight size={17}/>}</span></button>}
 
