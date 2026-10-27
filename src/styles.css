@@ -252,3 +252,13 @@ nav button:hover{background:#292b31;color:#f1ead7}
 .pixel-market{z-index:4;left:57%;top:48%;width:48px;height:40px;background:#c69a4c;border:4px solid #382c1c;box-shadow:4px 4px 0 #111;}.pixel-market:before{content:"";position:absolute;left:-5px;top:-15px;width:50px;height:20px;background:#6d8052;border:4px solid #2c3724;clip-path:polygon(0 100%,50% 0,100% 100%)}.pixel-market span{position:absolute;top:43px;left:-4px;color:#d5c69e;font-size:7px;white-space:nowrap}
 .pixel-ruins{z-index:4;left:21%;top:17%;width:58px;height:48px;background:#64615b;border:4px solid #272828;box-shadow:3px 3px 0 #111}.pixel-ruins i{display:block;position:absolute;bottom:0;width:12px;height:34px;background:#858178;border:2px solid #363634}.pixel-ruins i:first-child{left:7px}.pixel-ruins i:nth-child(2){right:7px}.pixel-ruins span,.pixel-camp span{position:absolute;top:53px;left:-3px;white-space:nowrap;font-size:7px;color:#c8bfa8}
 .pixel-camp{z-index:6;left:48%;top:70%;width:54px;height:42px;background:#a75c45;border:4px solid #33211d;box-shadow:4px 4px 0 #111}.pixel-camp:before{content:"";position:absolute;left:7px;top:-15px;width:32px;height:25px;background:#d28a62;border:3px solid #3c2520;clip-path:polygon(0 100%,50% 0,100% 100%)}.pixel-camp span{top:47px;left:-5px;color:#d2c49e}
+
+/* NPC quest dialogue */
+.npc-card{position:relative;text-align:left;cursor:pointer;display:flex;align-items:center;gap:12px;min-height:76px}
+.npc-card>span{width:48px;height:48px;display:grid;place-items:center;background:#313b31;border:3px solid #59664f;box-shadow:3px 3px 0 #0c0d10;font-size:25px;image-rendering:pixelated}
+.npc-card>div{display:flex;flex-direction:column;gap:3px;flex:1}.npc-card small{color:#aaa59a}.npc-card em{font-style:normal;background:#b9675b;color:#fff1dc;border:2px solid #492c2a;min-width:20px;height:20px;display:grid;place-items:center;font-weight:900}
+.npc-card.has-quest{border-color:#8e7748;box-shadow:4px 4px 0 #0d0e11, inset 0 0 0 1px #b18d4f}
+.npc-dialog{max-width:560px}.npc-speech{margin:18px 0;padding:18px 20px;background:#191a1f;border:3px solid #554d42;box-shadow:4px 4px 0 #0a0b0d;color:#e8dfc8;font-family:Georgia,serif;font-size:1.1rem;line-height:1.65;position:relative}
+.npc-speech:before{content:"";position:absolute;left:24px;bottom:-11px;width:18px;height:18px;background:#191a1f;border-right:3px solid #554d42;border-bottom:3px solid #554d42;transform:rotate(45deg)}
+.npc-request{margin-top:22px;padding:16px;background:#29272e;border:2px solid #6b624d;box-shadow:3px 3px 0 #0c0d0e}.npc-request h3{margin:5px 0 6px;color:#e7ddc4}.npc-request p{color:#aaa59a;line-height:1.5}.npc-reward-line{margin:12px 0 14px;color:#bdb5a4}
+.npc-response{color:#aaa59a;line-height:1.6;margin:18px 0}
