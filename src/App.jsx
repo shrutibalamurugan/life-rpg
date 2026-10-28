@@ -45,20 +45,30 @@ const EQUIPMENT_CATALOG = [
 ]
 
 const QUEST_CHAINS = [
-  {id:'first-chapter',title:'The First Chapter',villager:'Mira the Healer',icon:'📜',desc:'Prove that small acts of care can change the whole realm.',steps:[
-    {title:'Rest at the Healer’s Shrine',task:'Take 10 intentional minutes away from schoolwork.',xp:25,gold:20},
-    {title:'Carry a Kind Thought',task:'Write down one thing you handled well today.',xp:30,gold:25},
-    {title:'Return to the Shrine',task:'Complete your normal bedtime wind-down.',xp:40,gold:35}
+  {id:'first-chapter',title:'Mira’s Healing Path',villager:'Mira the Healer',icon:'📜',desc:'A gentle three-part story about learning that caring for yourself is part of becoming a stronger adventurer.',completion:'Healer’s Blessing',completeLine:'You came back to the shrine three times, and each time you chose to care for yourself. That is a kind of strength no sword can teach.',steps:[
+    {title:'I · Rest at the Shrine',task:'Take 10 intentional minutes away from schoolwork.',xp:25,gold:20},
+    {title:'II · Carry a Kind Thought',task:'Write down one thing you handled well today.',xp:30,gold:25},
+    {title:'III · Return to the Shrine',task:'Complete your normal bedtime wind-down.',xp:40,gold:35}
   ]},
-  {id:'archive-chronicle',title:'The Lost Chronicle',villager:'Tomas the Scholar',icon:'📚',desc:'Recover a forgotten page by training your recall.',steps:[
-    {title:'Find the First Page',task:'Complete 20 flashcards or practice questions.',xp:30,gold:25},
-    {title:'Decode the Margin',task:'Review 5 questions you previously missed.',xp:35,gold:30},
-    {title:'Seal the Chronicle',task:'Explain one difficult topic without looking at notes.',xp:50,gold:45}
+  {id:'archive-chronicle',title:'The Lost Chronicle',villager:'Tomas the Scholar',icon:'📚',desc:'Help Tomas reconstruct a missing chapter by sharpening your recall.',completion:'Scholar’s Mark',completeLine:'Excellent work, adventurer. The Chronicle is whole again—and your memory grows sharper with it.',steps:[
+    {title:'I · Find the First Page',task:'Complete 20 flashcards or practice questions.',xp:30,gold:25},
+    {title:'II · Decode the Margin',task:'Review 5 questions you previously missed.',xp:35,gold:30},
+    {title:'III · Seal the Chronicle',task:'Explain one difficult topic without looking at notes.',xp:50,gold:45}
   ]},
-  {id:'road-beyond',title:'Road Beyond the Keep',villager:'Pip the Trainer',icon:'🧭',desc:'Open a new road by moving through the world.',steps:[
-    {title:'Leave the Gate',task:'Take a 10-minute walk or movement break.',xp:25,gold:20},
-    {title:'Reach the Waystone',task:'Complete a workout or 20+ minutes of movement.',xp:40,gold:35},
-    {title:'Mark the Map',task:'Visit a new place or take a genuinely new route.',xp:55,gold:50}
+  {id:'road-beyond',title:'Pip’s Road to Strength',villager:'Pip the Trainer',icon:'🧭',desc:'Train your body and prove that consistency, not punishment, moves the adventurer forward.',completion:'Trailblazer’s Boon',completeLine:'You kept showing up. That is what makes a body stronger—and an adventurer harder to stop.',steps:[
+    {title:'I · Leave the Gate',task:'Take a 10-minute walk or movement break.',xp:25,gold:20},
+    {title:'II · Reach the Waystone',task:'Complete a workout or 20+ minutes of movement.',xp:40,gold:35},
+    {title:'III · Mark the Map',task:'Visit a new place or take a genuinely new route.',xp:55,gold:50}
+  ]},
+  {id:'tailor-preparations',title:'Elara’s Preparations',villager:'Elara the Tailor',icon:'🧵',desc:'Turn preparation into equipment for the days ahead.',completion:'Prepared Adventurer',completeLine:'Look at you. Future You has been waiting for this kind of preparation. Consider yourself properly equipped.',steps:[
+    {title:'I · Lay Out the Armor',task:'Lay out tomorrow’s outfit before bed.',xp:20,gold:20},
+    {title:'II · Pack the Satchel',task:'Pack your school bag for tomorrow.',xp:25,gold:25},
+    {title:'III · Set the First Task',task:'Choose and prepare tomorrow’s first study task.',xp:35,gold:35}
+  ]},
+  {id:'pathfinder-journal',title:'The Pathfinder’s Journal',villager:'Lyra the Stargazer',icon:'🌌',desc:'A hidden route opens only when you start paying attention to the world around you.',completion:'Pathfinder’s Star',completeLine:'You are learning to notice the world instead of simply passing through it. Keep your eyes open—the next road may already be there.',steps:[
+    {title:'I · Leave the Familiar Road',task:'Take a genuinely new route today.',xp:25,gold:20},
+    {title:'II · Find Something New',task:'Visit a place you have never visited before.',xp:40,gold:30},
+    {title:'III · Mark the Discovery',task:'Record one new place, trail, café, library, park, or landmark you discovered.',xp:55,gold:45}
   ]}
 ]
 
@@ -396,7 +406,7 @@ export default function App() {
     const nextProgress=chain.progress+1; const finished=nextProgress>=chain.steps.length
     setQuestChains(xs=>xs.map(c=>c.id===chainId?{...c,progress:nextProgress,completed:finished}:c))
     setXp(v=>v+step.xp+(finished?75:0)); setGold(g=>g+step.gold+(finished?50:0)+companionGoldBonus)
-    if(finished){setTown(t=>({...t,xp:t.xp+100}));unlockAchievement('chain-complete');notify('QUEST CHAIN COMPLETE! The realm remembers your deeds. +75 bonus XP')}
+    if(finished){setTown(t=>({...t,xp:t.xp+100}));unlockAchievement('chain-complete');notify('QUEST CHAIN COMPLETE! '+(chain.completion||'The realm remembers your deeds.')+' · +75 bonus XP · +50 gold')}
     else notify('Quest step complete! '+step.title+' · +'+step.xp+' XP')
   }
   function upgradeTown(building){
@@ -531,7 +541,7 @@ export default function App() {
       </header>
 
       {active==='dashboard'&&<Dashboard quests={quests} stats={stats} xp={xp} gold={gold} progress={progress} completed={completed} finishQuest={finishQuest} setShowQuest={setShowQuest} worlds={WORLDS} setActive={setActive} character={character} dailyQuests={dailyQuests} daily={daily} dailyDone={dailyDone} completeDaily={completeDaily} event={event} resolveEvent={resolveEvent}/>}
-      {active==='quests'&&<QuestPage quests={quests} finishQuest={finishQuest} setShowQuest={setShowQuest} villagerQuests={villagerQuests} villagerQuestList={VILLAGER_QUESTS} acceptVillagerQuest={acceptVillagerQuest} completeVillagerQuest={completeVillagerQuest} townLevel={town.level} talkToNpc={talkToNpc} selectedNpc={selectedNpc} setSelectedNpc={setSelectedNpc} gold={gold}/>}
+      {active==='quests'&&<QuestPage quests={quests} finishQuest={finishQuest} setShowQuest={setShowQuest} villagerQuests={villagerQuests} villagerQuestList={VILLAGER_QUESTS} acceptVillagerQuest={acceptVillagerQuest} completeVillagerQuest={completeVillagerQuest} townLevel={town.level} talkToNpc={talkToNpc} selectedNpc={selectedNpc} setSelectedNpc={setSelectedNpc} gold={gold} questChains={questChains} completeChainStep={completeChainStep}/>}
       {active==='planner'&&<RoutinePage routine={routine} toggleRoutine={toggleRoutine} openRoutineEditor={openRoutineEditor} openRoutineCreator={openRoutineCreator}/>}
       {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} topicDraft={topicDraft} setTopicDraft={setTopicDraft} addTopic={addTopic} editingTopic={editingTopic} setEditingTopic={setEditingTopic} saveTopic={saveTopic} deleteTopic={deleteTopic} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss}/>}
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney}/>} 
@@ -586,7 +596,7 @@ function Quick({icon:Icon,title,value,onClick}){return <button className="quick-
 
 function Quest({q,finishQuest}){const Icon=q.type==='body'?Heart:q.type==='mind'?BookOpen:q.type==='spirit'?Sparkles:ScrollText;return <div className={'quest-row '+(q.done?'done':'')}><button className="check" onClick={()=>finishQuest(q.id)}>{q.done?<Check size={17}/>:''}</button><div className="quest-icon"><Icon size={18}/></div><div className="quest-info"><b>{q.title}</b><span>{q.subtitle}</span></div><div className="quest-reward"><b>+{q.xp} XP</b><span>◈ {q.gold}</span></div><span className="quest-type">{q.type}</span></div>}
 
-function QuestPage({quests,finishQuest,setShowQuest,villagerQuests,villagerQuestList,acceptVillagerQuest,completeVillagerQuest,townLevel,talkToNpc,selectedNpc,setSelectedNpc,gold}){
+function QuestPage({quests,finishQuest,setShowQuest,villagerQuests,villagerQuestList,acceptVillagerQuest,completeVillagerQuest,townLevel,talkToNpc,selectedNpc,setSelectedNpc,gold,questChains,completeChainStep}){
  const unlockedNames=Object.entries(NPC_UNLOCKS).filter(([,cfg])=>townLevel>=cfg.level).map(([name])=>name)
  const unlocked=villagerQuestList.filter(q=>unlockedNames.includes(q.villager))
  const active=unlocked.filter(q=>villagerQuests.active.includes(q.id))
@@ -598,6 +608,7 @@ function QuestPage({quests,finishQuest,setShowQuest,villagerQuests,villagerQuest
    <div className="villager-grid">{unlocked.map(q=><VillagerQuestCard key={q.id} q={q} state={villagerQuests.completed.includes(q.id)?'completed':villagerQuests.active.includes(q.id)?'active':'available'} onClick={()=>q&&acceptVillagerQuest(q.id)} onTalk={()=>talkToNpc(q.villager)} />)}</div>
    {locked.length>0&&<div className="locked-villagers"><div className="section-head"><div><span className="eyebrow">PEOPLE YOU HAVE YET TO MEET</span><h3>Expand the Keep to find them</h3></div></div><div className="locked-villager-grid">{locked.map(([name,cfg])=><div className="locked-villager panel" key={name}><span>?</span><div><b>Unknown Villager</b><small>{cfg.role} · Unlocks at Keep Level {cfg.level}</small></div><em>🔒</em></div>)}</div></div>}
   </section>
+  <section className="quest-chains-section"><div className="section-head"><div><span className="eyebrow">STORYLINES</span><h2>Quest Chains</h2><p className="muted">Help recurring characters through multi-step stories. Complete every chapter to earn a special title, bonus rewards, and a permanent place in the realm’s history.</p></div></div><div className="quest-chain-grid">{questChains.map(chain=>{const step=chain.steps[chain.progress];const done=chain.completed;return <div className={'quest-chain-card panel '+(done?'completed':'')} key={chain.id}><div className="quest-chain-head"><span className="chain-icon">{chain.icon}</span><div><b>{chain.title}</b><small>{chain.villager}</small></div><strong>{done?'✓':(chain.progress+1)+'/'+chain.steps.length}</strong></div><p>{chain.desc}</p>{done?<div className="chain-complete-line">🏆 {chain.completion}<small>{chain.completeLine}</small></div>:<div className="chain-step"><span className="eyebrow">CURRENT CHAPTER</span><h3>{step.title}</h3><p>{step.task}</p><div className="npc-reward-line">Reward: <b>+{step.xp} XP</b> · <b>+{step.gold} ◈</b></div><button className="primary" onClick={()=>completeChainStep(chain.id)}>Complete Chapter</button></div>}</div>})}</div></section>
   <div className="section-head"><div><span className="eyebrow">ADVENTURER'S JOURNAL</span><h2>My quests</h2><p className="muted">Your personal running task list. Add anything you need to get done; these quests do not reset with the daily Quest Board.</p></div></div><div className="quest-list full">{quests.length?quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>):<div className="empty-quest panel"><ScrollText size={20}/><span><b>Your journal is empty.</b><small>Add your first personal quest above.</small></span></div>}</div>
   {selectedNpc&&<div className="modal-backdrop" onClick={()=>setSelectedNpc(null)}><div className="modal npc-dialog" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedNpc(null)}><X/></button><span className="eyebrow">VILLAGER · ADVENTURER'S KEEP</span><h2>{selectedNpc.name}</h2><div className="npc-speech">“{selectedNpc.line}”</div>{(()=>{const q=unlocked.find(x=>x.villager===selectedNpc.name);if(!q)return <p className="npc-response">The villager smiles. “Come back tomorrow; I may have another request.”</p>;const activeQ=villagerQuests.active.includes(q.id);const doneQ=villagerQuests.completed.includes(q.id);return <div className="npc-request"><span className="eyebrow">{doneQ?'QUEST COMPLETE':activeQ?'QUEST IN PROGRESS':'NEW QUEST'}</span><h3>{q.request}</h3><p>{q.detail}</p><div className="npc-reward-line">Reward: <b>+{q.xp} XP</b> · <b>+{q.gold} ◈</b></div>{!doneQ&&!activeQ&&<button className="primary" onClick={()=>{acceptVillagerQuest(q.id);setSelectedNpc(null)}}>Accept Quest</button>}{activeQ&&<button className="primary" onClick={()=>{completeVillagerQuest(q.id);setSelectedNpc(null)}}>Mark Quest Complete</button>}{doneQ&&<button className="ghost" onClick={()=>setSelectedNpc(null)}>Come back tomorrow</button>}</div>})()}</div></div>}
  </div>
