@@ -245,7 +245,7 @@ export default function App() {
   const [realmBosses,setRealmBosses] = useState(() => load('realm-bosses', REALM_BOSSES.map(b=>({...b,hp:b.maxHp,defeated:false}))))
   const [equipment,setEquipment] = useState(() => load('equipment', {owned:[],equipped:{weapon:null,armor:null,accessory:null}}))
   const [discoveries,setDiscoveries] = useState(() => load('discoveries', []))
-  const [campaign,setCampaign] = useState(() => load('campaign', {chapter:1,flags:[],choices:[],relationship:0,reputation:0,lastEncounterDate:''}))
+  const [campaign,setCampaign] = useState(() => load('campaign', {chapter:1,flags:[],choices:[],relationship:0,reputation:0,lastEncounterDate:'',productivity:{xp:0,quests:0}}))
   const [storyEncounter,setStoryEncounter] = useState(() => load('story-encounter', null))
   const [selectedNpc,setSelectedNpc] = useState(null)
   const [realmTime,setRealmTime] = useState(() => new Date())
@@ -447,6 +447,9 @@ export default function App() {
 
   function notify(message){setToast(message);window.clearTimeout(window.__lifeToast);window.__lifeToast=window.setTimeout(()=>setToast(''),2600)}
   function unlockAchievement(id){setAchievements(a=>a.includes(id)?a:[...a,id])}
+  function recordProductivityProgress(xp,completedQuests=0){
+    setCampaign(c=>({...c,productivity:{xp:(c.productivity?.xp||0)+Math.max(0,xp||0),quests:(c.productivity?.quests||0)+Math.max(0,completedQuests)}}))
+  }
   function completeDaily(id){
     if(daily.completed.includes(id))return
     const q=dailyQuests.find(x=>x.id===id);if(!q)return
@@ -456,8 +459,8 @@ export default function App() {
     setDaily(d=>({...d,completed:next,streak,lastCompletedDate:todayKey}))
     if(streak>=3)unlockAchievement('three-day-flame')
     if(streak>=7)unlockAchievement('week-warrior')
-    setXp(v=>v+q.xp);setGold(g=>g+q.gold+companionGoldBonus)
-    if(next.length===dailyQuests.length&&!daily.bonusClaimed){setDaily(d=>({...d,bonusClaimed:true}));setXp(v=>v+100);setGold(g=>g+50);unlockAchievement('main-character');notify('DAILY ADVENTURE COMPLETE! +100 bonus XP · +50 gold')}
+    setXp(v=>v+q.xp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus)
+    if(next.length===dailyQuests.length&&!daily.bonusClaimed){setDaily(d=>({...d,bonusClaimed:true}));setXp(v=>v+100);recordProductivityProgress(100);setGold(g=>g+50);unlockAchievement('main-character');notify('DAILY ADVENTURE COMPLETE! +100 bonus XP · +50 gold')}
     else notify(`${q.title} complete! +${q.xp} XP · +${q.gold} gold · ${streak}-day streak`)
   }
   function resolveEvent(option){
@@ -468,6 +471,8 @@ export default function App() {
   }
   function resolveStoryChoice(choice){
     if(!storyEncounter||storyEncounter.resolved)return
+    const earned=campaign.productivity||{xp:0,quests:0}
+    if((earned.xp||0)<100||(earned.quests||0)<3){notify('The Atlas is sealed. Earn 100 productivity XP and complete 3 quests to choose your path.');return}
     const reward=choice.reward||{}
     if(reward.xp)setXp(v=>v+reward.xp)
     if(reward.gold)setGold(g=>g+reward.gold)
@@ -478,7 +483,8 @@ export default function App() {
       flags:[...new Set([...(c.flags||[]),...(choice.flags||[])])],
       choices:[...(c.choices||[]),{scene:storyEncounter.id,title:storyEncounter.title,choice:choice.label,date:storyEncounter.date}],
       relationship:(c.relationship||0)+(choice.relationship||0),
-      reputation:(c.reputation||0)+(choice.reputation||0)
+      reputation:(c.reputation||0)+(choice.reputation||0),
+      productivity:{xp:0,quests:0}
     }))
     setStoryEncounter(e=>({...e,resolved:true,selectedChoice:choice.label,epilogue:choice.epilogue||'The realm remembers what you chose.'}))
     notify('The Atlas remembers your choice. '+(reward.xp?'+'+reward.xp+' XP ':'')+(reward.gold?'+'+reward.gold+' gold':''))
@@ -554,7 +560,7 @@ export default function App() {
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
     setQuests(xs=>xs.filter(x=>x.id!==id))
-    setXp(x=>x+q.xp); setGold(g=>g+q.gold+companionGoldBonus)
+    setXp(x=>x+q.xp);recordProductivityProgress(q.xp,1); setGold(g=>g+q.gold+companionGoldBonus)
     notify(`Journal quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
   function addQuest(e){
@@ -562,7 +568,7 @@ export default function App() {
     setQuests(xs=>[...xs,{id:Date.now(),title:newQuest.trim(),subtitle:'Custom quest from your adventurer’s journal',xp:25,gold:5,type:'custom',stat:'DIS',done:false}])
     setNewQuest('');setShowQuest(false);notify('New quest added to your journal.')
   }
-  function toggleRoutine(id){const item=routine.find(x=>x.id===id);if(!item||item.active===false)return;const next=!item.done;setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:next,xpAwarded:next?true:false}:x));if(next&&!item.xpAwarded){setXp(v=>v+(item.xp||20));setGold(g=>g+companionGoldBonus);notify(`Ritual complete! +${item.xp||20} XP · ${item.stat||'DIS'} strengthened`)}}
+  function toggleRoutine(id){const item=routine.find(x=>x.id===id);if(!item||item.active===false)return;const next=!item.done;setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:next,xpAwarded:next?true:false}:x));if(next&&!item.xpAwarded){setXp(v=>v+(item.xp||20));recordProductivityProgress(item.xp||20);setGold(g=>g+companionGoldBonus);notify(`Ritual complete! +${item.xp||20} XP · ${item.stat||'DIS'} strengthened`)}}
   function openRoutineEditor(item){setRoutineEditorMode('edit');setEditingRoutine(item.id);setRoutineDraft({time:item.time,title:item.title,xp:item.xp||20,stat:item.stat||'DIS',repeat:item.repeat||'daily',active:item.active!==false})}
   function openRoutineCreator(){setRoutineEditorMode('add');setEditingRoutine(null);setRoutineDraft({time:'',title:'',xp:20,stat:'DIS',repeat:'daily',active:true})}
   function saveRoutine(e){e.preventDefault();if(!routineDraft.time.trim()||!routineDraft.title.trim())return;const clean={time:routineDraft.time.trim(),title:routineDraft.title.trim(),xp:Number(routineDraft.xp)||20,stat:routineDraft.stat,repeat:routineDraft.repeat,active:routineDraft.active};if(routineEditorMode==='add'){setRoutine(xs=>[...xs,{id:Date.now(),...clean,done:false}]);notify('New routine quest added.')}else{setRoutine(xs=>xs.map(x=>x.id===editingRoutine?{...x,...clean}:x));notify('Routine quest updated.')}setEditingRoutine(null)}
@@ -643,7 +649,7 @@ export default function App() {
         <div className="top-actions"><div className="cloud-status"><Cloud size={13}/> <span>Cloud save</span></div><div className="currency">◈ <b>{gold}</b></div><div className="level-pill"><span>LVL</span><b>{level}</b></div><button className="signout-button" onClick={()=>supabase.auth.signOut()} title="Sign out"><LogOut size={14}/></button></div>
       </header>
 
-      {active==='dashboard'&&<Dashboard quests={quests} stats={stats} xp={xp} gold={gold} progress={progress} completed={completed} finishQuest={finishQuest} setShowQuest={setShowQuest} worlds={WORLDS} setActive={setActive} character={character} dailyQuests={dailyQuests} daily={daily} dailyDone={dailyDone} completeDaily={completeDaily} event={event} resolveEvent={resolveEvent} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice}/>}
+      {active==='dashboard'&&<Dashboard quests={quests} stats={stats} xp={xp} gold={gold} progress={progress} completed={completed} finishQuest={finishQuest} setShowQuest={setShowQuest} worlds={WORLDS} setActive={setActive} character={character} dailyQuests={dailyQuests} daily={daily} dailyDone={dailyDone} completeDaily={completeDaily} event={event} resolveEvent={resolveEvent} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice} campaign={campaign}/>}
       {active==='quests'&&<QuestPage quests={quests} finishQuest={finishQuest} setShowQuest={setShowQuest} villagerQuests={villagerQuests} villagerQuestList={VILLAGER_QUESTS} acceptVillagerQuest={acceptVillagerQuest} completeVillagerQuest={completeVillagerQuest} townLevel={town.level} talkToNpc={talkToNpc} selectedNpc={selectedNpc} setSelectedNpc={setSelectedNpc} gold={gold} questChains={questChains} completeChainStep={completeChainStep}/>}
       {active==='planner'&&<RoutinePage routine={routine} toggleRoutine={toggleRoutine} openRoutineEditor={openRoutineEditor} openRoutineCreator={openRoutineCreator}/>}
       {active==='story'&&<StoryPage campaign={campaign} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice} setActive={setActive}/>}
@@ -662,7 +668,7 @@ export default function App() {
   </div>
 }
 
-function Dashboard({quests,stats,xp,gold,progress,completed,finishQuest,setShowQuest,worlds,setActive,character,dailyQuests,daily,dailyDone,completeDaily,event,resolveEvent,storyEncounter,resolveStoryChoice}){
+function Dashboard({quests,stats,xp,gold,progress,completed,finishQuest,setShowQuest,worlds,setActive,character,dailyQuests,daily,dailyDone,completeDaily,event,resolveEvent,storyEncounter,resolveStoryChoice,campaign}){
 
  return <div className="content">
   <section className="daily-adventure panel"><div><span className="eyebrow">TODAY'S ADVENTURE</span><h2>The Wandering Mage's Journey</h2><p>Complete real-life quests to earn XP, gold, discoveries, and level up.</p></div><div className="daily-progress"><b>{dailyDone}/{dailyQuests.length}</b><span>quests complete</span><div className="xp-bar"><i style={{width:(dailyDone/dailyQuests.length*100)+'%'}}/></div></div></section>
@@ -670,8 +676,8 @@ function Dashboard({quests,stats,xp,gold,progress,completed,finishQuest,setShowQ
   <section className="event-panel panel"><div><span className="eyebrow">✨ RANDOM ENCOUNTER</span><h2>{event.title||'A quiet road...'}</h2><p>{event.body||'The realm is waiting for your next discovery.'}</p></div><div className="event-options">{event.resolved?<div className="event-complete">✓ Encounter resolved. The road will offer a new choice tomorrow.</div>:(event.options||[{label:'Explore',reward:{xp:25},message:'You found 25 XP!'}]).map((o,i)=><button key={i} className="ghost" onClick={()=>resolveEvent(o)}>{o.label}{o.reward?.xp?' · +'+o.reward.xp+' XP':''}{o.reward?.gold?' · +'+o.reward.gold+' gold':''}</button>)}</div></section>
   {storyEncounter&&<section className="event-panel panel" style={{borderColor:'rgba(197,155,70,.55)',background:'linear-gradient(135deg,rgba(78,65,42,.28),rgba(24,27,27,.96))'}}>
     <div><span className="eyebrow">✦ THE SHATTERED ATLAS · CHAPTER {storyEncounter.chapter||1}</span><h2>{storyEncounter.title}</h2><p>{storyEncounter.body}</p></div>
-    <div className="event-options">{storyEncounter.resolved?<div className="event-complete">✦ You chose: {storyEncounter.selectedChoice}. {storyEncounter.epilogue}</div>:(storyEncounter.choices||[]).map((choice,i)=><button key={i} className="ghost" onClick={()=>resolveStoryChoice(choice)}>{choice.label} · +{choice.reward?.xp||0} XP</button>)}
-    <button className="ghost" onClick={()=>setActive('story')}>Open the Chronicle →</button></div>
+    {storyEncounter.resolved?<div className="event-complete">✦ You chose: {storyEncounter.selectedChoice}. {storyEncounter.epilogue}</div>:<div className="event-options"><div className="story-requirements"><b>PROVE YOUR PROGRESS TO THE ATLAS</b><p>{campaign.productivity?.xp||0}/100 productivity XP · {campaign.productivity?.quests||0}/3 quests completed</p><div className="xp-bar"><i style={{width:Math.min(100,(campaign.productivity?.xp||0))+'%'}}/></div><small>Complete real-life quests and routines to unlock your choices. Story rewards do not count.</small></div>{(storyEncounter.choices||[]).map((choice,i)=><button key={i} className="ghost" disabled={(campaign.productivity?.xp||0)<100||(campaign.productivity?.quests||0)<3} onClick={()=>resolveStoryChoice(choice)}>{(campaign.productivity?.xp||0)>=100&&(campaign.productivity?.quests||0)>=3?'Choose: ':'🔒 '}{choice.label} · +{choice.reward?.xp||0} XP</button>)}</div>}
+    <button className="ghost" onClick={()=>setActive('story')}>Open the Chronicle →</button>
   </section>}
   <section className="hero-grid"><div className="hero-card panel"><div className="hero-copy"><span className="eyebrow">CURRENT QUESTLINE</span><h2>Become the hero<br/><em>of your own story.</em></h2><p>Build your body, sharpen your mind, tend your spirit, and make ordinary days feel like an adventure.</p><button className="primary" onClick={()=>document.querySelector('.quest-list')?.scrollIntoView({behavior:'smooth'})}>Continue Adventure <ChevronRight size={17}/></button></div><div className="hero-orb"><div className="pixel-sun">✦</div><div className="mountain m1"/><div className="mountain m2"/></div></div>
   <div className="character-card panel"><div className="card-heading"><span>CHARACTER</span><UserRound size={16}/></div><div className="big-avatar">{character.avatar}</div><h3>{character.name}</h3><span className="class-name">{character.className.toUpperCase()}</span><div className="xp-label"><span>LEVEL {Math.floor(xp/250)+1}</span><span>{xp%250} / 250 XP</span></div><div className="xp-bar"><i style={{width:progress+'%'}}/></div><div className="stat-row">{stats.slice(0,3).map(([s,v])=><div key={s}><b>{s}</b><span>{v}</span></div>)}</div><div className="gold-mini"><span>GOLD</span><b>◈ {gold}</b></div></div></section>
@@ -822,6 +828,10 @@ function RealmPage({level,timeLabel,isNight,town,upgradeTown,questChains,complet
 
 function StoryPage({campaign,storyEncounter,resolveStoryChoice,setActive}){
  const choices=[...(campaign.choices||[])].reverse()
+ const earned=campaign.productivity||{xp:0,quests:0}
+ const xpProgress=Math.min(100,(earned.xp||0))
+ const questProgress=Math.min(100,((earned.quests||0)/3)*100)
+ const unlocked=(earned.xp||0)>=100&&(earned.quests||0)>=3
  return <div className="content realm-page">
   <PageIntro eyebrow="CAMPAIGN JOURNAL" title="The Shattered Atlas" text="An enchanted atlas is breaking apart. Its roads, memories, and hidden places are disappearing—and Lyra the Stargazer believes you can help uncover why."/>
   <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {campaign.chapter===1?'The Missing Keeper':'Roads Beneath the Stars'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
@@ -832,7 +842,7 @@ function StoryPage({campaign,storyEncounter,resolveStoryChoice,setActive}){
   </div>
   <section className="realm-section">
    <div className="section-head"><div><span className="eyebrow">CURRENT ENCOUNTER</span><h2>{storyEncounter?storyEncounter.title:'The stars are quiet… for now'}</h2></div><span className="muted">{storyEncounter?'Lyra may return after a little time':'Unlock the Starlit Grove to begin Lyra’s campaign'}</span></div>
-   {storyEncounter?<div className="panel quest-chain-card"><p>{storyEncounter.body}</p>{storyEncounter.resolved?<div className="chain-complete-line"><b>✦ {storyEncounter.selectedChoice}</b><small>{storyEncounter.epilogue}</small></div>:(storyEncounter.choices||[]).map((choice,i)=><div className="chain-step" key={i}><h3>{choice.label}</h3><p>Reward: +{choice.reward?.xp||0} XP · +{choice.reward?.gold||0} gold{choice.reward?.item?' · '+choice.reward.item:''}</p><button className="primary" onClick={()=>resolveStoryChoice(choice)}>Choose this path</button></div>)}</div>:<div className="panel quest-chain-card"><p>Lyra’s story begins once you discover the Starlit Grove. After that, she will return with new clues every few days. Unresolved encounters stay available until you make your choice.</p><button className="ghost" onClick={()=>setActive('realm')}>Visit the Realm</button></div>}
+   {storyEncounter?<div className="panel quest-chain-card"><p>{storyEncounter.body}</p>{storyEncounter.resolved?<div className="chain-complete-line"><b>✦ {storyEncounter.selectedChoice}</b><small>{storyEncounter.epilogue}</small></div>:<><div className="story-requirements"><span className="eyebrow">YOUR PROGRESS UNLOCKS THE STORY</span><h3>{unlocked?'The Atlas recognizes your efforts':'The Atlas is waiting for proof of your efforts'}</h3><p>Earn {earned.xp||0}/100 productivity XP and complete {earned.quests||0}/3 quests. Both goals are required.</p><div className="xp-bar"><i style={{width:xpProgress+'%'}}/></div><small>{Math.max(0,100-(earned.xp||0))} XP remaining · {Math.max(0,3-(earned.quests||0))} quests remaining</small><div className="xp-bar"><i style={{width:questProgress+'%'}}/></div><small>Only XP from completed journal quests, daily quests, and routines counts. Story rewards, discoveries, and random encounters do not count.</small></div>{(storyEncounter.choices||[]).map((choice,i)=><div className="chain-step" key={i}><h3>{choice.label}</h3><p>Reward: +{choice.reward?.xp||0} XP · +{choice.reward?.gold||0} gold{choice.reward?.item?' · '+choice.reward.item:''}</p><button className="primary" disabled={!unlocked} onClick={()=>resolveStoryChoice(choice)}>{unlocked?'Choose this path':'Complete your goals to unlock'}</button></div>)}</>}</div>:<div className="panel quest-chain-card"><p>Lyra’s story begins once you discover the Starlit Grove. After that, she will return with new clues every few days. Unresolved encounters stay available until you make your choice.</p><button className="ghost" onClick={()=>setActive('realm')}>Visit the Realm</button></div>}
   </section>
   <section className="quest-chains-section"><div className="section-head"><div><span className="eyebrow">THE PATH YOU HAVE CHOSEN</span><h2>Campaign journal</h2></div></div>
    {choices.length?choices.map((entry,i)=><div className="panel chain-step" key={entry.date+'-'+i}><span className="eyebrow">{entry.date} · {entry.title}</span><h3>{entry.choice}</h3></div>):<div className="panel quest-chain-card"><p>Your first decision is waiting in the Starlit Grove.</p></div>}
