@@ -113,6 +113,12 @@ const DISCOVERY_INFO = {
   'market-square': {level:10,icon:'🏮',name:'Market Square',desc:'A bustling market beyond the Keep.',reward:'Unlocks the traveling market and new equipment.'}
 }
 
+const EXPLORATION_AREAS = [
+  {id:'whispering-ruins',name:'Whispering Ruins',icon:'🏛️',description:'A half-buried archive where old roads are etched into stone.',requiredItems:['🗺️ Map Fragment','🗺️ Atlas Fragment','📜 Torn Atlas Fragment'],rewardItem:'🧭 Ruins Inscription',xp:50,gold:25,discovery:'The ruins reveal a forgotten road leading east.'},
+  {id:'moonlit-observatory',name:'Moonlit Observatory',icon:'🔭',description:'A sealed tower that still tracks stars no longer in the sky.',requiredItems:['🔑 Observatory Key'],rewardItem:'⭐ Star Lens',xp:65,gold:30,discovery:'The Star Lens reveals a constellation pointing beneath the lake.'},
+  {id:'sunken-causeway',name:'Sunken Causeway',icon:'🌊',description:'A submerged road visible only when the Atlas and lake agree.',requiredItems:['🌊 Lakeway Map'],rewardItem:'🫧 Deepwater Pearl',xp:75,gold:35,discovery:'The causeway opens a path toward the forgotten shoreline.'}
+]
+
 const EXTRA_ACHIEVEMENTS = {
   'chain-complete': {name:'Questkeeper',icon:'📜',desc:'Completed a full multi-step quest chain.'},
   'town-builder': {name:'Founder of the Keep',icon:'🏘️',desc:'Upgraded the Adventurer Guild.'},
@@ -245,6 +251,7 @@ export default function App() {
   const [realmBosses,setRealmBosses] = useState(() => load('realm-bosses', REALM_BOSSES.map(b=>({...b,hp:b.maxHp,defeated:false}))))
   const [equipment,setEquipment] = useState(() => load('equipment', {owned:[],equipped:{weapon:null,armor:null,accessory:null}}))
   const [discoveries,setDiscoveries] = useState(() => load('discoveries', []))
+  const [exploredAreas,setExploredAreas] = useState(() => load('explored-areas', []))
   const [campaign,setCampaign] = useState(() => load('campaign', {chapter:1,flags:[],choices:[],relationship:0,reputation:0,lastEncounterDate:'',productivity:{xp:0,quests:0}}))
   const [storyEncounter,setStoryEncounter] = useState(() => load('story-encounter', null))
   const [selectedNpc,setSelectedNpc] = useState(null)
@@ -282,6 +289,7 @@ export default function App() {
     if(data.realmBosses)setRealmBosses(data.realmBosses)
     if(data.equipment)setEquipment(data.equipment)
     if(data.discoveries)setDiscoveries(data.discoveries)
+    if(data.exploredAreas)setExploredAreas(data.exploredAreas)
     if(data.campaign)setCampaign(data.campaign)
     if(data.storyEncounter)setStoryEncounter(data.storyEncounter)
     if(data.weightJourney)setWeightJourney(data.weightJourney)
@@ -300,7 +308,7 @@ export default function App() {
     return ()=>{cancelled=true}
   },[session?.user?.id])
 
-  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,campaign,storyEncounter,weightJourney}
+  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -310,7 +318,7 @@ export default function App() {
       if(error)console.error('Cloud save failed',error)
     },400)
     return ()=>clearTimeout(saveTimerRef.current)
-  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,campaign,storyEncounter,weightJourney])
+  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,campaign,storyEncounter,weightJourney])
 
   useEffect(()=>{
     if(!session)return
@@ -343,6 +351,7 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-realm-bosses',JSON.stringify(realmBosses)),[realmBosses])
   useEffect(()=>localStorage.setItem('life-rpg-equipment',JSON.stringify(equipment)),[equipment])
   useEffect(()=>localStorage.setItem('life-rpg-discoveries',JSON.stringify(discoveries)),[discoveries])
+  useEffect(()=>localStorage.setItem('life-rpg-explored-areas',JSON.stringify(exploredAreas)),[exploredAreas])
   useEffect(()=>localStorage.setItem('life-rpg-campaign',JSON.stringify(campaign)),[campaign])
   useEffect(()=>localStorage.setItem('life-rpg-story-encounter',JSON.stringify(storyEncounter)),[storyEncounter])
   useEffect(()=>{const timer=setInterval(()=>setRealmTime(new Date()),60000);return()=>clearInterval(timer)},[])
@@ -553,6 +562,17 @@ export default function App() {
     if(level<place.level){notify(place.name+' reveals itself at hero level '+place.level+'. Keep adventuring!');return}
     setDiscoveries(d=>[...d,id]);setXp(v=>v+35);setGold(g=>g+15+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! '+place.name+' · +35 XP · +15 gold')
   }
+  function exploreArea(id){
+    if(exploredAreas.includes(id))return
+    const area=EXPLORATION_AREAS.find(x=>x.id===id)
+    if(!area)return
+    const key=area.requiredItems.find(item=>inventory.includes(item))
+    if(!key){notify('You need a map clue to explore '+area.name+'. Check your Hero inventory.');return}
+    setInventory(items=>{const index=items.indexOf(key);return items.filter((_,i)=>i!==index).concat(area.rewardItem)})
+    setExploredAreas(xs=>[...xs,id])
+    setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder')
+    notify(area.name+' explored! +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
+  }
   function talkToNpc(name){
     const lines=NPC_DIALOGUE[name]||[];setSelectedNpc({name,line:lines[(new Date().getDate()+name.length)%lines.length]})
   }
@@ -630,7 +650,7 @@ export default function App() {
   const nav=[
     ['dashboard','Camp',Sword],['quests','Quests',ScrollText],['planner','Routine',CalendarDays],['realm','Realm',Crown],['story','Chronicle',BookOpen],
     ['study','Grand Archive',GraduationCap],['body','Verdant Wilds',Dumbbell],
-    ['map','World Map',Map],['character','Character',UserRound],['inventory','Rewards',Backpack]
+    ['map','World Map',Map],['hero','Hero',UserRound]
   ]
 
   if(authLoading)return <AuthLoadingScreen />
@@ -655,9 +675,8 @@ export default function App() {
       {active==='story'&&<StoryPage campaign={campaign} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice} setActive={setActive}/>}
       {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} topicDraft={topicDraft} setTopicDraft={setTopicDraft} addTopic={addTopic} editingTopic={editingTopic} setEditingTopic={setEditingTopic} saveTopic={saveTopic} deleteTopic={deleteTopic} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss}/>}
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney}/>} 
-      {active==='map'&&<MapPage worlds={WORLDS} setActive={setActive} level={level}/>}
-      {active==='character'&&<CharacterPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor}/>} 
-      {active==='inventory'&&<InventoryPage gold={gold} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements}/>}
+      {active==='map'&&<MapPage worlds={WORLDS} setActive={setActive} level={level} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea}/>}
+      {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements}/>}
       {active==='realm'&&<RealmPage level={level} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive}/>} />
       
       {showQuest&&<div className="modal-backdrop" onClick={()=>setShowQuest(false)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setShowQuest(false)}><X/></button><span className="eyebrow">NEW QUEST</span><h2>Add a quest to your journal</h2><form onSubmit={addQuest}><input autoFocus value={newQuest} onChange={e=>setNewQuest(e.target.value)} placeholder="e.g. Walk to class instead of taking the bus"/><button className="primary" type="submit">Accept Quest <Sword size={16}/></button></form></div></div>}
@@ -762,7 +781,7 @@ function BodyPage({workouts,activeWorkout,setActiveWorkout,updateExercise,logWor
 
 function BodyCard({icon:Icon,title,value,text,onClick}){return <button className="body-card panel" onClick={onClick}><Icon size={24}/><span className="eyebrow">{title}</span><strong>{value}</strong><small>{text}</small><ChevronRight size={15}/></button>}
 
-function MapPage({worlds,setActive,level}){
+function MapPage({worlds,setActive,level,inventory,exploredAreas,exploreArea}){
  const destinations={body:'body',study:'study',life:'planner',glow:'dashboard',spirit:'dashboard',explore:'dashboard'}
  return <div className="content">
   <PageIntro eyebrow="WORLD MAP" title="The Realm of Becoming" text="Choose a destination, adventurer. Click a region on the map to travel there."/>
@@ -800,14 +819,22 @@ function MapPage({worlds,setActive,level}){
    })}
    <div className="map-legend"><span><i className="legend-dot unlocked-dot"/>Unlocked</span><span><i className="legend-dot locked-dot"/>Locked</span><span>Click a region to travel</span></div>
   </div>
-  <div className="map-tip panel"><Compass size={17}/><span><b>Traveler's note:</b> The shortcuts on your Camp remain the fastest route. The World Map is for exploring the realm.</span></div>
+  <div className="map-tip panel"><Compass size={17}/><span><b>Traveler's note:</b> The atlas is incomplete. Find map clues in chests and story encounters, then spend them to open permanent paths.</span></div>
+  <section className="exploration-section">
+   <div className="section-head"><div><span className="eyebrow">BEYOND THE KNOWN ROADS</span><h2>Hidden places</h2><p className="muted">Map clues are consumed when you open a place. Once explored, it stays on your map.</p></div></div>
+   <div className="exploration-grid">{EXPLORATION_AREAS.map(area=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));return <article className={'exploration-card panel '+(explored?'explored':'')} key={area.id}><div className="exploration-icon">{explored?'✓':area.icon}</div><div className="exploration-copy"><b>{area.name}</b><p>{explored?area.discovery:area.description}</p><small>{explored?'DISCOVERED · '+area.rewardItem:key?'CLUE FOUND · '+key:'NEEDS '+area.requiredItems.map(x=>x.replace(/^\S+\s/, '')).join(' OR ')}</small></div><button className={explored?'ghost':'primary'} disabled={explored||!key} onClick={()=>exploreArea(area.id)}>{explored?'Explored':key?'Explore':'Find clue'}</button></article>})}</div>
+  </section>
  </div>
 }
 
 function WorldCard({world,onClick,large=false,locked=false}){const Icon=world.icon;return <button className={'world-card panel '+(large?'large ':'')+(locked?'locked':'')} onClick={onClick} disabled={locked}><div className="world-art"><Icon size={large?38:28}/><span>{world.stat}</span></div><div><h3>{locked?'🔒 ':''}{world.name}</h3><p>{locked?'Unlock at level '+world.unlockLevel:world.desc}</p></div><span className="circle-btn">{locked?'🔒':<ChevronRight size={17}/>}</span></button>}
 
-function CharacterPage({character,level,xp,gold,stats,openCharacterEditor}){return <div className="content"><div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:(xp%250)/250*100+'%'}}/></div><span>{xp%250} / 250 XP</span><strong className="sheet-gold">◈ {gold} gold</strong></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div><div className="stat-cards">{stats.map(([label,value,name,Icon])=><div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name}</small></div>)}</div><div className="panel character-rules"><span className="eyebrow">HOW YOUR HERO GROWS</span><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> glow-up quests</div></div></div>}
-function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements}){const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]||EXTRA_ACHIEVEMENTS[id]).filter(Boolean);return <div className="content"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?companions.join(' · '):'No companion yet.'}</small></div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section></div>}
+function CharacterPage({character,level,xp,gold,stats,openCharacterEditor}){return <div className="hero-character-section"><div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:(xp%250)/250*100+'%'}}/></div><span>{xp%250} / 250 XP</span><strong className="sheet-gold">◈ {gold} gold</strong></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div><div className="stat-cards">{stats.map(([label,value,name,Icon])=><div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name}</small></div>)}</div><div className="panel character-rules"><span className="eyebrow">HOW YOUR HERO GROWS</span><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> glow-up quests</div></div></div>}
+function HeroPage({character,level,xp,gold,stats,openCharacterEditor,rewards,buyReward,rollMysteryChest,companions,inventory,achievements}){
+ return <div className="content hero-page"><PageIntro eyebrow="YOUR ADVENTURER" title="The Hero's Hall" text="Your character, growing strengths, treasures, companions, and real-life rewards—all in one place."/><CharacterPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor}/><InventoryPage gold={gold} rewards={rewards} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements}/></div>
+}
+
+function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements}){const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]||EXTRA_ACHIEVEMENTS[id]).filter(Boolean);return <div className="hero-inventory-section"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?companions.join(' · '):'No companion yet.'}</small></div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section></div>}
 
 
 function RealmPage({level,timeLabel,isNight,town,upgradeTown,questChains,completeChainStep,realmBosses,strikeRealmBoss,equipment,equipmentCatalog,buyEquipment,equipItem,companions,discoveries,discoverRealm,setActive}){
