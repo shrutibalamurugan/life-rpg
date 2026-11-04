@@ -372,3 +372,17 @@ nav button:hover{background:#292b31;color:#f1ead7}
 .npc-moonlit-observatory{background:linear-gradient(#1d2c4c,#4a4b68)}.npc-moonlit-observatory:before{background:#d8a77e;box-shadow:0 -7px 0 4px #b9b7b0,-5px 7px 0 -1px #d8a77e,5px 7px 0 -1px #d8a77e,0 25px 0 8px #454b70}.npc-moonlit-observatory:after{box-shadow:0 0 0 2px #ddd4b8,12px 0 0 2px #ddd4b8,4px 8px 0 -1px #8c4f4c}.npc-moonlit-observatory span{background:#373e5e}
 .npc-sunken-causeway{background:linear-gradient(#173d4b,#3d666a)}.npc-sunken-causeway:before{background:#bb8a69;box-shadow:0 -7px 0 4px #45372f,-5px 7px 0 -1px #bb8a69,5px 7px 0 -1px #bb8a69,0 25px 0 8px #526a67}.npc-sunken-causeway span{background:#466b6b}
 @media(max-width:600px){.location-scene{height:170px}.location-heading{padding:14px 4px 8px}.location-npc-heading{align-items:flex-start}.npc-portrait{width:50px;height:60px;flex-basis:50px}}
+
+
+/* Stage 6: functional story relics */
+.relic-section{margin-top:28px}
+.relic-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.relic-card{display:flex;align-items:center;gap:12px;padding:15px}
+.relic-icon{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;background:#25251f;border:2px solid #80683f;box-shadow:3px 3px 0 #0c0d10;font-size:23px}
+.relic-card>div:nth-child(2){flex:1;min-width:0}
+.relic-card b{display:block;color:var(--cream);font-size:11px}
+.relic-card p{margin:5px 0;color:var(--muted);font-size:9px;line-height:1.45}
+.relic-card small{color:var(--gold);font-size:8px}
+.relic-card button{white-space:nowrap}
+.relic-empty{padding:16px;color:var(--muted);font-size:10px;line-height:1.5}
+@media(max-width:700px){.relic-grid{grid-template-columns:1fr}.relic-card{align-items:flex-start}.relic-card button{margin-left:auto}}
