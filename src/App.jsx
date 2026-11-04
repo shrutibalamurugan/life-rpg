@@ -176,6 +176,39 @@ function getCampaignScene(campaign){
       {label:'Restore the forgotten places and hidden histories',flags:['cartographer-promise','world-memory'],relationship:1,reputation:1,reward:{xp:80,gold:45,item:'🌙 Memory Lantern'},epilogue:'Your promise is written into the Atlas in silver ink. The realm remembers what was nearly lost.'}
     ]
   }
+  if(flags.has('cartographer-promise')&&!flags.has('echo-awakened')&&!flags.has('echo-guarded'))return {
+    id:'the-echo-in-the-ink',title:'The Echo in the Ink',chapter:3,
+    body:'The promise you made changes the Atlas. At the edge of the page, ink gathers into a small doorway—and from inside it comes a voice that sounds almost like your own. “A map can remember roads,” it whispers. “But only a traveler can decide where they lead.” Lyra reaches for the page, then stops. “This is new.”',
+    choices:[
+      {label:'Answer the voice and open the ink doorway',flags:['echo-awakened'],relationship:1,reputation:1,reward:{xp:90,gold:50,item:'🪶 Echo Quill'},chapter:3,epilogue:'The doorway opens just wide enough to reveal a room made of unfinished maps. A single quill floats in the center, waiting for someone to write.'},
+      {label:'Close the Atlas and ask Lyra to stand with you',flags:['echo-guarded'],relationship:2,reputation:2,reward:{xp:90,gold:50,item:'🌟 Starward Seal'},chapter:3,epilogue:'Lyra places her hand over yours and closes the Atlas. The voice fades—but not before whispering your name. Whatever is inside now knows you are listening.'}
+    ]
+  }
+  if((flags.has('echo-awakened')||flags.has('echo-guarded'))&&!flags.has('keeper-revealed'))return {
+    id:'keeper-in-the-mirror',title:'The Keeper in the Mirror',chapter:3,
+    body:'The next time the Atlas opens, it does not show a road. It shows a mirror. In its reflection stands the missing Keeper—older than the stories, exhausted, and surrounded by pages that refuse to stay still. “I did not abandon the realm,” the Keeper says. “I was trying to keep it from being rewritten.”',
+    choices:[
+      {label:'Ask the Keeper what they need',flags:['keeper-revealed','keeper-aid'],relationship:1,reputation:2,reward:{xp:100,gold:55,item:'🗝️ Keeper’s Key'},chapter:3,epilogue:'The Keeper points toward a locked page. “Then help me open the one place the Atlas was built to forget.”'},
+      {label:'Ask why the Keeper hid the truth',flags:['keeper-revealed','keeper-questioned'],relationship:0,reputation:3,reward:{xp:100,gold:55,item:'📜 Keeper’s Testimony'},chapter:3,epilogue:'The Keeper tells you the Atlas was never meant to record one perfect world. It was built to preserve choices—and someone has been trying to erase them.'}
+    ]
+  }
+  if(flags.has('keeper-revealed')&&!flags.has('name-on-the-page'))return {
+    id:'page-that-knows-your-name',title:'The Page That Knows Your Name',chapter:3,
+    body:'The locked page opens without a key. It is blank except for one line written in fresh ink: YOUR STORY DOES NOT BELONG TO THE ATLAS. Lyra looks at you. “Maybe that is the lesson. We can restore the map without letting it decide who we become.”',
+    choices:[
+      {label:'Write your own name beneath the warning',flags:['name-on-the-page'],relationship:2,reputation:2,reward:{xp:110,gold:60,item:'✒️ Cartographer’s Mark'},chapter:3,epilogue:'Your name does not become a destination. It becomes a promise: you will keep choosing the road instead of letting the road choose for you.'},
+      {label:'Leave the page blank and protect the choice itself',flags:['name-on-the-page','blank-page'],relationship:1,reputation:3,reward:{xp:110,gold:60,item:'📖 Unwritten Page'},chapter:3,epilogue:'You leave the page untouched. The Atlas folds around the blank space like a protective hand, preserving the possibility of every road not yet taken.'}
+    ]
+  }
+  if(flags.has('name-on-the-page')&&!flags.has('chapter-three-complete'))return {
+    id:'the-road-you-choose',title:'The Road You Choose',chapter:3,
+    body:'At dawn, the Atlas finally stops moving. A single road appears from the Keep, crosses the lake, and disappears beyond the edge of every known map. The Keeper’s voice reaches you one last time: “You have restored enough for now. The next part cannot be found by following clues. It must be lived.” Lyra smiles. “Then we go when you are ready.”',
+    choices:[
+      {label:'Promise to keep exploring with Lyra',flags:['chapter-three-complete','next-road-ready'],relationship:2,reputation:2,reward:{xp:125,gold:75,item:'🧭 Horizon Compass'},chapter:4,epilogue:'The Atlas draws a new horizon beyond the known realm. For the first time, the blank space does not feel like something missing. It feels like somewhere you can go.'},
+      {label:'Promise to protect what you have restored',flags:['chapter-three-complete','atlas-keeper'],relationship:1,reputation:3,reward:{xp:125,gold:75,item:'🛡️ Atlas Keeper’s Crest'},chapter:4,epilogue:'The Atlas settles into your hands, quiet and warm. The realm is safe for now—but the new horizon is waiting whenever you choose to answer it.'}
+    ]
+  }
+
   return null
 }
 
@@ -913,7 +946,7 @@ function StoryPage({campaign,storyEncounter,resolveStoryChoice,setActive}){
  const unlocked=(earned.xp||0)>=100&&(earned.quests||0)>=3
  return <div className="content realm-page">
   <PageIntro eyebrow="CAMPAIGN JOURNAL" title="The Shattered Atlas" text="An enchanted atlas is breaking apart. Its roads, memories, and hidden places are disappearing—and Lyra the Stargazer believes you can help uncover why."/>
-  <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {campaign.chapter===1?'The Missing Keeper':'Roads Beneath the Stars'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
+  <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {campaign.chapter===1?'The Missing Keeper':campaign.chapter===2?'Roads Beneath the Stars':campaign.chapter===3?'The Keeper’s Echo':'A New Horizon'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
   <div className="stat-cards">
    <div className="panel stat-card"><Sparkles/><span>LYRA BOND</span><strong>{campaign.relationship||0}</strong><small>Trust built through choices</small></div>
    <div className="panel stat-card"><Crown/><span>KEEP REPUTATION</span><strong>{campaign.reputation||0}</strong><small>How the realm sees your actions</small></div>
