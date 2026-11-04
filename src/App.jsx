@@ -114,9 +114,9 @@ const DISCOVERY_INFO = {
 }
 
 const EXPLORATION_AREAS = [
-  {id:'whispering-ruins',name:'Whispering Ruins',icon:'🏛️',description:'A half-buried archive where old roads are etched into stone.',requiredItems:['🗺️ Map Fragment','🗺️ Atlas Fragment','📜 Torn Atlas Fragment'],rewardItem:'🧭 Ruins Inscription',xp:50,gold:25,discovery:'The ruins reveal a forgotten road leading east.'},
-  {id:'moonlit-observatory',name:'Moonlit Observatory',icon:'🔭',description:'A sealed tower that still tracks stars no longer in the sky.',requiredItems:['🔑 Observatory Key'],rewardItem:'⭐ Star Lens',xp:65,gold:30,discovery:'The Star Lens reveals a constellation pointing beneath the lake.'},
-  {id:'sunken-causeway',name:'Sunken Causeway',icon:'🌊',description:'A submerged road visible only when the Atlas and lake agree.',requiredItems:['🌊 Lakeway Map'],rewardItem:'🫧 Deepwater Pearl',xp:75,gold:35,discovery:'The causeway opens a path toward the forgotten shoreline.'}
+  {id:'whispering-ruins',name:'Whispering Ruins',icon:'🏛️',description:'A half-buried archive where old roads are etched into stone.',requiredItems:['🗺️ Map Fragment','🗺️ Atlas Fragment','📜 Torn Atlas Fragment'],rewardItem:'🧭 Ruins Inscription',xp:50,gold:25,discovery:'The ruins reveal a forgotten road leading east.',npc:'Edda the Archivist',dialogue:'The stones remember a keeper who vanished before the Atlas shattered. Read the inscription aloud, and listen for the answer.',quest:{title:'Translate the fallen inscription',task:'Spend 15 focused minutes reviewing or studying something you have been putting off.',xp:35,gold:15},encounter:{title:'The Whispering Wall',body:'A line of silver writing appears between the stones. It asks what should be preserved when a story begins to fade.',choices:[{label:'Preserve the names of those who came before',item:'📜 Keeper’s Rubbing',gold:15},{label:'Preserve the road so others can find it',item:'🧭 Wayfinder Mark',gold:20}]}},
+  {id:'moonlit-observatory',name:'Moonlit Observatory',icon:'🔭',description:'A sealed tower that still tracks stars no longer in the sky.',requiredItems:['🔑 Observatory Key'],rewardItem:'⭐ Star Lens',xp:65,gold:30,discovery:'The Star Lens reveals a constellation pointing beneath the lake.',npc:'Orin the Nightwatcher',dialogue:'I have watched these stars for forty years. Tonight, one constellation is missing—and another is shining where the lake should be.',quest:{title:'Chart the missing constellation',task:'Take a 10-minute screen-free break outdoors or by a window, then return and note one thing you noticed.',xp:40,gold:20},encounter:{title:'The Unlit Telescope',body:'The telescope moves by itself and settles on a dark patch of sky. A voice asks which light you would follow.',choices:[{label:'Follow the faint, steady star',item:'✨ Steadfast Star Chart',gold:20},{label:'Follow the bright, unfamiliar flare',item:'🌠 Comet Shard',gold:25}]}},
+  {id:'sunken-causeway',name:'Sunken Causeway',icon:'🌊',description:'A submerged road visible only when the Atlas and lake agree.',requiredItems:['🌊 Lakeway Map'],rewardItem:'🫧 Deepwater Pearl',xp:75,gold:35,discovery:'The causeway opens a path toward the forgotten shoreline.',npc:'Mira the Ferrier',dialogue:'The water is lower than it has been in a century. The road is waiting, but it only appears to those who move with patience.',quest:{title:'Walk the old shoreline',task:'Take a gentle 15-minute walk or complete a short mobility session.',xp:45,gold:25},encounter:{title:'The Drowned Lantern',body:'A lantern glows beneath the water. Something is trying to guide travelers across the causeway.',choices:[{label:'Lift the lantern carefully',item:'🏮 Drowned Lantern',gold:25},{label:'Leave it as a guide for the next traveler',item:'🌊 Tidekeeper’s Token',gold:30}]}}
 ]
 
 const EXTRA_ACHIEVEMENTS = {
@@ -252,6 +252,8 @@ export default function App() {
   const [equipment,setEquipment] = useState(() => load('equipment', {owned:[],equipped:{weapon:null,armor:null,accessory:null}}))
   const [discoveries,setDiscoveries] = useState(() => load('discoveries', []))
   const [exploredAreas,setExploredAreas] = useState(() => load('explored-areas', []))
+  const [locationProgress,setLocationProgress] = useState(() => load('location-progress', {}))
+  const [activeLocation,setActiveLocation] = useState(null)
   const [campaign,setCampaign] = useState(() => load('campaign', {chapter:1,flags:[],choices:[],relationship:0,reputation:0,lastEncounterDate:'',productivity:{xp:0,quests:0}}))
   const [storyEncounter,setStoryEncounter] = useState(() => load('story-encounter', null))
   const [selectedNpc,setSelectedNpc] = useState(null)
@@ -290,6 +292,7 @@ export default function App() {
     if(data.equipment)setEquipment(data.equipment)
     if(data.discoveries)setDiscoveries(data.discoveries)
     if(data.exploredAreas)setExploredAreas(data.exploredAreas)
+    if(data.locationProgress)setLocationProgress(data.locationProgress)
     if(data.campaign)setCampaign(data.campaign)
     if(data.storyEncounter)setStoryEncounter(data.storyEncounter)
     if(data.weightJourney)setWeightJourney(data.weightJourney)
@@ -308,7 +311,7 @@ export default function App() {
     return ()=>{cancelled=true}
   },[session?.user?.id])
 
-  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,campaign,storyEncounter,weightJourney}
+  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -318,7 +321,7 @@ export default function App() {
       if(error)console.error('Cloud save failed',error)
     },400)
     return ()=>clearTimeout(saveTimerRef.current)
-  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,campaign,storyEncounter,weightJourney])
+  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
 
   useEffect(()=>{
     if(!session)return
@@ -352,6 +355,7 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-equipment',JSON.stringify(equipment)),[equipment])
   useEffect(()=>localStorage.setItem('life-rpg-discoveries',JSON.stringify(discoveries)),[discoveries])
   useEffect(()=>localStorage.setItem('life-rpg-explored-areas',JSON.stringify(exploredAreas)),[exploredAreas])
+  useEffect(()=>localStorage.setItem('life-rpg-location-progress',JSON.stringify(locationProgress)),[locationProgress])
   useEffect(()=>localStorage.setItem('life-rpg-campaign',JSON.stringify(campaign)),[campaign])
   useEffect(()=>localStorage.setItem('life-rpg-story-encounter',JSON.stringify(storyEncounter)),[storyEncounter])
   useEffect(()=>{const timer=setInterval(()=>setRealmTime(new Date()),60000);return()=>clearInterval(timer)},[])
@@ -571,7 +575,26 @@ export default function App() {
     setInventory(items=>{const index=items.indexOf(key);return items.filter((_,i)=>i!==index).concat(area.rewardItem)})
     setExploredAreas(xs=>[...xs,id])
     setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder')
-    notify(area.name+' explored! +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
+    setActiveLocation(id)
+    notify(area.name+' discovered! +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
+  }
+  function completeLocationQuest(areaId){
+    const area=EXPLORATION_AREAS.find(x=>x.id===areaId)
+    if(!area||!exploredAreas.includes(areaId)||locationProgress[areaId]?.questDone)return
+    setLocationProgress(p=>({...p,[areaId]:{...(p[areaId]||{}),questDone:true}}))
+    setXp(v=>v+area.quest.xp);setGold(g=>g+area.quest.gold+companionGoldBonus)
+    recordProductivityProgress(area.quest.xp,1)
+    notify('Location quest complete! +'+area.quest.xp+' XP · +'+area.quest.gold+' gold')
+  }
+  function resolveLocationEncounter(areaId,choiceIndex){
+    const area=EXPLORATION_AREAS.find(x=>x.id===areaId)
+    if(!area||!exploredAreas.includes(areaId)||locationProgress[areaId]?.encounterChoice!==undefined)return
+    const choice=area.encounter.choices[choiceIndex]
+    if(!choice)return
+    setLocationProgress(p=>({...p,[areaId]:{...(p[areaId]||{}),encounterChoice:choiceIndex}}))
+    setInventory(items=>items.includes(choice.item)?items:[...items,choice.item])
+    setGold(g=>g+choice.gold+companionGoldBonus)
+    notify('Encounter resolved: '+choice.item+' · +'+choice.gold+' gold')
   }
   function talkToNpc(name){
     const lines=NPC_DIALOGUE[name]||[];setSelectedNpc({name,line:lines[(new Date().getDate()+name.length)%lines.length]})
@@ -669,13 +692,13 @@ export default function App() {
         <div className="top-actions"><div className="cloud-status"><Cloud size={13}/> <span>Cloud save</span></div><div className="currency">◈ <b>{gold}</b></div><div className="level-pill"><span>LVL</span><b>{level}</b></div><button className="signout-button" onClick={()=>supabase.auth.signOut()} title="Sign out"><LogOut size={14}/></button></div>
       </header>
 
-      {active==='dashboard'&&<Dashboard quests={quests} stats={stats} xp={xp} gold={gold} progress={progress} completed={completed} finishQuest={finishQuest} setShowQuest={setShowQuest} worlds={WORLDS} setActive={setActive} character={character} dailyQuests={dailyQuests} daily={daily} dailyDone={dailyDone} completeDaily={completeDaily} event={event} resolveEvent={resolveEvent} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice} campaign={campaign}/>}
+      {active==='dashboard'&&<Dashboard quests={quests} stats={stats} xp={xp} gold={gold} progress={progress} completed={completed} finishQuest={finishQuest} setShowQuest={setShowQuest} worlds={WORLDS} setActive={setActive} dailyQuests={dailyQuests} daily={daily} dailyDone={dailyDone} completeDaily={completeDaily}/>}
       {active==='quests'&&<QuestPage quests={quests} finishQuest={finishQuest} setShowQuest={setShowQuest} villagerQuests={villagerQuests} villagerQuestList={VILLAGER_QUESTS} acceptVillagerQuest={acceptVillagerQuest} completeVillagerQuest={completeVillagerQuest} townLevel={town.level} talkToNpc={talkToNpc} selectedNpc={selectedNpc} setSelectedNpc={setSelectedNpc} gold={gold} questChains={questChains} completeChainStep={completeChainStep}/>}
       {active==='planner'&&<RoutinePage routine={routine} toggleRoutine={toggleRoutine} openRoutineEditor={openRoutineEditor} openRoutineCreator={openRoutineCreator}/>}
       {active==='story'&&<StoryPage campaign={campaign} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice} setActive={setActive}/>}
       {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} topicDraft={topicDraft} setTopicDraft={setTopicDraft} addTopic={addTopic} editingTopic={editingTopic} setEditingTopic={setEditingTopic} saveTopic={saveTopic} deleteTopic={deleteTopic} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss}/>}
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney}/>} 
-      {active==='map'&&<MapPage worlds={WORLDS} setActive={setActive} level={level} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea}/>}
+      {active==='map'&&<MapPage worlds={WORLDS} setActive={setActive} level={level} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea} activeLocation={activeLocation} setActiveLocation={setActiveLocation} locationProgress={locationProgress} completeLocationQuest={completeLocationQuest} resolveLocationEncounter={resolveLocationEncounter}/>}
       {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements}/>}
       {active==='realm'&&<RealmPage level={level} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive}/>} />
       
@@ -687,32 +710,19 @@ export default function App() {
   </div>
 }
 
-function Dashboard({quests,stats,xp,gold,progress,completed,finishQuest,setShowQuest,worlds,setActive,character,dailyQuests,daily,dailyDone,completeDaily,event,resolveEvent,storyEncounter,resolveStoryChoice,campaign}){
+function Dashboard({quests,stats,xp,gold,progress,completed,finishQuest,setShowQuest,worlds,setActive,dailyQuests,daily,dailyDone,completeDaily}){
 
  return <div className="content">
   <section className="daily-adventure panel"><div><span className="eyebrow">TODAY'S ADVENTURE</span><h2>The Wandering Mage's Journey</h2><p>Complete real-life quests to earn XP, gold, discoveries, and level up.</p></div><div className="daily-progress"><b>{dailyDone}/{dailyQuests.length}</b><span>quests complete</span><div className="xp-bar"><i style={{width:(dailyDone/dailyQuests.length*100)+'%'}}/></div></div></section>
   <section className="daily-quests"><div className="section-head"><div><span className="eyebrow">QUESTBOARD</span><h2>Today's adventure</h2></div><span className="muted">Full clear = bonus XP</span></div><div className="daily-grid">{dailyQuests.map(q=>{const done=daily.completed.includes(q.id);return <button key={q.id} className={'daily-quest panel '+(done?'done':'')} onClick={()=>!done&&completeDaily(q.id)} disabled={done}><span className="daily-icon">{done?<Check size={18}/>:q.icon}</span><span><b>{q.title}</b><small>{done?'Completed · returns at midnight':q.subtitle}</small></span><strong>{done?'✓': '+'+q.xp}</strong></button>})}</div></section>
-  <section className="event-panel panel"><div><span className="eyebrow">✨ RANDOM ENCOUNTER</span><h2>{event.title||'A quiet road...'}</h2><p>{event.body||'The realm is waiting for your next discovery.'}</p></div><div className="event-options">{event.resolved?<div className="event-complete">✓ Encounter resolved. The road will offer a new choice tomorrow.</div>:(event.options||[{label:'Explore',reward:{xp:25},message:'You found 25 XP!'}]).map((o,i)=><button key={i} className="ghost" onClick={()=>resolveEvent(o)}>{o.label}{o.reward?.xp?' · +'+o.reward.xp+' XP':''}{o.reward?.gold?' · +'+o.reward.gold+' gold':''}</button>)}</div></section>
-  {storyEncounter&&<section className="event-panel panel" style={{borderColor:'rgba(197,155,70,.55)',background:'linear-gradient(135deg,rgba(78,65,42,.28),rgba(24,27,27,.96))'}}>
-    <div><span className="eyebrow">✦ THE SHATTERED ATLAS · CHAPTER {storyEncounter.chapter||1}</span><h2>{storyEncounter.title}</h2><p>{storyEncounter.body}</p></div>
-    {storyEncounter.resolved?<div className="event-complete">✦ You chose: {storyEncounter.selectedChoice}. {storyEncounter.epilogue}</div>:<div className="event-options"><div className="story-requirements"><b>PROVE YOUR PROGRESS TO THE ATLAS</b><p>{campaign.productivity?.xp||0}/100 productivity XP · {campaign.productivity?.quests||0}/3 quests completed</p><div className="xp-bar"><i style={{width:Math.min(100,(campaign.productivity?.xp||0))+'%'}}/></div><small>Complete real-life quests and routines to unlock your choices. Story rewards do not count.</small></div>{(storyEncounter.choices||[]).map((choice,i)=><button key={i} className="ghost" disabled={(campaign.productivity?.xp||0)<100||(campaign.productivity?.quests||0)<3} onClick={()=>resolveStoryChoice(choice)}>{(campaign.productivity?.xp||0)>=100&&(campaign.productivity?.quests||0)>=3?'Choose: ':'🔒 '}{choice.label} · +{choice.reward?.xp||0} XP</button>)}</div>}
-    <button className="ghost" onClick={()=>setActive('story')}>Open the Chronicle →</button>
-  </section>}
-  <section className="hero-grid"><div className="hero-card panel"><div className="hero-copy"><span className="eyebrow">CURRENT QUESTLINE</span><h2>Become the hero<br/><em>of your own story.</em></h2><p>Build your body, sharpen your mind, tend your spirit, and make ordinary days feel like an adventure.</p><button className="primary" onClick={()=>document.querySelector('.quest-list')?.scrollIntoView({behavior:'smooth'})}>Continue Adventure <ChevronRight size={17}/></button></div><div className="hero-orb"><div className="pixel-sun">✦</div><div className="mountain m1"/><div className="mountain m2"/></div></div>
-  <div className="character-card panel"><div className="card-heading"><span>CHARACTER</span><UserRound size={16}/></div><div className="big-avatar">{character.avatar}</div><h3>{character.name}</h3><span className="class-name">{character.className.toUpperCase()}</span><div className="xp-label"><span>LEVEL {Math.floor(xp/250)+1}</span><span>{xp%250} / 250 XP</span></div><div className="xp-bar"><i style={{width:progress+'%'}}/></div><div className="stat-row">{stats.slice(0,3).map(([s,v])=><div key={s}><b>{s}</b><span>{v}</span></div>)}</div><div className="gold-mini"><span>GOLD</span><b>◈ {gold}</b></div></div></section>
-
-  <section className="quick-grid">
-    <Quick icon={CalendarDays} title="Today's Routine" value="2 / 5 done" onClick={()=>setActive('planner')}/>
-    <Quick icon={GraduationCap} title="Module Mastery" value="83% average" onClick={()=>setActive('study')}/>
-    <Quick icon={Dumbbell} title="Body Quest" value="3 active goals" onClick={()=>setActive('body')}/>
-    <Quick icon={Flame} title="Adventure Streak" value={(daily.streak||0)+' days'} onClick={()=>setActive('inventory')}/>
+  <section className="quick-grid camp-shortcuts">
+    <Quick icon={CalendarDays} title="Routine" value="Manage your daily rituals" onClick={()=>setActive('planner')}/>
+    <Quick icon={BookOpen} title="Chronicle" value="Continue the Shattered Atlas" onClick={()=>setActive('story')}/>
+    <Quick icon={Map} title="World Map" value="Visit discovered places" onClick={()=>setActive('map')}/>
   </section>
 
   <section className="section-head"><div><span className="eyebrow">TODAY'S JOURNAL</span><h2>Active quests</h2></div><button className="ghost" onClick={()=>setShowQuest(true)}>+ New Quest</button></section>
   <div className="quest-list">{quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>)}</div>
-
-  <section className="lower-grid"><div className="panel stats-panel"><div className="card-heading"><span>CHARACTER STATS</span><Sparkles size={16}/></div>{stats.map(([label,value,name,Icon])=><div className="stat-line" key={label}><Icon size={16}/><b>{label}</b><span>{name}</span><strong>{value}</strong></div>)}</div>
-  <div className="panel progress-panel"><div className="card-heading"><span>ADVENTURE LOG</span><Flame size={16}/></div><div className="streak"><span className="streak-number">{daily.streak||0}</span><div><b>day streak</b><span>{daily.completed.length?'The flame is alive today.':'Complete a daily quest to light the flame.'}</span></div><Flame size={30}/></div><div className="week">{['M','T','W','T','F','S','S'].map((d,i)=><div key={i} className={i<4?'done-day':''}><span>{d}</span><i>{i<4?'✓':'·'}</i></div>)}</div><div className="reward-note"><Trophy size={16}/><span><b>{completed}</b> quests completed today. Complete 2 more for the Explorer’s Bonus.</span></div></div></section>
 
   <section className="section-head world-head"><div><span className="eyebrow">THE REALM</span><h2>Choose your path</h2></div><button className="ghost" onClick={()=>setActive('map')}>Open Map <Map size={14}/></button></section>
   <div className="world-grid">{worlds.slice(0,3).map(w=><WorldCard key={w.id} world={w} onClick={()=>setActive(w.id==='body'?'body':w.id==='study'?'study':'planner')}/>)}</div>
@@ -781,8 +791,10 @@ function BodyPage({workouts,activeWorkout,setActiveWorkout,updateExercise,logWor
 
 function BodyCard({icon:Icon,title,value,text,onClick}){return <button className="body-card panel" onClick={onClick}><Icon size={24}/><span className="eyebrow">{title}</span><strong>{value}</strong><small>{text}</small><ChevronRight size={15}/></button>}
 
-function MapPage({worlds,setActive,level,inventory,exploredAreas,exploreArea}){
+function MapPage({worlds,setActive,level,inventory,exploredAreas,exploreArea,activeLocation,setActiveLocation,locationProgress,completeLocationQuest,resolveLocationEncounter}){
  const destinations={body:'body',study:'study',life:'planner',glow:'dashboard',spirit:'dashboard',explore:'dashboard'}
+ const currentArea=EXPLORATION_AREAS.find(a=>a.id===activeLocation)
+ if(currentArea&&exploredAreas.includes(currentArea.id))return <LocationPage area={currentArea} progress={locationProgress[currentArea.id]||{}} onBack={()=>setActiveLocation(null)} onQuest={()=>completeLocationQuest(currentArea.id)} onEncounter={i=>resolveLocationEncounter(currentArea.id,i)}/>
  return <div className="content">
   <PageIntro eyebrow="WORLD MAP" title="The Realm of Becoming" text="Choose a destination, adventurer. Click a region on the map to travel there."/>
   <div className="realm-map-wrap panel">
@@ -824,6 +836,18 @@ function MapPage({worlds,setActive,level,inventory,exploredAreas,exploreArea}){
    <div className="section-head"><div><span className="eyebrow">BEYOND THE KNOWN ROADS</span><h2>Hidden places</h2><p className="muted">Map clues are consumed when you open a place. Once explored, it stays on your map.</p></div></div>
    <div className="exploration-grid">{EXPLORATION_AREAS.map(area=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));return <article className={'exploration-card panel '+(explored?'explored':'')} key={area.id}><div className="exploration-icon">{explored?'✓':area.icon}</div><div className="exploration-copy"><b>{area.name}</b><p>{explored?area.discovery:area.description}</p><small>{explored?'DISCOVERED · '+area.rewardItem:key?'CLUE FOUND · '+key:'NEEDS '+area.requiredItems.map(x=>x.replace(/^\S+\s/, '')).join(' OR ')}</small></div><button className={explored?'ghost':'primary'} disabled={explored||!key} onClick={()=>exploreArea(area.id)}>{explored?'Explored':key?'Explore':'Find clue'}</button></article>})}</div>
   </section>
+ </div>
+}
+
+function LocationPage({area,progress,onBack,onQuest,onEncounter}){
+ const resolved=progress.encounterChoice!==undefined
+ const selected=resolved?area.encounter.choices[progress.encounterChoice]:null
+ return <div className="content location-page">
+  <button className="ghost location-back" onClick={onBack}><ChevronLeft size={16}/> Back to World Map</button>
+  <section className="location-hero panel"><div className="location-art">{area.icon}</div><div><span className="eyebrow">DISCOVERED LOCATION</span><h1>{area.name}</h1><p>{area.discovery}</p><span className="location-npc">✦ {area.npc} is here</span></div></section>
+  <section className="location-section panel"><span className="eyebrow">A LOCAL VOICE</span><h2>{area.npc}</h2><p className="location-dialogue">“{area.dialogue}”</p></section>
+  <section className="location-section panel"><span className="eyebrow">LOCAL QUEST</span><h2>{area.quest.title}</h2><p>{area.quest.task}</p><div className="location-reward">Reward: <b>+{area.quest.xp} XP</b> · <b>+{area.quest.gold} gold</b></div>{progress.questDone?<div className="location-complete">✓ Quest completed. The Atlas remembers your effort.</div>:<button className="primary" onClick={onQuest}>I completed this real-life task</button>}<small className="location-note">This is a real-world activity. Completing it counts toward your productivity progress for the Chronicle.</small></section>
+  <section className="location-section panel"><span className="eyebrow">STORY ENCOUNTER</span><h2>{area.encounter.title}</h2><p>{area.encounter.body}</p>{resolved?<div className="location-complete">✦ You chose: {selected.label}<br/>Collected: {selected.item}</div>:<div className="location-choices">{area.encounter.choices.map((choice,i)=><button className="ghost" key={choice.label} onClick={()=>onEncounter(i)}>{choice.label}<small>Gain {choice.item} · +{choice.gold} gold</small></button>)}</div>}</section>
  </div>
 }
 
