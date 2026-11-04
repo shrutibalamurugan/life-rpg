@@ -333,3 +333,42 @@ nav button:hover{background:#292b31;color:#f1ead7}
 .location-bond-track i{display:block;height:100%;background:linear-gradient(90deg,#66845b,#d0a34f);transition:width .25s ease}
 .location-talk{font-size:10px;margin-top:2px}
 @media(max-width:600px){.location-bond-head{align-items:flex-start;flex-direction:column}.location-bond-label{white-space:normal}}
+
+
+/* Stage 5: pixel-art location scenes and recognizable NPC portraits */
+.location-hero{display:block;padding:14px;overflow:hidden}
+.location-scene{height:clamp(170px,28vw,270px);position:relative;overflow:hidden;border:3px solid #766346;box-shadow:inset 0 0 0 3px rgba(10,12,15,.65),4px 4px 0 #0b0c0f;image-rendering:pixelated;isolation:isolate}
+.location-scene:before,.location-scene:after{content:"";position:absolute;image-rendering:pixelated}
+.location-scene .scene-stars{position:absolute;inset:0;opacity:.85;background-image:radial-gradient(#f4d98b 1.5px,transparent 2px),radial-gradient(#d6e4e2 1px,transparent 2px);background-size:73px 61px,41px 47px;background-position:7px 9px,22px 18px}
+.location-scene .scene-moon{position:absolute;right:12%;top:13%;width:35px;height:35px;background:#f3d99b;box-shadow:0 0 0 5px rgba(243,217,155,.12),0 0 24px rgba(243,217,155,.35)}
+.location-scene .scene-ground{position:absolute;left:0;right:0;bottom:0;height:36%;border-top:5px solid rgba(10,15,15,.55)}
+.location-scene .scene-landmark{position:absolute;bottom:24%;left:43%;width:76px;height:92px}
+.scene-whispering-ruins{background:linear-gradient(#252b43 0 48%,#45465a 49% 67%,#263a31 68%); }
+.scene-whispering-ruins:before{left:0;right:0;bottom:28%;height:42%;background:linear-gradient(90deg,transparent 0 9%,#53616a 9% 12%,transparent 12% 24%,#626b70 24% 28%,transparent 28% 71%,#59656a 71% 75%,transparent 75%),linear-gradient(0deg,#303a3a 0 18%,transparent 18%);clip-path:polygon(0 100%,0 20%,12% 20%,12% 0,25% 0,25% 30%,38% 30%,38% 10%,50% 10%,50% 35%,64% 35%,64% 5%,76% 5%,76% 28%,100% 28%,100% 100%)}
+.scene-whispering-ruins:after{left:8%;right:8%;bottom:17%;height:13%;background:repeating-linear-gradient(90deg,#6d725e 0 18px,#3b493c 18px 25px);border-top:4px solid #85816c}
+.scene-whispering-ruins .scene-ground{background:repeating-linear-gradient(90deg,#344a37 0 22px,#40583d 22px 39px)}
+.scene-whispering-ruins .scene-moon{background:#d9d8b0;right:16%;top:12%}
+.scene-whispering-ruins .scene-landmark{left:46%;bottom:26%;width:62px;height:80px;background:linear-gradient(90deg,transparent 0 10%,#8a8b7b 10% 26%,transparent 26% 74%,#8a8b7b 74% 90%,transparent 90%),linear-gradient(0deg,#4b4e4b 0 17%,transparent 17%);border-top:12px solid #9b9a83;filter:drop-shadow(4px 4px #1c2425)}
+.scene-moonlit-observatory{background:linear-gradient(#101a3c 0 54%,#28395a 55% 72%,#172c2b 73%)}
+.scene-moonlit-observatory:before{left:0;right:0;bottom:27%;height:47%;background:repeating-linear-gradient(90deg,transparent 0 8%,#142638 8% 10%,transparent 10% 18%),linear-gradient(0deg,#152a2c 0 20%,transparent 20%);clip-path:polygon(0 100%,0 58%,8% 58%,8% 25%,15% 25%,15% 58%,28% 58%,28% 0,39% 0,39% 58%,54% 58%,54% 30%,64% 30%,64% 58%,80% 58%,80% 15%,91% 15%,91% 58%,100% 58%,100% 100%)}
+.scene-moonlit-observatory:after{left:0;right:0;bottom:15%;height:8%;background:repeating-linear-gradient(90deg,#415c4c 0 16px,#1c382e 16px 24px)}
+.scene-moonlit-observatory .scene-ground{background:linear-gradient(0deg,#14282a,#263c39)}
+.scene-moonlit-observatory .scene-landmark{left:44%;bottom:25%;width:82px;height:105px;background:linear-gradient(90deg,transparent 0 12%,#777a9b 12% 88%,transparent 88%),linear-gradient(0deg,#454b70 0 75%,transparent 75%);border-top:13px solid #a5a1c5;box-shadow:inset 9px 0 #555c83,inset -9px 0 #373e65}
+.scene-moonlit-observatory .scene-landmark:after{content:"";position:absolute;left:25px;top:-28px;width:29px;height:22px;border:6px solid #9d9ab9;border-radius:50% 50% 0 0;background:#28314d}
+.scene-moonlit-observatory .scene-moon{width:42px;height:42px;border-radius:50%;box-shadow:0 0 0 7px rgba(241,222,164,.12),0 0 28px rgba(241,222,164,.4)}
+.scene-sunken-causeway{background:linear-gradient(#192b43 0 45%,#31566a 46% 72%,#183b4b 73%)}
+.scene-sunken-causeway:before{left:0;right:0;bottom:23%;height:40%;background:repeating-linear-gradient(90deg,transparent 0 12%,#172d3b 12% 15%,transparent 15% 27%),linear-gradient(0deg,#173847 0 22%,transparent 22%);clip-path:polygon(0 100%,0 45%,15% 45%,15% 0,28% 0,28% 45%,45% 45%,45% 18%,57% 18%,57% 45%,78% 45%,78% 8%,91% 8%,91% 45%,100% 45%,100% 100%)}
+.scene-sunken-causeway:after{left:0;right:0;bottom:17%;height:8%;background:repeating-linear-gradient(90deg,#9a8d69 0 22px,#5f674f 22px 30px);opacity:.75}
+.scene-sunken-causeway .scene-ground{height:40%;background:repeating-linear-gradient(0deg,#1a4355 0 7px,#27586a 7px 11px);border-top:4px solid #74a0a0}
+.scene-sunken-causeway .scene-landmark{left:46%;bottom:32%;width:64px;height:74px;background:linear-gradient(90deg,transparent 0 12%,#637d82 12% 28%,transparent 28% 72%,#637d82 72% 88%,transparent 88%),linear-gradient(0deg,#536f76 0 20%,transparent 20%);border-top:9px solid #91a5a0;opacity:.85}
+.scene-sunken-causeway .scene-moon{right:13%;top:12%;background:#c6d7d0}
+.location-heading{padding:18px 8px 10px}.location-heading h1{margin:5px 0 8px;color:var(--cream);font-size:clamp(22px,4vw,34px)}.location-heading p{color:var(--muted);line-height:1.65;font-size:12px;margin:0 0 8px}
+.location-npc-heading{display:flex;align-items:center;gap:13px}
+.npc-portrait{width:58px;height:68px;flex:0 0 58px;position:relative;overflow:hidden;background:#262a39;border:3px solid #786544;box-shadow:3px 3px 0 #0c0d10;image-rendering:pixelated}
+.npc-portrait:before{content:"";position:absolute;left:17px;top:9px;width:22px;height:24px;background:#d9a77e;box-shadow:0 -7px 0 4px #6c5147, -5px 7px 0 -1px #d9a77e,5px 7px 0 -1px #d9a77e,0 25px 0 8px #465a54;image-rendering:pixelated}
+.npc-portrait:after{content:"";position:absolute;left:20px;top:19px;width:4px;height:4px;background:#29232a;box-shadow:12px 0 #29232a,4px 8px 0 -1px #8c4f4c;image-rendering:pixelated}
+.npc-portrait span{position:absolute;left:10px;bottom:-5px;width:36px;height:27px;background:#425a55;border:3px solid #27383a;box-shadow:0 -6px 0 -2px #d5b48a}
+.npc-whispering-ruins{background:linear-gradient(#252b3b,#3c4b47)}.npc-whispering-ruins:before{background:#d5a27b;box-shadow:0 -7px 0 4px #c5c2b5,-5px 7px 0 -1px #d5a27b,5px 7px 0 -1px #d5a27b,0 25px 0 8px #6b6652}.npc-whispering-ruins span{background:#5a594b}
+.npc-moonlit-observatory{background:linear-gradient(#1d2c4c,#4a4b68)}.npc-moonlit-observatory:before{background:#d8a77e;box-shadow:0 -7px 0 4px #b9b7b0,-5px 7px 0 -1px #d8a77e,5px 7px 0 -1px #d8a77e,0 25px 0 8px #454b70}.npc-moonlit-observatory:after{box-shadow:0 0 0 2px #ddd4b8,12px 0 0 2px #ddd4b8,4px 8px 0 -1px #8c4f4c}.npc-moonlit-observatory span{background:#373e5e}
+.npc-sunken-causeway{background:linear-gradient(#173d4b,#3d666a)}.npc-sunken-causeway:before{background:#bb8a69;box-shadow:0 -7px 0 4px #45372f,-5px 7px 0 -1px #bb8a69,5px 7px 0 -1px #bb8a69,0 25px 0 8px #526a67}.npc-sunken-causeway span{background:#466b6b}
+@media(max-width:600px){.location-scene{height:170px}.location-heading{padding:14px 4px 8px}.location-npc-heading{align-items:flex-start}.npc-portrait{width:50px;height:60px;flex-basis:50px}}
