@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Backpack, BookOpen, CalendarDays, Check, ChevronRight, Compass, Crown, Flame,
+  Backpack, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Compass, Crown, Flame,
   Heart, Map, Plus, ScrollText, Settings, Shield, Sparkles, Sword, Trophy,
   UserRound, X, Dumbbell, GraduationCap, Moon, Coffee, Footprints, Cloud, LogOut
 } from 'lucide-react'
