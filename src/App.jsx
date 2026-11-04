@@ -566,35 +566,52 @@ export default function App() {
     if(level<place.level){notify(place.name+' reveals itself at hero level '+place.level+'. Keep adventuring!');return}
     setDiscoveries(d=>[...d,id]);setXp(v=>v+35);setGold(g=>g+15+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! '+place.name+' · +35 XP · +15 gold')
   }
+  function finishExplorationArea(areaId,progress){
+    const area=EXPLORATION_AREAS.find(x=>x.id===areaId)
+    if(!area||!progress?.questDone||progress.encounterChoice===undefined||progress.discoveryClaimed)return
+    setLocationProgress(p=>({...p,[areaId]:{...(p[areaId]||{}),discoveryClaimed:true}}))
+    if(progress.clueItem){
+      setInventory(items=>{const index=items.indexOf(progress.clueItem);const without=index>=0?items.filter((_,i)=>i!==index):items;return without.includes(area.rewardItem)?without:[...without,area.rewardItem]})
+      setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder')
+      notify(area.name+' fully explored! Clue used · +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
+    }else{
+      notify(area.name+' fully explored! Your path is complete.')
+    }
+  }
   function exploreArea(id){
     if(exploredAreas.includes(id))return
     const area=EXPLORATION_AREAS.find(x=>x.id===id)
     if(!area)return
     const key=area.requiredItems.find(item=>inventory.includes(item))
     if(!key){notify('You need a map clue to explore '+area.name+'. Check your Hero inventory.');return}
-    setInventory(items=>{const index=items.indexOf(key);return items.filter((_,i)=>i!==index).concat(area.rewardItem)})
     setExploredAreas(xs=>[...xs,id])
-    setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder')
+    setLocationProgress(p=>({...p,[id]:{...(p[id]||{}),clueItem:key}}))
     setActiveLocation(id)
-    notify(area.name+' discovered! +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
+    notify(area.name+' discovered! Your clue is held until you complete the local quest and choose a path.')
   }
   function completeLocationQuest(areaId){
     const area=EXPLORATION_AREAS.find(x=>x.id===areaId)
-    if(!area||!exploredAreas.includes(areaId)||locationProgress[areaId]?.questDone)return
-    setLocationProgress(p=>({...p,[areaId]:{...(p[areaId]||{}),questDone:true}}))
+    const progress=locationProgress[areaId]||{}
+    if(!area||!exploredAreas.includes(areaId)||progress.questDone)return
+    const next={...progress,questDone:true}
+    setLocationProgress(p=>({...p,[areaId]:next}))
     setXp(v=>v+area.quest.xp);setGold(g=>g+area.quest.gold+companionGoldBonus)
     recordProductivityProgress(area.quest.xp,1)
     notify('Location quest complete! +'+area.quest.xp+' XP · +'+area.quest.gold+' gold')
+    finishExplorationArea(areaId,next)
   }
   function resolveLocationEncounter(areaId,choiceIndex){
     const area=EXPLORATION_AREAS.find(x=>x.id===areaId)
-    if(!area||!exploredAreas.includes(areaId)||locationProgress[areaId]?.encounterChoice!==undefined)return
+    const progress=locationProgress[areaId]||{}
+    if(!area||!exploredAreas.includes(areaId)||progress.encounterChoice!==undefined)return
     const choice=area.encounter.choices[choiceIndex]
     if(!choice)return
-    setLocationProgress(p=>({...p,[areaId]:{...(p[areaId]||{}),encounterChoice:choiceIndex}}))
+    const next={...progress,encounterChoice:choiceIndex}
+    setLocationProgress(p=>({...p,[areaId]:next}))
     setInventory(items=>items.includes(choice.item)?items:[...items,choice.item])
     setGold(g=>g+choice.gold+companionGoldBonus)
     notify('Encounter resolved: '+choice.item+' · +'+choice.gold+' gold')
+    finishExplorationArea(areaId,next)
   }
   function talkToNpc(name){
     const lines=NPC_DIALOGUE[name]||[];setSelectedNpc({name,line:lines[(new Date().getDate()+name.length)%lines.length]})
@@ -833,8 +850,8 @@ function MapPage({worlds,setActive,level,inventory,exploredAreas,exploreArea,act
   </div>
   <div className="map-tip panel"><Compass size={17}/><span><b>Traveler's note:</b> The atlas is incomplete. Find map clues in chests and story encounters, then spend them to open permanent paths.</span></div>
   <section className="exploration-section">
-   <div className="section-head"><div><span className="eyebrow">BEYOND THE KNOWN ROADS</span><h2>Hidden places</h2><p className="muted">Map clues are consumed when you open a place. Once explored, it stays on your map.</p></div></div>
-   <div className="exploration-grid">{EXPLORATION_AREAS.map(area=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));return <article className={'exploration-card panel '+(explored?'explored':'')} key={area.id}><div className="exploration-icon">{explored?'✓':area.icon}</div><div className="exploration-copy"><b>{area.name}</b><p>{explored?area.discovery:area.description}</p><small>{explored?'DISCOVERED · '+area.rewardItem:key?'CLUE FOUND · '+key:'NEEDS '+area.requiredItems.map(x=>x.replace(/^\S+\s/, '')).join(' OR ')}</small></div><button className={explored?'ghost':'primary'} disabled={explored||!key} onClick={()=>exploreArea(area.id)}>{explored?'Explored':key?'Explore':'Find clue'}</button></article>})}</div>
+   <div className="section-head"><div><span className="eyebrow">BEYOND THE KNOWN ROADS</span><h2>Hidden places</h2><p className="muted">Your clue is held while you explore. It is only used when you finish the local quest and choose a path.</p></div></div>
+   <div className="exploration-grid">{EXPLORATION_AREAS.map(area=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));return <article className={'exploration-card panel '+(explored?'explored':'')} key={area.id}><div className="exploration-icon">{explored?'✓':area.icon}</div><div className="exploration-copy"><b>{area.name}</b><p>{explored?area.discovery:area.description}</p><small>{explored?'DISCOVERED · '+area.rewardItem:key?'CLUE FOUND · '+key:'NEEDS '+area.requiredItems.map(x=>x.replace(/^\S+\s/, '')).join(' OR ')}</small></div><button className={explored?'ghost':'primary'} disabled={explored||!key} onClick={()=>exploreArea(area.id)}>{explored?(locationProgress[area.id]?.discoveryClaimed?'Complete':'Continue') :key?'Explore':'Find clue'}</button></article>})}</div>
   </section>
  </div>
 }
