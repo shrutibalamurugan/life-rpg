@@ -323,3 +323,13 @@ nav button:hover{background:#292b31;color:#f1ead7}
 .location-choices button{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;white-space:normal}
 .location-choices button small{font-size:9px;color:var(--gold)}
 @media(max-width:600px){.location-hero{align-items:flex-start;gap:14px;padding:16px}.location-art{width:70px;height:70px;flex-basis:70px;font-size:38px}.location-choices{grid-template-columns:1fr}.camp-shortcuts{grid-template-columns:1fr 1fr}}
+
+
+/* Stage 4: location NPC bonds and evolving conversations */
+.location-bond-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.location-bond-head h2{margin-bottom:0}
+.location-bond-label{padding:6px 9px;background:#211f25;border:2px solid #66563d;color:#d7b66d;font-size:9px;letter-spacing:.06em;white-space:nowrap}
+.location-bond-track{height:9px;margin:13px 0 16px;background:#17181d;border:2px solid #4a4650;box-shadow:2px 2px 0 #0d0e11;overflow:hidden}
+.location-bond-track i{display:block;height:100%;background:linear-gradient(90deg,#66845b,#d0a34f);transition:width .25s ease}
+.location-talk{font-size:10px;margin-top:2px}
+@media(max-width:600px){.location-bond-head{align-items:flex-start;flex-direction:column}.location-bond-label{white-space:normal}}
