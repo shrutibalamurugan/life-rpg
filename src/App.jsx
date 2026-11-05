@@ -322,6 +322,7 @@ export default function App() {
   const applyingRemoteRef=useRef(false)
   const saveTimerRef=useRef(null)
   const [quests,setQuests] = useState(() => load('quests', []).filter(q=>![1,2,3,4].includes(q.id)))
+  const [journalDate,setJournalDate] = useState(() => load('journal-date', getESTDateKey()))
   const [xp,setXp] = useState(() => load('xp',245))
   const [gold,setGold] = useState(() => load('gold',86))
   const [active,setActive] = useState('dashboard')
@@ -405,6 +406,7 @@ export default function App() {
     if(!data||typeof data!=='object')return
     applyingRemoteRef.current=true
     if(data.quests)setQuests(data.quests.filter(q=>![1,2,3,4].includes(q.id)))
+    if(data.journalDate)setJournalDate(data.journalDate)
     if(typeof data.xp==='number')setXp(data.xp)
     if(typeof data.gold==='number')setGold(data.gold)
     if(data.routine)setRoutine(data.routine)
@@ -447,7 +449,7 @@ export default function App() {
     return ()=>{cancelled=true}
   },[session?.user?.id])
 
-  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney}
+  const cloudData={version:2,quests,journalDate,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -457,7 +459,7 @@ export default function App() {
       if(error)console.error('Cloud save failed',error)
     },400)
     return ()=>clearTimeout(saveTimerRef.current)
-  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
+  },[session?.user?.id,cloudHydrated,quests,journalDate,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
 
   useEffect(()=>{
     if(!session)return
@@ -469,6 +471,7 @@ export default function App() {
   },[session?.user?.id])
 
   useEffect(()=>localStorage.setItem('life-rpg-quests',JSON.stringify(quests)),[quests])
+  useEffect(()=>localStorage.setItem('life-rpg-journal-date',JSON.stringify(journalDate)),[journalDate])
   useEffect(()=>localStorage.setItem('life-rpg-xp',JSON.stringify(xp)),[xp])
   useEffect(()=>localStorage.setItem('life-rpg-gold',JSON.stringify(gold)),[gold])
   useEffect(()=>localStorage.setItem('life-rpg-routine',JSON.stringify(routine)),[routine])
@@ -509,13 +512,14 @@ export default function App() {
   useEffect(()=>{
     const resetDailyAtEST=()=>{
       const today=getESTDateKey()
+      if(journalDate!==today){setQuests([]);setJournalDate(today)}
       if(daily.date!==today)setDaily(x=>({...x,date:today,completed:[],bonusClaimed:false}))
       if(villagerQuests.date!==today)setVillagerQuests({date:today,active:[],completed:[]})
     }
     resetDailyAtEST()
     const timer=setInterval(resetDailyAtEST,30000)
     return()=>clearInterval(timer)
-  },[daily.date,villagerQuests.date])
+  },[journalDate,daily.date,villagerQuests.date])
   useEffect(()=>{
     const d=new Date()
     const currentDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -949,7 +953,7 @@ function QuestPage({quests,finishQuest,setShowQuest,villagerQuests,villagerQuest
    {locked.length>0&&<div className="locked-villagers"><div className="section-head"><div><span className="eyebrow">PEOPLE YOU HAVE YET TO MEET</span><h3>Expand the Keep to find them</h3></div></div><div className="locked-villager-grid">{locked.map(([name,cfg])=><div className="locked-villager panel" key={name}><span>?</span><div><b>Unknown Villager</b><small>{cfg.role} · Unlocks at Keep Level {cfg.level}</small></div><em>🔒</em></div>)}</div></div>}
   </section>
   <section className="quest-chains-section"><div className="section-head"><div><span className="eyebrow">STORYLINES</span><h2>Quest Chains</h2><p className="muted">Help recurring characters through multi-step stories. Complete every chapter to earn a special title, bonus rewards, and a permanent place in the realm’s history.</p></div></div><div className="quest-chain-grid">{questChains.map(chain=>{const step=chain.steps[chain.progress];const done=chain.completed;return <div className={'quest-chain-card panel '+(done?'completed':'')} key={chain.id}><div className="quest-chain-head"><span className="chain-icon">{chain.icon}</span><div><b>{chain.title}</b><small>{chain.villager}</small></div><strong>{done?'✓':(chain.progress+1)+'/'+chain.steps.length}</strong></div><p>{chain.desc}</p>{done?<div className="chain-complete-line">🏆 {chain.completion}<small>{chain.completeLine}</small></div>:<div className="chain-step"><span className="eyebrow">CURRENT CHAPTER</span><h3>{step.title}</h3><p>{step.task}</p><div className="npc-reward-line">Reward: <b>+{step.xp} XP</b> · <b>+{step.gold} ◈</b></div><button className="primary" onClick={()=>completeChainStep(chain.id)}>Complete Chapter</button></div>}</div>})}</div></section>
-  <div className="section-head"><div><span className="eyebrow">ADVENTURER'S JOURNAL</span><h2>My quests</h2><p className="muted">Your personal running task list. Add anything you need to get done; these quests do not reset with the daily Quest Board.</p></div></div><div className="quest-list full">{quests.length?quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>):<div className="empty-quest panel"><ScrollText size={20}/><span><b>Your journal is empty.</b><small>Add your first personal quest above.</small></span></div>}</div>
+  <div className="section-head"><div><span className="eyebrow">ADVENTURER'S JOURNAL</span><h2>My quests</h2><p className="muted">Your daily personal quest list. Add anything you need to get done; unfinished journal quests reset at midnight Eastern.</p></div></div><div className="quest-list full">{quests.length?quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>):<div className="empty-quest panel"><ScrollText size={20}/><span><b>Your journal is empty.</b><small>Add your first personal quest above.</small></span></div>}</div>
   {selectedNpc&&<div className="modal-backdrop" onClick={()=>setSelectedNpc(null)}><div className="modal npc-dialog" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setSelectedNpc(null)}><X/></button><span className="eyebrow">VILLAGER · ADVENTURER'S KEEP</span><h2>{selectedNpc.name}</h2><div className="npc-speech">“{selectedNpc.line}”</div>{(()=>{const q=unlocked.find(x=>x.villager===selectedNpc.name);if(!q)return <p className="npc-response">The villager smiles. “Come back tomorrow; I may have another request.”</p>;const activeQ=villagerQuests.active.includes(q.id);const doneQ=villagerQuests.completed.includes(q.id);return <div className="npc-request"><span className="eyebrow">{doneQ?'QUEST COMPLETE':activeQ?'QUEST IN PROGRESS':'NEW QUEST'}</span><h3>{q.request}</h3><p>{q.detail}</p><div className="npc-reward-line">Reward: <b>+{q.xp} XP</b> · <b>+{q.gold} ◈</b></div>{!doneQ&&!activeQ&&<button className="primary" onClick={()=>{acceptVillagerQuest(q.id);setSelectedNpc(null)}}>Accept Quest</button>}{activeQ&&<button className="primary" onClick={()=>{completeVillagerQuest(q.id);setSelectedNpc(null)}}>Mark Quest Complete</button>}{doneQ&&<><div className="npc-speech npc-complete">“{VILLAGER_COMPLETE_DIALOGUE[selectedNpc.name]||'Well done, adventurer.'}”</div><button className="ghost" onClick={()=>setSelectedNpc(null)}>Come back tomorrow</button></>}</div>})()}</div></div>}
  </div>
 }
