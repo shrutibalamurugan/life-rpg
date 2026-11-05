@@ -806,6 +806,8 @@ export default function App() {
     if(progress.clueItem){
       setInventory(items=>{const index=items.indexOf(progress.clueItem);const without=index>=0?items.filter((_,i)=>i!==index):items;return without.includes(area.rewardItem)?without:[...without,area.rewardItem]})
       setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder');bondCompanions()
+      const newCompanion=areaId==='whispering-ruins'?'🐦 Edda’s Raven':areaId==='moonlit-observatory'?'🦉 Orin’s Owl':areaId==='sunken-causeway'?'🦦 Mira’s Otter':null
+      if(newCompanion)setCompanions(items=>items.includes(newCompanion)?items:[...items,newCompanion])
       notify(area.name+' fully explored! Clue used · +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
     }else{
       notify(area.name+' fully explored! Your path is complete.')
