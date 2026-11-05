@@ -353,7 +353,17 @@ function getCampaignScene(campaign){
       {label:'Let Lyra keep the memories she can carry',flags:['lyra-fracture','lyra-protected'],relationship:4,reputation:2,reward:{xp:165,gold:100,item:'💙 Stargazer’s Charm'},epilogue:'Lyra chooses not to recover everything. “A person is allowed to be more than their history,” she says.'}
     ]
   }
-  if(flags.has('lyra-fracture')&&!flags.has('final-convergence'))return {
+
+  if(flags.has('lyra-fracture')&&!flags.has('cartographer-shadow'))return {
+    id:'cartographer-shadow',title:'The Cartographer’s Shadow',chapter:9,
+    body:'Lyra’s recovered memories reveal one final truth: the hand behind the ink belongs to no living suspect. Long ago, the first Cartographer created an echo inside the Atlas—a copy of their own desire to make the world orderly and predictable. The echo believes every painful choice is a mistake that should be corrected. The Keeper shattered the Atlas to keep that echo from choosing a single perfect history.',
+    choices:[
+      {label:'Destroy the Cartographer’s Echo',flags:['cartographer-shadow','echo-destroyed'],relationship:3,reputation:2,reward:{xp:170,gold:105,item:'⚔️ Cartographer’s Seal'},epilogue:'The echo recoils when you refuse its promise of a perfect world. “You would choose uncertainty?” it asks. For the first time, it sounds afraid.'},
+      {label:'Ask the Echo what it is trying to save',flags:['cartographer-shadow','echo-understood'],relationship:4,reputation:3,reward:{xp:170,gold:105,item:'🪞 Cartographer’s Mirror'},epilogue:'The echo shows you centuries of grief it was created to prevent. Its methods are terrible, but its original purpose was not cruelty. You realize the final choice cannot be about good versus evil.'}
+    ]
+  }
+
+  if(flags.has('cartographer-shadow')&&!flags.has('final-convergence'))return {
     id:'final-convergence',title:'All Roads Remember',chapter:9,
     body:'The fragments begin returning to the Atlas on their own. Elaria appears on the map. The second Keep flickers into view. The Moonlit Observatory turns toward the same point in the sky. Every suspect receives the same message: COME TO THE KEEP BEFORE MIDNIGHT.',
     choices:[
@@ -1119,7 +1129,7 @@ function StoryPage({campaign,storyEncounter,resolveStoryChoice,setActive}){
  const unlocked=(earned.xp||0)>=100&&(earned.quests||0)>=3
  return <div className="content realm-page">
   <PageIntro eyebrow="CAMPAIGN JOURNAL" title="The Shattered Atlas" text="An enchanted atlas is breaking apart. Its roads, memories, and hidden places are disappearing—and Lyra the Stargazer believes you can help uncover why."/>
-  <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {campaign.chapter===1?'The Missing Keeper':campaign.chapter===2?'Roads Beneath the Stars':campaign.chapter===3?'The Keeper’s Echo':'A New Horizon'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
+  <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {campaign.chapter===1?'The Missing Keeper':campaign.chapter===2?'Roads Beneath the Stars':campaign.chapter===3?'The Keeper’s Echo':campaign.chapter===4?'The Lost Town':campaign.chapter===5?'The Keeper’s Circle':campaign.chapter===6?'The Second Keep':campaign.chapter===7?'The Seventh Page':campaign.chapter===8?'The Hand Behind the Ink':'The Cartographer’s Shadow'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
   <div className="stat-cards">
    <div className="panel stat-card"><Sparkles/><span>LYRA BOND</span><strong>{campaign.relationship||0}</strong><small>Trust built through choices</small></div>
    <div className="panel stat-card"><Crown/><span>KEEP REPUTATION</span><strong>{campaign.reputation||0}</strong><small>How the realm sees your actions</small></div>
