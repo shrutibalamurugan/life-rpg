@@ -35,8 +35,6 @@ jobs:
       # - name: Verify formatting
       #   run: deno fmt --check
 
-      - name: Run linter
-        run: deno lint
-
+      # This is a Vite/React app; Deno lint is not the project's linter.
       - name: Run tests
         run: deno test -A
