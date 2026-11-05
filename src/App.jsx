@@ -1065,13 +1065,14 @@ function RealmPage({level,timeLabel,isNight,town,upgradeTown,questChains,complet
 
 function StoryPage({campaign,storyEncounter,resolveStoryChoice,setActive}){
  const choices=[...(campaign.choices||[])].reverse()
+ const chapterNames={1:'The Missing Keeper',2:'Roads Beneath the Stars',3:'The Keeper’s Echo',4:'The Horizon Beyond',5:'The World Behind the Map',6:'The Many Keepers',7:'The Roadwarden’s Era',8:'The Living Atlas'}
  const earned=campaign.productivity||{xp:0,quests:0}
  const xpProgress=Math.min(100,(earned.xp||0))
  const questProgress=Math.min(100,((earned.quests||0)/3)*100)
  const unlocked=(earned.xp||0)>=100&&(earned.quests||0)>=3
  return <div className="content realm-page">
   <PageIntro eyebrow="CAMPAIGN JOURNAL" title="The Shattered Atlas" text="An enchanted atlas is breaking apart. Its roads, memories, and hidden places are disappearing—and Lyra the Stargazer believes you can help uncover why."/>
-  <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {campaign.chapter===1?'The Missing Keeper':campaign.chapter===2?'Roads Beneath the Stars':campaign.chapter===3?'The Keeper’s Echo':'A New Horizon'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
+  <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {chapterNames[campaign.chapter||1]||'Beyond the Known Atlas'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
   <div className="stat-cards">
    <div className="panel stat-card"><Sparkles/><span>LYRA BOND</span><strong>{campaign.relationship||0}</strong><small>Trust built through choices</small></div>
    <div className="panel stat-card"><Crown/><span>KEEP REPUTATION</span><strong>{campaign.reputation||0}</strong><small>How the realm sees your actions</small></div>
