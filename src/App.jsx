@@ -1,4 +1,3 @@
-// deno-lint-ignore-file
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Backpack, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Compass, Crown, Flame,
@@ -127,13 +126,6 @@ const EXTRA_ACHIEVEMENTS = {
   'pathfinder': {name:'Pathfinder',icon:'🧭',desc:'Discovered a new place on the realm map.'}
 }
 
-const COMPANION_INFO = {
-  '🦊 Moss the Fox': {icon:'🦊',name:'Moss the Fox',title:'The Lucky Scout',personality:'Mischievous, bright-eyed, and always three steps ahead. Moss has a talent for finding the useful thing you were sure you lost.',passive:'+5 gold whenever you complete a real-life quest.',active:'Lucky Paws',activeDesc:'Moss sniffs out a hidden coin pouch.',activeReward:'+15 gold'},
-  '🐦 Edda’s Raven': {icon:'🐦',name:'Edda’s Raven',title:'The Archive Scribe',personality:'Quiet and observant. It remembers every page you leave unfinished and seems personally offended by avoidable mistakes.',passive:'+5 XP on journal quests and focused-study daily quests.',active:'Keen Eye',activeDesc:'The raven points out one overlooked detail.',activeReward:'+20 XP'},
-  '🦉 Orin’s Owl': {icon:'🦉',name:'Orin’s Owl',title:'The Nightwatcher',personality:'Calm, patient, and strangely good at knowing when you have pushed yourself too far. It prefers quiet victories.',passive:'+5 gold on rest and ritual daily quests.',active:'Night Watch',activeDesc:'The owl keeps watch while you reclaim a little time for yourself.',activeReward:'+20 gold'},
-  '🦦 Mira’s Otter': {icon:'🦦',name:'Mira’s Otter',title:'The River Companion',personality:'Playful and energetic. It treats every walk, stretch, and small act of care like an expedition worth celebrating.',passive:'+5 gold on movement and location quests.',active:'River Rest',activeDesc:'The otter reminds you that recovery is part of the journey.',activeReward:'+20 XP'}
-}
-
 const RELIC_INFO = {
   '✨ Keeper’s Star': {name:'Keeper’s Star',icon:'✨',stat:'SPI',statName:'Spirit',desc:'A star-shaped promise from Lyra. Attuning it permanently strengthens your Spirit.',amount:1},
   '🛡️ Atlas Ward': {name:'Atlas Ward',icon:'🛡️',stat:'DIS',statName:'Discipline',desc:'A protective mark for those who chose to guard the Atlas first.',amount:1},
@@ -233,162 +225,6 @@ function getCampaignScene(campaign){
     ]
   }
 
-  if(flags.has('name-on-the-page')&&!flags.has('elaria-bell'))return {
-    id:'elaria-bell',title:'The Bell Beneath Elaria',chapter:4,
-    body:'The next Atlas fragment points back to the Whispering Ruins. Beneath the old square, you find a bell that rings only when someone speaks the name Elaria aloud. When it rings, a hidden stairway opens—and on the wall is a list of names. Several are familiar. One belongs to someone who still lives in the Keep.',
-    choices:[
-      {label:'Copy the names before touching anything',flags:['elaria-bell','names-recorded','suspect-edda'],relationship:1,reputation:2,reward:{xp:90,gold:50,item:'🔔 Elarian Bell'},epilogue:'You preserve the names first. One has been carefully circled: Edda the Archivist. You do not know whether that makes her guilty—or simply important.'},
-      {label:'Ring the bell again and follow the hidden stair',flags:['elaria-bell','names-heard','suspect-orin'],relationship:1,reputation:1,reward:{xp:90,gold:50,item:'🗝️ Elarian Stair Key'},epilogue:'The bell rings twice. Somewhere far away, a telescope turns by itself. The stair leads toward a sealed chamber beneath the old roads.'}
-    ]
-  }
-  if(flags.has('elaria-bell')&&!flags.has('archivist-lie'))return {
-    id:'archivist-lie',title:'The Archivist’s Lie',chapter:4,
-    body:'Edda the Archivist insists Elaria was never a recognized settlement. Yet when you mention the bell, her composure cracks. She admits she once found a record of the town—but says someone ordered her to remove it from the Archive. She refuses to say who.',
-    choices:[
-      {label:'Believe Edda and ask who gave the order',flags:['archivist-lie','edda-questioned','suspect-corin'],relationship:1,reputation:2,reward:{xp:95,gold:50,item:'📚 Redacted Ledger'},epilogue:'Edda gives you a ledger with one page missing. The remaining ink contains a signature reduced to a single initial: C.'},
-      {label:'Accuse Edda of erasing Elaria herself',flags:['archivist-lie','edda-suspected'],relationship:0,reputation:3,reward:{xp:95,gold:50,item:'🕯️ Archive Wax Seal'},epilogue:'Edda is furious—but not frightened. “If I had erased Elaria,” she says, “you would not be standing here asking me about it.”'}
-    ]
-  }
-  if(flags.has('archivist-lie')&&!flags.has('star-witness'))return {
-    id:'star-witness',title:'A Witness in the Stars',chapter:4,
-    body:'Orin the Nightwatcher brings you to the Moonlit Observatory. A star chart from decades ago shows Elaria clearly. It also shows three figures standing beside the Atlas Keeper: Orin, Edda, and a third person whose name has been scraped away.',
-    choices:[
-      {label:'Ask Orin why he was there',flags:['star-witness','orin-questioned'],relationship:1,reputation:1,reward:{xp:100,gold:55,item:'⭐ Old Star Chart'},epilogue:'Orin admits he knew the Keeper long ago. He says the third figure was not a stranger—but he swears the Keeper trusted them more than anyone.'},
-      {label:'Ask who altered the chart',flags:['star-witness','chart-altered'],relationship:0,reputation:2,reward:{xp:100,gold:55,item:'🔭 Observatory Rubbing'},epilogue:'The altered ink is newer than the rest. Someone wanted the third figure erased, but the original impression remains in the paper.'}
-    ]
-  }
-  if(flags.has('star-witness')&&!flags.has('traveler-seal'))return {
-    id:'traveler-seal',title:'The Traveler’s Seal',chapter:5,
-    body:'A stranger arrives at the Keep wearing a silver clasp stamped with the same symbol found beneath the Atlas ink. They call themselves Sable, a traveler who has crossed roads that no longer exist. They know the name Elaria—and they know Lyra.',
-    choices:[
-      {label:'Invite Sable to the Keep',flags:['traveler-seal','sable-welcomed'],relationship:1,reputation:1,reward:{xp:105,gold:60,item:'🪙 Traveler’s Seal'},epilogue:'Sable accepts tea but avoids every question about the Atlas. Before leaving, they whisper: “Do not let the Keeper convince you that breaking the map was the same as saving the world.”'},
-      {label:'Follow Sable without revealing what you know',flags:['traveler-seal','sable-followed'],relationship:0,reputation:2,reward:{xp:105,gold:60,item:'🧭 Sable’s Route'},epilogue:'Sable leads you to a road that appears only at dusk. They vanish before you can ask where it ends.'}
-    ]
-  }
-  if(flags.has('traveler-seal')&&!flags.has('apprentice-confession'))return {
-    id:'apprentice-confession',title:'The Keeper’s Apprentice',chapter:5,
-    body:'The redacted ledger leads to Corin Vale, the Atlas Keeper’s former apprentice. Corin admits hiding a fragment inside the Keep years ago. “The Keeper told me never to return it,” he says. “Then one morning, they disappeared.”',
-    choices:[
-      {label:'Ask Corin what the Keeper feared',flags:['apprentice-confession','corin-trusted'],relationship:1,reputation:2,reward:{xp:110,gold:60,item:'🧩 Keeper’s Fragment'},epilogue:'Corin finally says the words he has avoided: “The Atlas had begun predicting choices before people made them.”'},
-      {label:'Ask Corin whether he helped break the Atlas',flags:['apprentice-confession','corin-suspected'],relationship:0,reputation:3,reward:{xp:110,gold:60,item:'✒️ Apprentice’s Note'},epilogue:'Corin admits he helped hide the fragments—but insists he never knew who was gathering them afterward.'}
-    ]
-  }
-  if(flags.has('apprentice-confession')&&!flags.has('moonwell-memory'))return {
-    id:'moonwell-memory',title:'The Moonwell Remembers',chapter:5,
-    body:'At the Moonwell, the new fragment unlocks a memory. You see the Keeper tearing pages from the Atlas while Edda, Orin, Corin, and a younger Lyra argue nearby. No one looks like a villain. Everyone looks terrified.',
-    choices:[
-      {label:'Watch the memory to the end',flags:['moonwell-memory','memory-watched'],relationship:2,reputation:1,reward:{xp:115,gold:65,item:'🌙 Memory Lantern'},epilogue:'The memory ends with Lyra saying, “If we cannot agree on what the Atlas should remember, perhaps it should remember nothing at all.”'},
-      {label:'Turn away before the memory finishes',flags:['moonwell-memory','memory-refused'],relationship:1,reputation:2,reward:{xp:115,gold:65,item:'💧 Moonwell Tear'},epilogue:'You refuse to let a memory decide what a living person did. The Moonwell goes still, as though it approves of your caution.'}
-    ]
-  }
-  if(flags.has('moonwell-memory')&&!flags.has('second-keep'))return {
-    id:'second-keep',title:'The Keep That Never Was',chapter:6,
-    body:'The Star Lens opens a doorway to the second Adventurer’s Keep. It is almost identical to yours, except the Chronicle lists a completely different history. In this version, Elaria still exists—and the Atlas Keeper never vanished.',
-    choices:[
-      {label:'Enter the second Keep',flags:['second-keep','parallel-keep'],relationship:1,reputation:1,reward:{xp:120,gold:70,item:'🪞 Keep Mirror Shard'},epilogue:'A familiar innkeeper greets you as if you have been expected for years. Then they ask the question you hoped no one would ask: “Which version of you are you?”'},
-      {label:'Study the doorway from your side',flags:['second-keep','parallel-watched'],relationship:1,reputation:2,reward:{xp:120,gold:70,item:'🗺️ Mirror Map'},epilogue:'You notice the second Keep is not another world. It is a possibility the Atlas preserved instead of reality.'}
-    ]
-  }
-  if(flags.has('second-keep')&&!flags.has('erased-name'))return {
-    id:'erased-name',title:'The Name That Was Removed',chapter:6,
-    body:'Inside the second Keep, you find a memorial with four names: Edda, Orin, Corin, and Lyra. A fifth name has been scraped away so completely that even the shape of the letters is gone. The same absence appears in your own Atlas.',
-    choices:[
-      {label:'Search the Archive for the missing name',flags:['erased-name','archive-search'],relationship:1,reputation:2,reward:{xp:125,gold:70,item:'📜 Name Rubbing'},epilogue:'The Archive contains a single reference to a person called the Cartographer. Every other mention has been erased.'},
-      {label:'Ask Lyra whether she knows the name',flags:['erased-name','lyra-name-question'],relationship:2,reputation:1,reward:{xp:125,gold:70,item:'🌟 Lyra’s Memory Shard'},epilogue:'Lyra goes silent. “I know the name,” she says. “I just do not know whether it was mine.”'}
-    ]
-  }
-  if(flags.has('erased-name')&&!flags.has('atlas-below'))return {
-    id:'atlas-below',title:'The Atlas Beneath the Keep',chapter:6,
-    body:'A hidden stair beneath the Adventurer’s Keep leads to a chamber older than the Keep itself. At its center is a stone table shaped like an open book. Six empty spaces surround a seventh sealed compartment.',
-    choices:[
-      {label:'Place your fragments into the six spaces',flags:['atlas-below','fragments-placed'],relationship:1,reputation:2,reward:{xp:130,gold:75,item:'🗿 Atlas Tablet'},epilogue:'The six spaces glow. The sealed seventh compartment remains dark—but you hear something breathing behind it.'},
-      {label:'Leave the fragments untouched and inspect the seal',flags:['atlas-below','seal-inspected'],relationship:1,reputation:3,reward:{xp:130,gold:75,item:'🔐 Seventh Seal Rubbing'},epilogue:'The seal bears a warning: “Do not complete the story before the traveler has chosen it.”'}
-    ]
-  }
-  if(flags.has('atlas-below')&&!flags.has('drowned-library'))return {
-    id:'drowned-library',title:'The Drowned Library',chapter:7,
-    body:'The Sunken Causeway opens into a library beneath the lake. Books float without getting wet. One shelf contains biographies of people who have not yet been born. Another contains stories of people everyone remembers—but who never existed.',
-    choices:[
-      {label:'Read the biographies of the unborn',flags:['drowned-library','future-books'],relationship:1,reputation:1,reward:{xp:135,gold:75,item:'📖 Future Chronicle'},epilogue:'One unfinished biography belongs to you. It contains choices you have not made yet.'},
-      {label:'Read the histories of the forgotten',flags:['drowned-library','lost-books'],relationship:2,reputation:2,reward:{xp:135,gold:75,item:'🕯️ Memory Lantern'],epilogue:'Elaria is here. So is the missing Cartographer. But the final page has been torn out.'}
-    ]
-  }
-  if(flags.has('drowned-library')&&!flags.has('keepers-door'))return {
-    id:'keepers-door',title:'The Door the Keeper Locked',chapter:7,
-    body:'The final shelf points toward a door beneath the Sunken Causeway. The lock opens with the Keeper’s Key. Behind it is not a prison cell, but a quiet room containing hundreds of letters the Keeper never sent.',
-    choices:[
-      {label:'Read the letters',flags:['keepers-door','letters-read'],relationship:1,reputation:2,reward:{xp:140,gold:80,item:'✉️ Keeper’s Letters'},epilogue:'The letters reveal that the Keeper was trying to warn several people at once. One letter is addressed simply: “To the one who finds me.”'},
-      {label:'Leave the letters sealed',flags:['keepers-door','letters-sealed'],relationship:2,reputation:3,reward:{xp:140,gold:80,item:'🗝️ Sealed Keeper’s Door'],epilogue:'You decide some truths belong to the person who wrote them. Behind the door, something clicks into place.'}
-    ]
-  }
-  if(flags.has('keepers-door')&&!flags.has('seventh-page'))return {
-    id:'seventh-page',title:'The Seventh Page',chapter:7,
-    body:'The sealed compartment finally opens. There is no prophecy inside. There is a blank page surrounded by notes from the Keeper. The page has one rule written across its edge: “The Atlas cannot invent a choice. It can only make a choice easier to remember.”',
-    choices:[
-      {label:'Ask what the blank page is for',flags:['seventh-page','page-questioned'],relationship:2,reputation:1,reward:{xp:145,gold:85,item:'📖 Seventh Page'},epilogue:'Lyra realizes the blank page is not empty. It is waiting for a story that has not happened yet.'},
-      {label:'Refuse to write on the page',flags:['seventh-page','page-protected'],relationship:1,reputation:3,reward:{xp:145,gold:85,item:'🛡️ Page Ward'},epilogue:'You protect the blank page. The Atlas shudders as though something outside it has noticed.'}
-    ]
-  }
-  if(flags.has('seventh-page')&&!flags.has('hand-behind-ink'))return {
-    id:'hand-behind-ink',title:'The Hand Behind the Ink',chapter:8,
-    body:'For the first time, you see the ink moving while no one touches the Atlas. It draws the same symbol found on Sable’s clasp, Corin’s ledger, and the oldest observatory chart. The clues finally converge—but they point to more than one person.',
-    choices:[
-      {label:'Confront the Keep’s suspects together',flags:['hand-behind-ink','suspects-confronted'],relationship:2,reputation:2,reward:{xp:150,gold:90,item:'🕵️ Conspiracy Dossier'},epilogue:'Edda, Orin, Corin, Sable, and Lyra each know part of the truth. None admits to rebuilding the Atlas. Someone is lying—or someone is being used.'},
-      {label:'Follow the ink instead of confronting anyone',flags:['hand-behind-ink','ink-followed'],relationship:1,reputation:1,reward:{xp:150,gold:90,item:'🖋️ Living Ink Vial'},epilogue:'The ink leads away from every suspect and toward the place where the Atlas was first created.'}
-    ]
-  }
-  if(flags.has('hand-behind-ink')&&!flags.has('origin-chamber'))return {
-    id:'origin-chamber',title:'The First Map',chapter:8,
-    body:'The trail ends in an underground chamber beneath the Astral Sanctum. Carved into the wall is the first map ever drawn. It does not show countries or roads. It shows choices: stay, leave, remember, forget, trust, doubt.',
-    choices:[
-      {label:'Study the first map',flags:['origin-chamber','map-studied'],relationship:2,reputation:1,reward:{xp:155,gold:90,item:'🗺️ First Map Fragment'},epilogue:'You realize the Atlas was never designed to control the world. It was designed to preserve the paths people chose.'},
-      {label:'Search for who altered the first map',flags:['origin-chamber','map-altered'],relationship:1,reputation:3,reward:{xp:155,gold:90,item:'🔎 Cartographer’s Evidence'},epilogue:'Someone added a new symbol centuries later: a hand writing over the map from outside the lines.'}
-    ]
-  }
-  if(flags.has('origin-chamber')&&!flags.has('keeper-return'))return {
-    id:'keeper-return',title:'The Keeper Returns',chapter:8,
-    body:'The Atlas Keeper finally steps out of the shadows. They are not trapped. They have been moving between the forgotten places, trying to stay ahead of the force rewriting the Atlas. “I shattered it because I thought the fragments would be safer apart,” they say. “I was wrong.”',
-    choices:[
-      {label:'Ask the Keeper who is rewriting it',flags:['keeper-return','keeper-accused'],relationship:1,reputation:2,reward:{xp:160,gold:95,item:'📜 Keeper’s Testimony'},epilogue:'The Keeper refuses to name anyone. “Because the hand behind the ink is not always a person.”'},
-      {label:'Ask the Keeper why they trusted Lyra',flags:['keeper-return','lyra-truth'],relationship:3,reputation:1,reward:{xp:160,gold:95,item:'🌙 Keeper’s Memory'},epilogue:'The Keeper tells you Lyra was present at the beginning—but her memory was deliberately divided so no one could use her as a key.'}
-    ]
-  }
-  if(flags.has('keeper-return')&&!flags.has('lyra-fracture'))return {
-    id:'lyra-fracture',title:'Lyra’s Missing Memory',chapter:8,
-    body:'Lyra finally remembers the lost town of Elaria. She remembers standing beside the Keeper, but she also remembers another version of herself watching from across the square. The Atlas did not erase one Lyra. It split one story into two possibilities.',
-    choices:[
-      {label:'Help Lyra recover both memories',flags:['lyra-fracture','lyra-restored'],relationship:3,reputation:1,reward:{xp:165,gold:100,item:'🌌 Lyra’s Star Shard'},epilogue:'Lyra remembers why she trusted the Keeper—and why she once feared them. Both memories are true.'},
-      {label:'Let Lyra keep the memories she can carry',flags:['lyra-fracture','lyra-protected'],relationship:4,reputation:2,reward:{xp:165,gold:100,item:'💙 Stargazer’s Charm'},epilogue:'Lyra chooses not to recover everything. “A person is allowed to be more than their history,” she says.'}
-    ]
-  }
-
-  if(flags.has('lyra-fracture')&&!flags.has('cartographer-shadow'))return {
-    id:'cartographer-shadow',title:'The Cartographer’s Shadow',chapter:9,
-    body:'Lyra’s recovered memories reveal one final truth: the hand behind the ink belongs to no living suspect. Long ago, the first Cartographer created an echo inside the Atlas—a copy of their own desire to make the world orderly and predictable. The echo believes every painful choice is a mistake that should be corrected. The Keeper shattered the Atlas to keep that echo from choosing a single perfect history.',
-    choices:[
-      {label:'Destroy the Cartographer’s Echo',flags:['cartographer-shadow','echo-destroyed'],relationship:3,reputation:2,reward:{xp:170,gold:105,item:'⚔️ Cartographer’s Seal'},epilogue:'The echo recoils when you refuse its promise of a perfect world. “You would choose uncertainty?” it asks. For the first time, it sounds afraid.'},
-      {label:'Ask the Echo what it is trying to save',flags:['cartographer-shadow','echo-understood'],relationship:4,reputation:3,reward:{xp:170,gold:105,item:'🪞 Cartographer’s Mirror'},epilogue:'The echo shows you centuries of grief it was created to prevent. Its methods are terrible, but its original purpose was not cruelty. You realize the final choice cannot be about good versus evil.'}
-    ]
-  }
-
-  if(flags.has('cartographer-shadow')&&!flags.has('final-convergence'))return {
-    id:'final-convergence',title:'All Roads Remember',chapter:9,
-    body:'The fragments begin returning to the Atlas on their own. Elaria appears on the map. The second Keep flickers into view. The Moonlit Observatory turns toward the same point in the sky. Every suspect receives the same message: COME TO THE KEEP BEFORE MIDNIGHT.',
-    choices:[
-      {label:'Bring everyone together',flags:['final-convergence','allies-gathered'],relationship:3,reputation:3,reward:{xp:175,gold:110,item:'🤝 Circle of Witnesses'},chapter:9,epilogue:'For once, no one has to guess what the others know. The truth is finally shared—and it is stranger than any one person’s confession.'},
-      {label:'Meet the message alone',flags:['final-convergence','alone-at-keep'],relationship:1,reputation:2,reward:{xp:175,gold:110,item:'🕯️ Midnight Lantern'},chapter:9,epilogue:'The Keep is empty when you arrive. On the table is a single fresh page with your handwriting on it.'}
-    ]
-  }
-  if(flags.has('final-convergence')&&!flags.has('atlas-choice'))return {
-    id:'atlas-choice',title:'The Page About You',chapter:9,
-    body:'At midnight, the Atlas opens to a page that was not there before. It does not predict your future. It records every choice you made during the search—the people you trusted, the roads you took, the moments you hesitated. At the bottom is a final question: “Who should decide what the world remembers?”',
-    choices:[
-      {label:'Restore the Atlas and its memories',flags:['atlas-choice','restore-atlas','atlas-saga-complete'],relationship:2,reputation:3,reward:{xp:200,gold:150,item:'🌟 Restored Atlas'},chapter:9,epilogue:'The world remembers. Elaria returns to the maps. The Keep settles into a new quiet. But one blank page remains, waiting for whatever story comes next.'},
-      {label:'Break the Atlas beyond repair',flags:['atlas-choice','break-atlas','atlas-saga-complete'],relationship:2,reputation:2,reward:{xp:200,gold:150,item:'🪶 Free Cartographer’s Quill'},chapter:9,epilogue:'The Atlas breaks into harmless light. No more history can be erased by its pages. The world is free to become something the map never predicted.'},
-      {label:'Leave the Seventh Page unwritten',flags:['atlas-choice','leave-page','atlas-saga-complete'],relationship:4,reputation:4,reward:{xp:200,gold:150,item:'📖 Unwritten Future'},chapter:9,epilogue:'You refuse to let the Atlas decide what comes next. The page stays blank. Lyra smiles. “Good. Then the next story belongs to us.”'}
-    ]
-  }
-
   return null
 }
 
@@ -456,8 +292,6 @@ export default function App() {
   const [daily,setDaily] = useState(() => load('daily', {date:'',completed:[],bonusClaimed:false}))
   const [achievements,setAchievements] = useState(() => load('achievements', []))
   const [companions,setCompanions] = useState(() => load('companions', []))
-  const [companionBonds,setCompanionBonds] = useState(() => load('companion-bonds', {}))
-  const [companionUses,setCompanionUses] = useState(() => load('companion-uses', {}))
   const [inventory,setInventory] = useState(() => load('inventory', []))
   const [event,setEvent] = useState(() => load('event', {date:'',title:'',body:'',options:[],resolved:false}))
   const [villagerQuests,setVillagerQuests] = useState(() => load('villager-quests', {date:'',active:[],completed:[]}))
@@ -498,8 +332,6 @@ export default function App() {
     if(data.daily)setDaily(data.daily)
     if(data.achievements)setAchievements(data.achievements)
     if(data.companions)setCompanions(data.companions)
-    if(data.companionBonds)setCompanionBonds(data.companionBonds)
-    if(data.companionUses)setCompanionUses(data.companionUses)
     if(data.inventory)setInventory(data.inventory)
     if(data.event)setEvent(data.event)
     if(data.villagerQuests)setVillagerQuests(data.villagerQuests)
@@ -528,7 +360,7 @@ export default function App() {
     return ()=>{cancelled=true}
   },[session?.user?.id])
 
-  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney}
+  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -602,7 +434,7 @@ export default function App() {
     if(campaign.lastEncounterDate){
       const [year,month,day]=campaign.lastEncounterDate.split('-').map(Number)
       const lastSeen=new Date(year,month-1,day).getTime()
-      if(now.getTime()-lastSeen<60*60*60*1000)return
+      if(now.getTime()-lastSeen<36*60*60*1000)return
     }
     const scene=getCampaignScene(campaign)
     if(!scene)return
@@ -619,21 +451,6 @@ export default function App() {
   ],[statBonus,gearBonus,townBonus])
   const timeHour=realmTime.getHours(); const isNight=timeHour<7||timeHour>=19; const timeLabel=isNight?'🌙 Nightfall':'☀️ Daylight'; const dayLabel=realmTime.toLocaleDateString(undefined,{weekday:'long'}).toUpperCase();
   const companionGoldBonus=companions.includes('🦊 Moss the Fox')?5:0
-  const companionXpBonus=(type)=>companions.includes('🐦 Edda’s Raven')&&type==='study'?5:0
-  const companionQuestGoldBonus=(type)=>((companions.includes('🦉 Orin’s Owl')&&(type==='rest'||type==='ritual'))||(companions.includes('🦦 Mira’s Otter')&&(type==='body'||type==='location')))?5:0
-  const companionToday=new Date().toISOString().slice(0,10)
-  function bondCompanions(amount=1){setCompanionBonds(b=>Object.fromEntries(Object.entries(b).map(([id,v])=>[id,(v||0)+amount])))}
-  function callCompanion(id){
-    if(!companions.includes(id)||companionUses[id]===companionToday)return
-    const info=COMPANION_INFO[id]; if(!info)return
-    setCompanionUses(u=>({...u,[id]:companionToday}))
-    if(id==='🦊 Moss the Fox')setGold(g=>g+15)
-    if(id==='🐦 Edda’s Raven')setXp(v=>v+20)
-    if(id==='🦉 Orin’s Owl')setGold(g=>g+20)
-    if(id==='🦦 Mira’s Otter')setXp(v=>v+20)
-    setCompanionBonds(b=>({...b,[id]:(b[id]||0)+2}))
-    notify(info.name+' used '+info.active+'! '+info.activeReward)
-  }
   const completed=quests.filter(q=>q.done).length
   const todayKey=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})()
   const dailyQuests=[
@@ -704,8 +521,7 @@ export default function App() {
     setDaily(d=>({...d,completed:next,streak,lastCompletedDate:todayKey}))
     if(streak>=3)unlockAchievement('three-day-flame')
     if(streak>=7)unlockAchievement('week-warrior')
-    const bonusXp=q.xp+companionXpBonus(q.id==='study'?'study':q.type)
-    setXp(v=>v+bonusXp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus+companionQuestGoldBonus(q.id));bondCompanions()
+    setXp(v=>v+q.xp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus)
     if(next.length===dailyQuests.length&&!daily.bonusClaimed){setDaily(d=>({...d,bonusClaimed:true}));setXp(v=>v+100);recordProductivityProgress(100);setGold(g=>g+50);unlockAchievement('main-character');notify('DAILY ADVENTURE COMPLETE! +100 bonus XP · +50 gold')}
     else notify(`${q.title} complete! +${q.xp} XP · +${q.gold} gold · ${streak}-day streak`)
   }
@@ -738,7 +554,7 @@ export default function App() {
   function rollMysteryChest(){
     if(gold<100){notify('The Mystery Chest costs 100 gold.');return}
     setGold(g=>g-100)
-    const drops=[{text:'+75 XP',reward:{xp:75}},{text:'+150 gold',reward:{gold:150}},{text:'A fox companion!',reward:{pet:'🦊 Moss the Fox'}},{text:'Edda’s raven joins you!',reward:{pet:'🐦 Edda’s Raven'}},{text:'Orin’s owl joins you!',reward:{pet:'🦉 Orin’s Owl'}},{text:'A rare map fragment',reward:{item:'🗺️ Map Fragment'}},{text:'An old brass key',reward:{item:'🔑 Observatory Key'}}]
+    const drops=[{text:'+75 XP',reward:{xp:75}},{text:'+150 gold',reward:{gold:150}},{text:'A fox companion!',reward:{pet:'🦊 Moss the Fox'}},{text:'A rare map fragment',reward:{item:'🗺️ Map Fragment'}},{text:'An old brass key',reward:{item:'🔑 Observatory Key'}}]
     const d=drops[Math.floor(Math.random()*drops.length)],r=d.reward
     if(r.xp)setXp(v=>v+r.xp);if(r.gold)setGold(g=>g+r.gold);if(r.pet)setCompanions(p=>p.includes(r.pet)?p:[...p,r.pet]);if(r.item)setInventory(i=>[...i,r.item])
     notify('MYSTERY CHEST: '+d.text)
@@ -752,7 +568,7 @@ export default function App() {
     if(!villagerQuests.active.includes(id)||villagerQuests.completed.includes(id))return
     const q=VILLAGER_QUESTS.find(x=>x.id===id);if(!q)return
     setVillagerQuests(v=>({...v,active:v.active.filter(x=>x!==id),completed:[...v.completed,id]}))
-    setXp(v=>v+q.xp);setGold(g=>g+q.gold);bondCompanions();notify(`${q.villager}: ${VILLAGER_COMPLETE_DIALOGUE[q.villager]||'Well done, adventurer.'} · +${q.xp} XP · +${q.gold} gold`)
+    setXp(v=>v+q.xp);setGold(g=>g+q.gold);notify(`${q.villager}: ${VILLAGER_COMPLETE_DIALOGUE[q.villager]||'Well done, adventurer.'} · +${q.xp} XP · +${q.gold} gold`)
   }
 
   function completeChainStep(chainId){
@@ -805,9 +621,7 @@ export default function App() {
     setLocationProgress(p=>({...p,[areaId]:{...(p[areaId]||{}),discoveryClaimed:true}}))
     if(progress.clueItem){
       setInventory(items=>{const index=items.indexOf(progress.clueItem);const without=index>=0?items.filter((_,i)=>i!==index):items;return without.includes(area.rewardItem)?without:[...without,area.rewardItem]})
-      setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder');bondCompanions()
-      const newCompanion=areaId==='whispering-ruins'?'🐦 Edda’s Raven':areaId==='moonlit-observatory'?'🦉 Orin’s Owl':areaId==='sunken-causeway'?'🦦 Mira’s Otter':null
-      if(newCompanion)setCompanions(items=>items.includes(newCompanion)?items:[...items,newCompanion])
+      setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder')
       notify(area.name+' fully explored! Clue used · +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
     }else{
       notify(area.name+' fully explored! Your path is complete.')
@@ -830,8 +644,8 @@ export default function App() {
     if(!area||!exploredAreas.includes(areaId)||progress.questDone)return
     const next={...progress,questDone:true}
     setLocationProgress(p=>({...p,[areaId]:next}))
-    setXp(v=>v+area.quest.xp);setGold(g=>g+area.quest.gold+companionQuestGoldBonus('location')+companionGoldBonus)
-    recordProductivityProgress(area.quest.xp,1);bondCompanions()
+    setXp(v=>v+area.quest.xp);setGold(g=>g+area.quest.gold+companionGoldBonus)
+    recordProductivityProgress(area.quest.xp,1)
     notify('Location quest complete! +'+area.quest.xp+' XP · +'+area.quest.gold+' gold')
     finishExplorationArea(areaId,next)
   }
@@ -855,8 +669,7 @@ export default function App() {
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
     setQuests(xs=>xs.filter(x=>x.id!==id))
-    const bonusXp=q.xp+companionXpBonus('journal')
-    setXp(x=>x+bonusXp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus);bondCompanions()
+    setXp(x=>x+q.xp);recordProductivityProgress(q.xp,1); setGold(g=>g+q.gold+companionGoldBonus)
     notify(`Journal quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
   function addQuest(e){
@@ -963,7 +776,7 @@ export default function App() {
       {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} topicDraft={topicDraft} setTopicDraft={setTopicDraft} addTopic={addTopic} editingTopic={editingTopic} setEditingTopic={setEditingTopic} saveTopic={saveTopic} deleteTopic={deleteTopic} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss}/>}
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney}/>} 
       {active==='map'&&<MapPage worlds={WORLDS} setActive={setActive} level={level} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea} activeLocation={activeLocation} setActiveLocation={setActiveLocation} locationProgress={locationProgress} completeLocationQuest={completeLocationQuest} resolveLocationEncounter={resolveLocationEncounter}/>}
-      {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} callCompanion={callCompanion} companionBonds={companionBonds} companionUses={companionUses}/>}
+      {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic}/>}
       {active==='realm'&&<RealmPage level={level} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive}/>} />
       
       {showQuest&&<div className="modal-backdrop" onClick={()=>setShowQuest(false)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setShowQuest(false)}><X/></button><span className="eyebrow">NEW QUEST</span><h2>Add a quest to your journal</h2><form onSubmit={addQuest}><input autoFocus value={newQuest} onChange={e=>setNewQuest(e.target.value)} placeholder="e.g. Walk to class instead of taking the bus"/><button className="primary" type="submit">Accept Quest <Sword size={16}/></button></form></div></div>}
@@ -1129,13 +942,11 @@ function LocationPage({area,progress,onBack,onQuest,onEncounter}){
 function WorldCard({world,onClick,large=false,locked=false}){const Icon=world.icon;return <button className={'world-card panel '+(large?'large ':'')+(locked?'locked':'')} onClick={onClick} disabled={locked}><div className="world-art"><Icon size={large?38:28}/><span>{world.stat}</span></div><div><h3>{locked?'🔒 ':''}{world.name}</h3><p>{locked?'Unlock at level '+world.unlockLevel:world.desc}</p></div><span className="circle-btn">{locked?'🔒':<ChevronRight size={17}/>}</span></button>}
 
 function CharacterPage({character,level,xp,gold,stats,openCharacterEditor}){return <div className="hero-character-section"><div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:(xp%250)/250*100+'%'}}/></div><span>{xp%250} / 250 XP</span><strong className="sheet-gold">◈ {gold} gold</strong></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div><div className="stat-cards">{stats.map(([label,value,name,Icon])=><div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name}</small></div>)}</div><div className="panel character-rules"><span className="eyebrow">HOW YOUR HERO GROWS</span><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> glow-up quests</div></div></div>}
-function HeroPage({character,level,xp,gold,stats,openCharacterEditor,rewards,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic,callCompanion,companionBonds,companionUses}){
- return <div className="content hero-page"><PageIntro eyebrow="YOUR ADVENTURER" title="The Hero's Hall" text="Your character, growing strengths, treasures, companions, and real-life rewards—all in one place."/><CharacterPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor}/><InventoryPage gold={gold} rewards={rewards} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} callCompanion={callCompanion} companionBonds={companionBonds} companionUses={companionUses}/></div>
+function HeroPage({character,level,xp,gold,stats,openCharacterEditor,rewards,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic}){
+ return <div className="content hero-page"><PageIntro eyebrow="YOUR ADVENTURER" title="The Hero's Hall" text="Your character, growing strengths, treasures, companions, and real-life rewards—all in one place."/><CharacterPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor}/><InventoryPage gold={gold} rewards={rewards} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic}/></div>
 }
 
-function CompanionCollection({companions,companionBonds,companionUses,callCompanion}){
- const today=new Date().toISOString().slice(0,10)
- return <CompanionCollection companions={companions} companionBonds={companionBonds} companionUses={companionUses} callCompanion={callCompanion}/><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section><section className="relic-section"><div className="section-head"><div><span className="eyebrow">ATTUNEMENT</span><h2>Relics with a purpose</h2><p className="muted">Some story treasures can be attuned instead of merely collected. Each one becomes a permanent part of your hero.</p></div></div><div className="relic-grid">{relics.length?relics.map(item=>{const relic=RELIC_INFO[item];return <article className="panel relic-card" key={item}><div className="relic-icon">{relic.icon}</div><div><b>{relic.name}</b><p>{relic.desc}</p><small>+{relic.amount} {relic.statName}</small></div><button className="primary" onClick={()=>attuneRelic(item)}>Attune</button></article>}):<div className="panel relic-empty">Story relics will appear here as the Atlas entrusts them to you.</div>}</div></section></div>}
+function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic}){const relics=[...new Set(inventory.filter(item=>RELIC_INFO[item]))];const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]||EXTRA_ACHIEVEMENTS[id]).filter(Boolean);return <div className="hero-inventory-section"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?companions.join(' · '):'No companion yet.'}</small></div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section><section className="relic-section"><div className="section-head"><div><span className="eyebrow">ATTUNEMENT</span><h2>Relics with a purpose</h2><p className="muted">Some story treasures can be attuned instead of merely collected. Each one becomes a permanent part of your hero.</p></div></div><div className="relic-grid">{relics.length?relics.map(item=>{const relic=RELIC_INFO[item];return <article className="panel relic-card" key={item}><div className="relic-icon">{relic.icon}</div><div><b>{relic.name}</b><p>{relic.desc}</p><small>+{relic.amount} {relic.statName}</small></div><button className="primary" onClick={()=>attuneRelic(item)}>Attune</button></article>}):<div className="panel relic-empty">Story relics will appear here as the Atlas entrusts them to you.</div>}</div></section></div>}
 
 
 function RealmPage({level,timeLabel,isNight,town,upgradeTown,questChains,completeChainStep,realmBosses,strikeRealmBoss,equipment,equipmentCatalog,buyEquipment,equipItem,companions,discoveries,discoverRealm,setActive}){
@@ -1162,7 +973,7 @@ function StoryPage({campaign,storyEncounter,resolveStoryChoice,setActive}){
  const unlocked=(earned.xp||0)>=100&&(earned.quests||0)>=3
  return <div className="content realm-page">
   <PageIntro eyebrow="CAMPAIGN JOURNAL" title="The Shattered Atlas" text="An enchanted atlas is breaking apart. Its roads, memories, and hidden places are disappearing—and Lyra the Stargazer believes you can help uncover why."/>
-  <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {campaign.chapter===1?'The Missing Keeper':campaign.chapter===2?'Roads Beneath the Stars':campaign.chapter===3?'The Keeper’s Echo':campaign.chapter===4?'The Lost Town':campaign.chapter===5?'The Keeper’s Circle':campaign.chapter===6?'The Second Keep':campaign.chapter===7?'The Seventh Page':campaign.chapter===8?'The Hand Behind the Ink':'The Cartographer’s Shadow'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
+  <div className="realm-banner panel"><div><span className="eyebrow">CURRENT CHAPTER</span><h2>Chapter {campaign.chapter||1} · {campaign.chapter===1?'The Missing Keeper':campaign.chapter===2?'Roads Beneath the Stars':campaign.chapter===3?'The Keeper’s Echo':'A New Horizon'}</h2><p>Every decision is remembered. Your path shapes Lyra’s trust, the Keep’s reputation, and which clues the Atlas reveals next.</p></div><div className="realm-level">✦ <b>{campaign.relationship||0}</b><small>Lyra bond</small></div></div>
   <div className="stat-cards">
    <div className="panel stat-card"><Sparkles/><span>LYRA BOND</span><strong>{campaign.relationship||0}</strong><small>Trust built through choices</small></div>
    <div className="panel stat-card"><Crown/><span>KEEP REPUTATION</span><strong>{campaign.reputation||0}</strong><small>How the realm sees your actions</small></div>
