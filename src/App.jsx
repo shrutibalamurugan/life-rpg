@@ -389,7 +389,7 @@ export default function App() {
   const [exploredAreas,setExploredAreas] = useState(() => load('explored-areas', []))
   const [locationProgress,setLocationProgress] = useState(() => load('location-progress', {}))
   const [activeLocation,setActiveLocation] = useState(null)
-  const [campaign,setCampaign] = useState(() => load('campaign', {chapter:1,flags:[],choices:[],relationship:0,reputation:0,lastEncounterDate:'',lastEncounterAt:'',productivity:{xp:0,quests:0}}))
+  const [campaign,setCampaign] = useState(() => load('campaign', {chapter:1,flags:[],choices:[],relationship:0,reputation:0,lastEncounterDate:'',lastEncounterAt:'',productivityDate:getESTDateKey(),productivity:{xp:0,quests:0}}))
   const [storyEncounter,setStoryEncounter] = useState(() => load('story-encounter', null))
   const [selectedNpc,setSelectedNpc] = useState(null)
   const [realmTime,setRealmTime] = useState(() => new Date())
@@ -431,7 +431,7 @@ export default function App() {
     if(data.discoveries)setDiscoveries(data.discoveries)
     if(data.exploredAreas)setExploredAreas(data.exploredAreas)
     if(data.locationProgress)setLocationProgress(data.locationProgress)
-    if(data.campaign)setCampaign({...data.campaign,lastEncounterAt:data.campaign.lastEncounterAt||''})
+    if(data.campaign)setCampaign({...data.campaign,lastEncounterAt:data.campaign.lastEncounterAt||'',productivityDate:data.campaign.productivityDate||data.campaign.lastEncounterDate||getESTDateKey()})
     if(data.storyEncounter)setStoryEncounter(data.storyEncounter)
     if(data.weightJourney)setWeightJourney(data.weightJourney)
   }
@@ -552,7 +552,7 @@ export default function App() {
     const scene=getCampaignScene(campaign)
     if(!scene)return
     setStoryEncounter({...scene,date:today,resolved:false})
-    setCampaign(c=>({...c,lastEncounterDate:today,productivity:{xp:0,quests:0}}))
+    setCampaign(c=>({...c,lastEncounterDate:today}))
   },[discoveries,campaign.flags,campaign.lastEncounterDate,storyEncounter?.resolved])
 
   const level=Math.floor(xp/250)+1, levelXp=xp%250, progress=levelXp/250*100
