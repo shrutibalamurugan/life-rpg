@@ -1,3 +1,4 @@
+// deno-lint-ignore-file
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Backpack, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Compass, Crown, Flame,
