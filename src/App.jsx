@@ -126,6 +126,13 @@ const EXTRA_ACHIEVEMENTS = {
   'pathfinder': {name:'Pathfinder',icon:'🧭',desc:'Discovered a new place on the realm map.'}
 }
 
+const COMPANION_INFO = {
+  '🦊 Moss the Fox': {icon:'🦊',name:'Moss the Fox',title:'The Lucky Scout',personality:'Mischievous, bright-eyed, and always three steps ahead.',passive:'+5 gold whenever you complete a real-life quest.'},
+  '🐦 Edda’s Raven': {icon:'🐦',name:'Edda’s Raven',title:'The Archive Scribe',personality:'Quiet and observant, with an uncanny memory for unfinished pages.',passive:'+5 XP on focused study quests.'},
+  '🦉 Orin’s Owl': {icon:'🦉',name:'Orin’s Owl',title:'The Nightwatcher',personality:'Calm, patient, and excellent at reminding you when rest matters.',passive:'+5 gold on rest and ritual quests.'},
+  '🦦 Mira’s Otter': {icon:'🦦',name:'Mira’s Otter',title:'The River Companion',personality:'Playful and energetic, turning every walk into a tiny expedition.',passive:'+5 gold on movement and location quests.'}
+}
+
 const RELIC_INFO = {
   '✨ Keeper’s Star': {name:'Keeper’s Star',icon:'✨',stat:'SPI',statName:'Spirit',desc:'A star-shaped promise from Lyra. Attuning it permanently strengthens your Spirit.',amount:1},
   '🛡️ Atlas Ward': {name:'Atlas Ward',icon:'🛡️',stat:'DIS',statName:'Discipline',desc:'A protective mark for those who chose to guard the Atlas first.',amount:1},
@@ -292,6 +299,7 @@ export default function App() {
   const [daily,setDaily] = useState(() => load('daily', {date:'',completed:[],bonusClaimed:false}))
   const [achievements,setAchievements] = useState(() => load('achievements', []))
   const [companions,setCompanions] = useState(() => load('companions', []))
+  const [companionBonds,setCompanionBonds] = useState(() => load('companion-bonds', {}))
   const [inventory,setInventory] = useState(() => load('inventory', []))
   const [event,setEvent] = useState(() => load('event', {date:'',title:'',body:'',options:[],resolved:false}))
   const [villagerQuests,setVillagerQuests] = useState(() => load('villager-quests', {date:'',active:[],completed:[]}))
@@ -332,6 +340,7 @@ export default function App() {
     if(data.daily)setDaily(data.daily)
     if(data.achievements)setAchievements(data.achievements)
     if(data.companions)setCompanions(data.companions)
+    if(data.companionBonds)setCompanionBonds(data.companionBonds)
     if(data.inventory)setInventory(data.inventory)
     if(data.event)setEvent(data.event)
     if(data.villagerQuests)setVillagerQuests(data.villagerQuests)
@@ -360,7 +369,7 @@ export default function App() {
     return ()=>{cancelled=true}
   },[session?.user?.id])
 
-  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney}
+  const cloudData={version:2,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -451,6 +460,8 @@ export default function App() {
   ],[statBonus,gearBonus,townBonus])
   const timeHour=realmTime.getHours(); const isNight=timeHour<7||timeHour>=19; const timeLabel=isNight?'🌙 Nightfall':'☀️ Daylight'; const dayLabel=realmTime.toLocaleDateString(undefined,{weekday:'long'}).toUpperCase();
   const companionGoldBonus=companions.includes('🦊 Moss the Fox')?5:0
+  const companionQuestGoldBonus=(type)=>((companions.includes('🦉 Orin’s Owl')&&(type==='rest'||type==='ritual'))||(companions.includes('🦦 Mira’s Otter')&&(type==='body'||type==='location')))?5:0
+  function bondCompanions(){setCompanionBonds(b=>Object.fromEntries(Object.entries(b).map(([id,v])=>[id,(v||0)+1])))}
   const completed=quests.filter(q=>q.done).length
   const todayKey=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})()
   const dailyQuests=[
@@ -644,7 +655,7 @@ export default function App() {
     if(!area||!exploredAreas.includes(areaId)||progress.questDone)return
     const next={...progress,questDone:true}
     setLocationProgress(p=>({...p,[areaId]:next}))
-    setXp(v=>v+area.quest.xp);setGold(g=>g+area.quest.gold+companionGoldBonus)
+    setXp(v=>v+area.quest.xp);setGold(g=>g+area.quest.gold+companionGoldBonus+companionQuestGoldBonus('location'));bondCompanions()
     recordProductivityProgress(area.quest.xp,1)
     notify('Location quest complete! +'+area.quest.xp+' XP · +'+area.quest.gold+' gold')
     finishExplorationArea(areaId,next)
@@ -669,7 +680,7 @@ export default function App() {
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
     setQuests(xs=>xs.filter(x=>x.id!==id))
-    setXp(x=>x+q.xp);recordProductivityProgress(q.xp,1); setGold(g=>g+q.gold+companionGoldBonus)
+    setXp(x=>x+q.xp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus);bondCompanions()
     notify(`Journal quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
   function addQuest(e){
@@ -776,7 +787,7 @@ export default function App() {
       {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} topicDraft={topicDraft} setTopicDraft={setTopicDraft} addTopic={addTopic} editingTopic={editingTopic} setEditingTopic={setEditingTopic} saveTopic={saveTopic} deleteTopic={deleteTopic} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss}/>}
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney}/>} 
       {active==='map'&&<MapPage worlds={WORLDS} setActive={setActive} level={level} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea} activeLocation={activeLocation} setActiveLocation={setActiveLocation} locationProgress={locationProgress} completeLocationQuest={completeLocationQuest} resolveLocationEncounter={resolveLocationEncounter}/>}
-      {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic}/>}
+      {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} companionBonds={companionBonds}/>}
       {active==='realm'&&<RealmPage level={level} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive}/>} />
       
       {showQuest&&<div className="modal-backdrop" onClick={()=>setShowQuest(false)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setShowQuest(false)}><X/></button><span className="eyebrow">NEW QUEST</span><h2>Add a quest to your journal</h2><form onSubmit={addQuest}><input autoFocus value={newQuest} onChange={e=>setNewQuest(e.target.value)} placeholder="e.g. Walk to class instead of taking the bus"/><button className="primary" type="submit">Accept Quest <Sword size={16}/></button></form></div></div>}
@@ -946,7 +957,7 @@ function HeroPage({character,level,xp,gold,stats,openCharacterEditor,rewards,buy
  return <div className="content hero-page"><PageIntro eyebrow="YOUR ADVENTURER" title="The Hero's Hall" text="Your character, growing strengths, treasures, companions, and real-life rewards—all in one place."/><CharacterPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor}/><InventoryPage gold={gold} rewards={rewards} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic}/></div>
 }
 
-function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic}){const relics=[...new Set(inventory.filter(item=>RELIC_INFO[item]))];const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]||EXTRA_ACHIEVEMENTS[id]).filter(Boolean);return <div className="hero-inventory-section"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?companions.join(' · '):'No companion yet.'}</small></div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section><section className="relic-section"><div className="section-head"><div><span className="eyebrow">ATTUNEMENT</span><h2>Relics with a purpose</h2><p className="muted">Some story treasures can be attuned instead of merely collected. Each one becomes a permanent part of your hero.</p></div></div><div className="relic-grid">{relics.length?relics.map(item=>{const relic=RELIC_INFO[item];return <article className="panel relic-card" key={item}><div className="relic-icon">{relic.icon}</div><div><b>{relic.name}</b><p>{relic.desc}</p><small>+{relic.amount} {relic.statName}</small></div><button className="primary" onClick={()=>attuneRelic(item)}>Attune</button></article>}):<div className="panel relic-empty">Story relics will appear here as the Atlas entrusts them to you.</div>}</div></section></div>}
+function InventoryPage({gold,rewards,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic,companionBonds}){const relics=[...new Set(inventory.filter(item=>RELIC_INFO[item]))];const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]||EXTRA_ACHIEVEMENTS[id]).filter(Boolean);return <div className="hero-inventory-section"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid">{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card companion-collection"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?'Your companions are growing alongside you.':'No companion yet.'}</small>{companions.map(id=>{const info=COMPANION_INFO[id];if(!info)return null;return <div className="companion-mini" key={id}><span>{info.icon}</span><div><b>{info.name}</b><small>{info.title} · Bond {companionBonds[id]||0}</small><p>{info.personality}</p><em>{info.passive}</em></div></div>})}</div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section><section className="relic-section"><div className="section-head"><div><span className="eyebrow">ATTUNEMENT</span><h2>Relics with a purpose</h2><p className="muted">Some story treasures can be attuned instead of merely collected. Each one becomes a permanent part of your hero.</p></div></div><div className="relic-grid">{relics.length?relics.map(item=>{const relic=RELIC_INFO[item];return <article className="panel relic-card" key={item}><div className="relic-icon">{relic.icon}</div><div><b>{relic.name}</b><p>{relic.desc}</p><small>+{relic.amount} {relic.statName}</small></div><button className="primary" onClick={()=>attuneRelic(item)}>Attune</button></article>}):<div className="panel relic-empty">Story relics will appear here as the Atlas entrusts them to you.</div>}</div></section></div>}
 
 
 function RealmPage({level,timeLabel,isNight,town,upgradeTown,questChains,completeChainStep,realmBosses,strikeRealmBoss,equipment,equipmentCatalog,buyEquipment,equipItem,companions,discoveries,discoverRealm,setActive}){
