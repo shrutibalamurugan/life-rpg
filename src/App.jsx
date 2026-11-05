@@ -646,7 +646,9 @@ export default function App() {
     setLocationProgress(p=>({...p,[areaId]:{...(p[areaId]||{}),discoveryClaimed:true}}))
     if(progress.clueItem){
       setInventory(items=>{const index=items.indexOf(progress.clueItem);const without=index>=0?items.filter((_,i)=>i!==index):items;return without.includes(area.rewardItem)?without:[...without,area.rewardItem]})
-      setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder')
+      setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder');bondCompanions()
+      const companionReward=areaId==='whispering-ruins'?'🐦 Edda’s Raven':areaId==='moonlit-observatory'?'🦉 Orin’s Owl':areaId==='sunken-causeway'?'🦦 Mira’s Otter':null
+      if(companionReward)setCompanions(items=>items.includes(companionReward)?items:[...items,companionReward])
       notify(area.name+' fully explored! Clue used · +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
     }else{
       notify(area.name+' fully explored! Your path is complete.')
@@ -694,7 +696,7 @@ export default function App() {
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
     setQuests(xs=>xs.filter(x=>x.id!==id))
-    setXp(x=>x+q.xp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus);bondCompanions()
+    setXp(x=>x+q.xp+(companions.includes('🐦 Edda’s Raven')?5:0));recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus);bondCompanions()
     notify(`Journal quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
   function addQuest(e){
