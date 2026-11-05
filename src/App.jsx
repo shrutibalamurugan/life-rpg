@@ -232,6 +232,209 @@ function getCampaignScene(campaign){
     ]
   }
 
+
+  // The Atlas is designed as a long-running campaign. After the first arc,
+  // each encounter advances only after real-life productivity progress and
+  // remains available until the player chooses. New arcs can be appended here
+  // without changing the existing save structure.
+  const EXTENDED_ATLAS_SCENES = [
+    {
+      id:'horizon-signal',title:'The Signal Beyond the Horizon',chapter:4,
+      body:'Three nights after the Atlas falls quiet, a new star appears above the blank edge of the map. It is not a star at all. It is a signal—three pulses, then silence. Lyra recognizes the pattern from the Keeper’s oldest notes.',
+      complete:'horizon-signal-seen',
+      choices:[
+        {label:'Answer the signal with a light of your own',flags:['horizon-signal-seen','signal-answered'],relationship:2,reputation:1,reward:{xp:90,gold:45,item:'🔦 Signal Lantern'},chapter:4,epilogue:'Your light answers. Far beyond the map, something answers back.'},
+        {label:'Record the signal and wait for another pulse',flags:['horizon-signal-seen','signal-recorded'],relationship:1,reputation:2,reward:{xp:90,gold:45,item:'📜 Signal Record'},chapter:4,epilogue:'You resist the urge to chase a mystery blindly. The Atlas marks your patience with a new silver road.'}
+      ]
+    },
+    {
+      id:'city-without-roads',title:'The City Without Roads',chapter:4,
+      body:'The signal leads to a city drawn on the Atlas but absent from every ordinary map. Its gates are open. Its streets are empty. Every doorway bears the same symbol: a circle with one road deliberately erased.',
+      complete:'city-without-roads',
+      choices:[
+        {label:'Enter the silent city',flags:['city-without-roads','city-entered'],relationship:1,reputation:2,reward:{xp:95,gold:50,item:'🏙️ City Seal'},chapter:4,epilogue:'Inside, you find warm lamps still burning. Someone expected travelers to return.'},
+        {label:'Study the erased road from outside',flags:['city-without-roads','city-mapped'],relationship:2,reputation:1,reward:{xp:95,gold:50,item:'🧭 Erased Road Chart'},chapter:4,epilogue:'You trace the missing road without crossing the gate. It points not inward, but underneath the city.'}
+      ]
+    },
+    {
+      id:'empty-council',title:'The Council of Empty Chairs',chapter:4,
+      body:'At the center of the city stands a council chamber with twelve chairs. Eleven are empty. The twelfth has a fresh page resting on it, written in the Keeper’s hand: “A world is not preserved by one person.”',
+      complete:'empty-council',
+      choices:[
+        {label:'Invite the Keep to send representatives',flags:['empty-council','keep-representatives'],relationship:2,reputation:3,reward:{xp:100,gold:55,item:'🏰 Council Seal'},chapter:4,epilogue:'For the first time, the mystery becomes something the whole Keep can help carry.'},
+        {label:'Sit in the empty chair yourself',flags:['empty-council','atlas-seat'],relationship:3,reputation:1,reward:{xp:100,gold:55,item:'🪑 Keeper’s Seat Mark'},chapter:4,epilogue:'The chair warms beneath you. A voice whispers: “Then remember that every choice has a cost.”'}
+      ]
+    },
+    {
+      id:'under-city',title:'The Road Beneath the City',chapter:4,
+      body:'Beneath the council chamber you find the erased road. It descends into a tunnel lined with maps of places that no longer exist. Some are beautiful. Some are warnings.',
+      complete:'under-city',
+      choices:[
+        {label:'Follow the road into the dark',flags:['under-city','under-city-entered'],relationship:1,reputation:1,reward:{xp:105,gold:60,item:'🌑 Underroad Token'},chapter:4,epilogue:'The tunnel opens beneath a sky that is upside down.'},
+        {label:'Bring a record of the lost places back to the Keep',flags:['under-city','lost-places-recorded'],relationship:2,reputation:3,reward:{xp:105,gold:60,item:'📚 Lost Places Ledger'},chapter:4,epilogue:'You refuse to let forgotten places vanish twice. The Ledger becomes a new part of the Keep’s archive.'}
+      ]
+    },
+    {
+      id:'upside-down-sky',title:'The Sky Beneath the World',chapter:5,
+      body:'The underroad ends beneath an impossible sky. Constellations drift below your feet, and one of them forms the shape of the Keep. Lyra whispers that the Atlas may not be a map of the world at all—it may be a map of worlds.',
+      complete:'upside-down-sky',
+      choices:[
+        {label:'Trust Lyra’s new theory',flags:['upside-down-sky','worlds-theory'],relationship:3,reputation:1,reward:{xp:110,gold:60,item:'🌌 Worldglass Lens'},chapter:5,epilogue:'The lens reveals another realm layered behind your own.'},
+        {label:'Demand evidence before believing it',flags:['upside-down-sky','worlds-proof'],relationship:1,reputation:3,reward:{xp:110,gold:60,item:'🔬 Cartographer’s Lens'},chapter:5,epilogue:'A second moon appears in the lens. You have your proof—and a new question.'}
+      ]
+    },
+    {
+      id:'first-door',title:'The Door With No Handle',chapter:5,
+      body:'The Worldglass Lens reveals a door floating in the dark. There is no handle, lock, or hinge. Across it is a single sentence: “Only a life in motion can open what a map cannot.”',
+      complete:'first-door',
+      choices:[
+        {label:'Place your hand against the door',flags:['first-door','door-touched'],relationship:2,reputation:2,reward:{xp:115,gold:65,item:'🚪 Threshold Sigil'},chapter:5,epilogue:'The door recognizes you. Somewhere beyond it, footsteps begin.'},
+        {label:'Write a question on the door',flags:['first-door','door-question'],relationship:3,reputation:2,reward:{xp:115,gold:65,item:'✒️ Questioning Quill'},chapter:5,epilogue:'Your question disappears into the wood. A different question appears in reply: “What are you building?”'}
+      ]
+    },
+    {
+      id:'keeper-question',title:'What Are You Building?',chapter:5,
+      body:'The Atlas refuses to show another road until you answer the question. Not with words—with evidence. Lyra points toward the Keep. “Perhaps the Atlas has been asking what kind of world your choices are making.”',
+      complete:'keeper-question',
+      choices:[
+        {label:'Build something that helps other travelers',flags:['keeper-question','build-for-others'],relationship:3,reputation:3,reward:{xp:120,gold:70,item:'🛠️ Wayfarer’s Token'},chapter:5,epilogue:'The Atlas records the Keep’s growing lights. Your world is becoming part of the map.'},
+        {label:'Protect a small place worth returning to',flags:['keeper-question','protect-home'],relationship:2,reputation:4,reward:{xp:120,gold:70,item:'🏠 Hearthstone'},chapter:5,epilogue:'A tiny golden square appears on the map around the Keep. Home is now a destination.'}
+      ]
+    },
+    {
+      id:'the-returning-road',title:'The Road That Returns',chapter:5,
+      body:'A road appears that loops endlessly back to the Keep. At first it seems useless. Then you notice the travelers on it: every one is carrying something they thought they had lost.',
+      complete:'returning-road',
+      choices:[
+        {label:'Help the travelers find what they lost',flags:['returning-road','lost-travelers'],relationship:2,reputation:4,reward:{xp:125,gold:70,item:'🧳 Traveler’s Compass'},chapter:5,epilogue:'The road shortens for every person you help. Perhaps roads change when people do.'},
+        {label:'Follow the road to discover where it truly begins',flags:['returning-road','road-origin'],relationship:3,reputation:2,reward:{xp:125,gold:70,item:'🪢 Origin Thread'},chapter:5,epilogue:'The road begins at a place that should not exist: the first page of the Atlas.'}
+      ]
+    },
+    {
+      id:'first-page',title:'The First Page',chapter:5,
+      body:'You reach the first page and find no ancient kingdom, no prophecy, and no grand throne. You find a traveler drawing a road by hand. The traveler looks exactly like the Keeper did in the mirror.',
+      complete:'first-page',
+      choices:[
+        {label:'Ask whether this is where the Atlas began',flags:['first-page','atlas-origin-asked'],relationship:2,reputation:2,reward:{xp:130,gold:75,item:'📖 First Page Fragment'},chapter:5,epilogue:'The traveler smiles. “The Atlas began whenever someone decided their next step mattered.”'},
+        {label:'Ask who drew the first road',flags:['first-page','first-road-asked'],relationship:3,reputation:1,reward:{xp:130,gold:75,item:'✏️ First Road Pencil'},chapter:5,epilogue:'The traveler hands you the pencil. “No one owns the first road. Everyone adds to it.”'}
+      ]
+    },
+    {
+      id:'many-keepers',title:'The Many Keepers',chapter:6,
+      body:'The truth is stranger than Lyra expected. There was never one Keeper. There have been hundreds—ordinary travelers who each carried the Atlas for a while, adding roads and protecting choices.',
+      complete:'many-keepers',
+      choices:[
+        {label:'Accept the tradition and join it',flags:['many-keepers','keeper-tradition'],relationship:3,reputation:3,reward:{xp:135,gold:80,item:'🛡️ Waykeeper Badge'},chapter:6,epilogue:'The badge bears no name. It is meant to be worn by whoever is carrying the Atlas today.'},
+        {label:'Ask why the tradition was hidden',flags:['many-keepers','keeper-secret'],relationship:2,reputation:4,reward:{xp:135,gold:80,item:'🔐 Keeper Archive Key'},chapter:6,epilogue:'The answer is waiting in an archive even older than the Keep.'}
+      ]
+    },
+    {
+      id:'archive-below',title:'The Archive Below',chapter:6,
+      body:'The hidden archive contains shelves of unfinished lives: plans abandoned, journeys delayed, letters never sent, books never opened. None are condemned. They are simply waiting.',
+      complete:'archive-below',
+      choices:[
+        {label:'Preserve the unfinished lives',flags:['archive-below','preserve-unfinished'],relationship:2,reputation:4,reward:{xp:140,gold:80,item:'📚 Unfinished Ledger'},chapter:6,epilogue:'The archive lights up. Nothing unfinished is treated as worthless anymore.'},
+        {label:'Find the lives that are ready to begin again',flags:['archive-below','begin-again'],relationship:3,reputation:2,reward:{xp:140,gold:80,item:'🌱 Second-Chance Seed'},chapter:6,epilogue:'Several pages glow. Their roads are not gone—they are waiting for a traveler to return.'}
+      ]
+    },
+    {
+      id:'the-false-ending',title:'The False Ending',chapter:6,
+      body:'At the bottom of the archive you find a final page labeled THE END. Lyra laughs when she sees it. “That is either very dramatic—or very suspicious.” The page is already beginning to erase itself.',
+      complete:'false-ending',
+      choices:[
+        {label:'Tear out the false ending',flags:['false-ending','ending-rejected'],relationship:3,reputation:3,reward:{xp:145,gold:85,item:'✂️ Severed Ending'},chapter:6,epilogue:'The page falls apart into harmless dust. The Atlas has no ending anymore.'},
+        {label:'Read the ending before it disappears',flags:['false-ending','ending-read'],relationship:2,reputation:4,reward:{xp:145,gold:85,item:'📜 False Ending'],chapter:6,epilogue:'It describes a world where every road is predetermined. You understand now what the Atlas has been fighting.'}
+      ]
+    },
+    {
+      id:'the-erasure',title:'The Erasure',chapter:6,
+      body:'For the first time, the Atlas is attacked while you are holding it. Roads vanish in real time. Lyra calls for the Keeper’s old defense, but the page refuses to respond.',
+      complete:'the-erasure',
+      choices:[
+        {label:'Hold the Atlas steady and keep working',flags:['the-erasure','atlas-held'],relationship:3,reputation:3,reward:{xp:150,gold:90,item:'🛡️ Atlas Anchor'},chapter:6,epilogue:'The missing roads return one by one. They were not destroyed; they were waiting for someone to refuse the erasure.'},
+        {label:'Let the Atlas change and follow the new road',flags:['the-erasure','new-road-followed'],relationship:4,reputation:2,reward:{xp:150,gold:90,item:'🌀 Unmapped Thread'},chapter:6,epilogue:'A road appears that no Keeper has ever recorded. The Atlas is changing because you are willing to change with it.'}
+      ]
+    },
+    {
+      id:'lyra-choice',title:'Lyra’s Choice',chapter:6,
+      body:'Lyra finally admits what she has never told you: the Atlas once offered her a chance to erase one painful memory. She never accepted. Now the Atlas offers it again.',
+      complete:'lyra-choice',
+      choices:[
+        {label:'Tell Lyra she does not have to erase anything',flags:['lyra-choice','lyra-keeps-memory'],relationship:5,reputation:2,reward:{xp:155,gold:90,item:'💠 Memory Crystal'},chapter:6,epilogue:'Lyra closes the page. “Thank you,” she says. “I think remembering is part of being alive.”'},
+        {label:'Let Lyra decide without trying to guide her',flags:['lyra-choice','lyra-decides'],relationship:3,reputation:4,reward:{xp:155,gold:90,item:'🌙 Moonlit Memory'],chapter:6,epilogue:'Lyra chooses for herself. Whatever she decides, the Atlas respects the choice.'}
+      ]
+    },
+    {
+      id:'the-cartographers',title:'The Cartographers Arrive',chapter:7,
+      body:'News of the restored roads spreads. Travelers, scholars, healers, and wanderers arrive at the Keep carrying maps of their own. They want to know who is responsible for the roads returning.',
+      complete:'cartographers-arrive',
+      choices:[
+        {label:'Welcome them and share what you learned',flags:['cartographers-arrive','open-cartographers'],relationship:3,reputation:5,reward:{xp:160,gold:95,item:'🗺️ Cartographers’ Charter'},chapter:7,epilogue:'The Keep becomes a meeting place for people who once traveled alone.'},
+        {label:'Ask them to prove they can protect the roads',flags:['cartographers-arrive','test-cartographers'],relationship:2,reputation:5,reward:{xp:160,gold:95,item:'🛡️ Roadwarden Seal'},chapter:7,epilogue:'The newcomers accept the test. A new guild may be forming.'}
+      ]
+    },
+    {
+      id:'roadwarden',title:'The Roadwarden’s Trial',chapter:7,
+      body:'The first trial is not a battle. A young traveler has lost confidence halfway down a difficult road. The Atlas waits to see whether you understand what a Keeper actually protects.',
+      complete:'roadwarden-trial',
+      choices:[
+        {label:'Walk beside the traveler until they are ready',flags:['roadwarden-trial','walk-beside'],relationship:3,reputation:5,reward:{xp:165,gold:100,item:'🥾 Roadwarden Boots'},chapter:7,epilogue:'The traveler finishes the road. You realize protection can look like simply staying.'},
+        {label:'Give the traveler the map and let them choose',flags:['roadwarden-trial','give-map'],relationship:4,reputation:4,reward:{xp:165,gold:100,item:'🗺️ Shared Map'},chapter:7,epilogue:'The traveler chooses a harder road—and discovers they were capable of it.'}
+      ]
+    },
+    {
+      id:'the-keeper-house',title:'The Keeper House',chapter:7,
+      body:'The new cartographers build a small house beside the Keep. It is not a palace. It has a table, a kettle, shelves, and a wall where anyone may pin a road they discovered.',
+      complete:'keeper-house',
+      choices:[
+        {label:'Make it a place anyone can enter',flags:['keeper-house','open-keeper-house'],relationship:3,reputation:6,reward:{xp:170,gold:100,item:'🗝️ Open Door Key'},chapter:7,epilogue:'The door is never locked. The Keep gains a new kind of landmark.'},
+        {label:'Make it an archive for future Keepers',flags:['keeper-house','keeper-archive-house'],relationship:4,reputation:5,reward:{xp:170,gold:100,item:'📚 Keeper House Ledger'},chapter:7,epilogue:'The shelves begin filling with stories written by travelers who never thought their journeys mattered.'}
+      ]
+    },
+    {
+      id:'the-last-map',title:'The Last Map',chapter:7,
+      body:'At last, the Atlas reveals what looks like its final map. It shows every road you have helped restore—and one blank circle at the center. Lyra says the circle is not a place. It is a question.',
+      complete:'last-map',
+      choices:[
+        {label:'Ask what the question is',flags:['last-map','question-asked'],relationship:4,reputation:5,reward:{xp:175,gold:105,item:'❓ Atlas Question'},chapter:7,epilogue:'The Atlas writes: “What will you do with a world that is no longer broken?”'},
+        {label:'Leave the question unanswered for now',flags:['last-map','question-kept'],relationship:5,reputation:6,reward:{xp:175,gold:105,item:'⭕ Unanswered Circle'},chapter:7,epilogue:'The circle remains blank. For once, an unanswered question feels like freedom.'}
+      ]
+    },
+    {
+      id:'the-world-after',title:'The World After',chapter:8,
+      body:'The roads are restored. The Keep is thriving. The Atlas could close here—but instead it opens to a page showing your ordinary day: your routines, your work, your rest, your choices. Lyra looks at you and understands.',
+      complete:'world-after',
+      choices:[
+        {label:'Accept that the adventure belongs in ordinary life',flags:['world-after','ordinary-adventure'],relationship:5,reputation:6,reward:{xp:180,gold:110,item:'🌟 Everyday Star'},chapter:8,epilogue:'The Atlas stops predicting your road. It simply records that you are walking it.'},
+        {label:'Ask what lies beyond the restored world',flags:['world-after','beyond-world'],relationship:6,reputation:5,reward:{xp:180,gold:110,item:'🌌 Beyondworld Key'},chapter:8,epilogue:'A second atlas appears behind the first. Its cover is blank.'}
+      ]
+    },
+    {
+      id:'the-second-atlas',title:'The Second Atlas',chapter:8,
+      body:'The second atlas contains no roads at all. It contains doors. Each door seems to lead to a different future, and none can be opened by gold, level, or force.',
+      complete:'second-atlas',
+      choices:[
+        {label:'Open the door marked BEGIN AGAIN',flags:['second-atlas','begin-again-door'],relationship:5,reputation:5,reward:{xp:185,gold:115,item:'🌱 Beginning Key'},chapter:8,epilogue:'The door opens onto a sunrise. The road beyond it has not been written yet.'},
+        {label:'Open the door marked KEEP GOING',flags:['second-atlas','keep-going-door'],relationship:6,reputation:6,reward:{xp:185,gold:115,item:'🗝️ Continuance Key'},chapter:8,epilogue:'The door opens onto a road that extends beyond every border on the Atlas.'}
+      ]
+    },
+    {
+      id:'beyond-the-border',title:'Beyond the Border',chapter:8,
+      body:'You step beyond the final border. Nothing breaks. Nothing ends. The world simply becomes larger. Lyra laughs, the Keeper smiles, and the Atlas leaves its last page blank.',
+      complete:'beyond-border',
+      choices:[
+        {label:'Leave the page blank and keep exploring',flags:['beyond-border','ever-open'],relationship:6,reputation:7,reward:{xp:200,gold:125,item:'📖 Ever-Open Page'},chapter:8,epilogue:'The Atlas becomes a living journal. There will always be another road to discover.'},
+        {label:'Write one promise for every future road',flags:['beyond-border','ever-promise'],relationship:7,reputation:7,reward:{xp:200,gold:125,item:'✒️ Keeper’s Promise'},chapter:8,epilogue:'You write: “I will keep choosing.” The words remain, even as the map continues beyond them.'}
+      ]
+    }
+  ];
+
+  const nextExtended = EXTENDED_ATLAS_SCENES.find(scene=>!flags.has(scene.complete));
+  if(nextExtended) return {
+    ...nextExtended,
+    choices:nextExtended.choices.map(choice=>({...choice,flags:[...(choice.flags||[]),nextExtended.complete]}))
+  };
+
   return null
 }
 
