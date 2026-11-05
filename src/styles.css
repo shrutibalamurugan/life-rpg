@@ -401,3 +401,13 @@ nav button:hover{background:#292b31;color:#f1ead7}
 .companion-passive{margin:6px 0!important}
 .companion-card button{margin-top:5px}
 @media(max-width:700px){.companion-list{grid-template-columns:1fr}.companion-card{align-items:flex-start}}
+
+
+.companion-mini{display:flex;gap:10px;margin-top:10px;padding:9px;background:rgba(255,255,255,.025);border:1px solid rgba(214,183,117,.18)}
+.companion-mini>span{font-size:24px;line-height:1}
+.companion-mini>div{min-width:0}
+.companion-mini b{display:block;color:var(--cream);font-size:10px}
+.companion-mini small{display:block;color:var(--gold);font-size:8px;margin-top:2px}
+.companion-mini p{margin:5px 0;font-size:8px;line-height:1.4;color:var(--muted)}
+.companion-mini em{display:block;font-size:8px;color:var(--muted);line-height:1.4;font-style:normal}
+.companion-mini button{margin-top:7px}
