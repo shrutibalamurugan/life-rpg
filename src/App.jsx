@@ -225,6 +225,152 @@ function getCampaignScene(campaign){
     ]
   }
 
+  if(flags.has('name-on-the-page')&&!flags.has('elaria-bell'))return {
+    id:'elaria-bell',title:'The Bell Beneath Elaria',chapter:4,
+    body:'The next Atlas fragment points back to the Whispering Ruins. Beneath the old square, you find a bell that rings only when someone speaks the name Elaria aloud. When it rings, a hidden stairway opens—and on the wall is a list of names. Several are familiar. One belongs to someone who still lives in the Keep.',
+    choices:[
+      {label:'Copy the names before touching anything',flags:['elaria-bell','names-recorded','suspect-edda'],relationship:1,reputation:2,reward:{xp:90,gold:50,item:'🔔 Elarian Bell'},epilogue:'You preserve the names first. One has been carefully circled: Edda the Archivist. You do not know whether that makes her guilty—or simply important.'},
+      {label:'Ring the bell again and follow the hidden stair',flags:['elaria-bell','names-heard','suspect-orin'],relationship:1,reputation:1,reward:{xp:90,gold:50,item:'🗝️ Elarian Stair Key'},epilogue:'The bell rings twice. Somewhere far away, a telescope turns by itself. The stair leads toward a sealed chamber beneath the old roads.'}
+    ]
+  }
+  if(flags.has('elaria-bell')&&!flags.has('archivist-lie'))return {
+    id:'archivist-lie',title:'The Archivist’s Lie',chapter:4,
+    body:'Edda the Archivist insists Elaria was never a recognized settlement. Yet when you mention the bell, her composure cracks. She admits she once found a record of the town—but says someone ordered her to remove it from the Archive. She refuses to say who.',
+    choices:[
+      {label:'Believe Edda and ask who gave the order',flags:['archivist-lie','edda-questioned','suspect-corin'],relationship:1,reputation:2,reward:{xp:95,gold:50,item:'📚 Redacted Ledger'},epilogue:'Edda gives you a ledger with one page missing. The remaining ink contains a signature reduced to a single initial: C.'},
+      {label:'Accuse Edda of erasing Elaria herself',flags:['archivist-lie','edda-suspected'],relationship:0,reputation:3,reward:{xp:95,gold:50,item:'🕯️ Archive Wax Seal'},epilogue:'Edda is furious—but not frightened. “If I had erased Elaria,” she says, “you would not be standing here asking me about it.”'}
+    ]
+  }
+  if(flags.has('archivist-lie')&&!flags.has('star-witness'))return {
+    id:'star-witness',title:'A Witness in the Stars',chapter:4,
+    body:'Orin the Nightwatcher brings you to the Moonlit Observatory. A star chart from decades ago shows Elaria clearly. It also shows three figures standing beside the Atlas Keeper: Orin, Edda, and a third person whose name has been scraped away.',
+    choices:[
+      {label:'Ask Orin why he was there',flags:['star-witness','orin-questioned'],relationship:1,reputation:1,reward:{xp:100,gold:55,item:'⭐ Old Star Chart'},epilogue:'Orin admits he knew the Keeper long ago. He says the third figure was not a stranger—but he swears the Keeper trusted them more than anyone.'},
+      {label:'Ask who altered the chart',flags:['star-witness','chart-altered'],relationship:0,reputation:2,reward:{xp:100,gold:55,item:'🔭 Observatory Rubbing'},epilogue:'The altered ink is newer than the rest. Someone wanted the third figure erased, but the original impression remains in the paper.'}
+    ]
+  }
+  if(flags.has('star-witness')&&!flags.has('traveler-seal'))return {
+    id:'traveler-seal',title:'The Traveler’s Seal',chapter:5,
+    body:'A stranger arrives at the Keep wearing a silver clasp stamped with the same symbol found beneath the Atlas ink. They call themselves Sable, a traveler who has crossed roads that no longer exist. They know the name Elaria—and they know Lyra.',
+    choices:[
+      {label:'Invite Sable to the Keep',flags:['traveler-seal','sable-welcomed'],relationship:1,reputation:1,reward:{xp:105,gold:60,item:'🪙 Traveler’s Seal'},epilogue:'Sable accepts tea but avoids every question about the Atlas. Before leaving, they whisper: “Do not let the Keeper convince you that breaking the map was the same as saving the world.”'},
+      {label:'Follow Sable without revealing what you know',flags:['traveler-seal','sable-followed'],relationship:0,reputation:2,reward:{xp:105,gold:60,item:'🧭 Sable’s Route'},epilogue:'Sable leads you to a road that appears only at dusk. They vanish before you can ask where it ends.'}
+    ]
+  }
+  if(flags.has('traveler-seal')&&!flags.has('apprentice-confession'))return {
+    id:'apprentice-confession',title:'The Keeper’s Apprentice',chapter:5,
+    body:'The redacted ledger leads to Corin Vale, the Atlas Keeper’s former apprentice. Corin admits hiding a fragment inside the Keep years ago. “The Keeper told me never to return it,” he says. “Then one morning, they disappeared.”',
+    choices:[
+      {label:'Ask Corin what the Keeper feared',flags:['apprentice-confession','corin-trusted'],relationship:1,reputation:2,reward:{xp:110,gold:60,item:'🧩 Keeper’s Fragment'},epilogue:'Corin finally says the words he has avoided: “The Atlas had begun predicting choices before people made them.”'},
+      {label:'Ask Corin whether he helped break the Atlas',flags:['apprentice-confession','corin-suspected'],relationship:0,reputation:3,reward:{xp:110,gold:60,item:'✒️ Apprentice’s Note'},epilogue:'Corin admits he helped hide the fragments—but insists he never knew who was gathering them afterward.'}
+    ]
+  }
+  if(flags.has('apprentice-confession')&&!flags.has('moonwell-memory'))return {
+    id:'moonwell-memory',title:'The Moonwell Remembers',chapter:5,
+    body:'At the Moonwell, the new fragment unlocks a memory. You see the Keeper tearing pages from the Atlas while Edda, Orin, Corin, and a younger Lyra argue nearby. No one looks like a villain. Everyone looks terrified.',
+    choices:[
+      {label:'Watch the memory to the end',flags:['moonwell-memory','memory-watched'],relationship:2,reputation:1,reward:{xp:115,gold:65,item:'🌙 Memory Lantern'},epilogue:'The memory ends with Lyra saying, “If we cannot agree on what the Atlas should remember, perhaps it should remember nothing at all.”'},
+      {label:'Turn away before the memory finishes',flags:['moonwell-memory','memory-refused'],relationship:1,reputation:2,reward:{xp:115,gold:65,item:'💧 Moonwell Tear'},epilogue:'You refuse to let a memory decide what a living person did. The Moonwell goes still, as though it approves of your caution.'}
+    ]
+  }
+  if(flags.has('moonwell-memory')&&!flags.has('second-keep'))return {
+    id:'second-keep',title:'The Keep That Never Was',chapter:6,
+    body:'The Star Lens opens a doorway to the second Adventurer’s Keep. It is almost identical to yours, except the Chronicle lists a completely different history. In this version, Elaria still exists—and the Atlas Keeper never vanished.',
+    choices:[
+      {label:'Enter the second Keep',flags:['second-keep','parallel-keep'],relationship:1,reputation:1,reward:{xp:120,gold:70,item:'🪞 Keep Mirror Shard'},epilogue:'A familiar innkeeper greets you as if you have been expected for years. Then they ask the question you hoped no one would ask: “Which version of you are you?”'},
+      {label:'Study the doorway from your side',flags:['second-keep','parallel-watched'],relationship:1,reputation:2,reward:{xp:120,gold:70,item:'🗺️ Mirror Map'},epilogue:'You notice the second Keep is not another world. It is a possibility the Atlas preserved instead of reality.'}
+    ]
+  }
+  if(flags.has('second-keep')&&!flags.has('erased-name'))return {
+    id:'erased-name',title:'The Name That Was Removed',chapter:6,
+    body:'Inside the second Keep, you find a memorial with four names: Edda, Orin, Corin, and Lyra. A fifth name has been scraped away so completely that even the shape of the letters is gone. The same absence appears in your own Atlas.',
+    choices:[
+      {label:'Search the Archive for the missing name',flags:['erased-name','archive-search'],relationship:1,reputation:2,reward:{xp:125,gold:70,item:'📜 Name Rubbing'},epilogue:'The Archive contains a single reference to a person called the Cartographer. Every other mention has been erased.'},
+      {label:'Ask Lyra whether she knows the name',flags:['erased-name','lyra-name-question'],relationship:2,reputation:1,reward:{xp:125,gold:70,item:'🌟 Lyra’s Memory Shard'},epilogue:'Lyra goes silent. “I know the name,” she says. “I just do not know whether it was mine.”'}
+    ]
+  }
+  if(flags.has('erased-name')&&!flags.has('atlas-below'))return {
+    id:'atlas-below',title:'The Atlas Beneath the Keep',chapter:6,
+    body:'A hidden stair beneath the Adventurer’s Keep leads to a chamber older than the Keep itself. At its center is a stone table shaped like an open book. Six empty spaces surround a seventh sealed compartment.',
+    choices:[
+      {label:'Place your fragments into the six spaces',flags:['atlas-below','fragments-placed'],relationship:1,reputation:2,reward:{xp:130,gold:75,item:'🗿 Atlas Tablet'},epilogue:'The six spaces glow. The sealed seventh compartment remains dark—but you hear something breathing behind it.'},
+      {label:'Leave the fragments untouched and inspect the seal',flags:['atlas-below','seal-inspected'],relationship:1,reputation:3,reward:{xp:130,gold:75,item:'🔐 Seventh Seal Rubbing'},epilogue:'The seal bears a warning: “Do not complete the story before the traveler has chosen it.”'}
+    ]
+  }
+  if(flags.has('atlas-below')&&!flags.has('drowned-library'))return {
+    id:'drowned-library',title:'The Drowned Library',chapter:7,
+    body:'The Sunken Causeway opens into a library beneath the lake. Books float without getting wet. One shelf contains biographies of people who have not yet been born. Another contains stories of people everyone remembers—but who never existed.',
+    choices:[
+      {label:'Read the biographies of the unborn',flags:['drowned-library','future-books'],relationship:1,reputation:1,reward:{xp:135,gold:75,item:'📖 Future Chronicle'},epilogue:'One unfinished biography belongs to you. It contains choices you have not made yet.'},
+      {label:'Read the histories of the forgotten',flags:['drowned-library','lost-books'],relationship:2,reputation:2,reward:{xp:135,gold:75,item:'🕯️ Memory Lantern'],epilogue:'Elaria is here. So is the missing Cartographer. But the final page has been torn out.'}
+    ]
+  }
+  if(flags.has('drowned-library')&&!flags.has('keepers-door'))return {
+    id:'keepers-door',title:'The Door the Keeper Locked',chapter:7,
+    body:'The final shelf points toward a door beneath the Sunken Causeway. The lock opens with the Keeper’s Key. Behind it is not a prison cell, but a quiet room containing hundreds of letters the Keeper never sent.',
+    choices:[
+      {label:'Read the letters',flags:['keepers-door','letters-read'],relationship:1,reputation:2,reward:{xp:140,gold:80,item:'✉️ Keeper’s Letters'},epilogue:'The letters reveal that the Keeper was trying to warn several people at once. One letter is addressed simply: “To the one who finds me.”'},
+      {label:'Leave the letters sealed',flags:['keepers-door','letters-sealed'],relationship:2,reputation:3,reward:{xp:140,gold:80,item:'🗝️ Sealed Keeper’s Door'],epilogue:'You decide some truths belong to the person who wrote them. Behind the door, something clicks into place.'}
+    ]
+  }
+  if(flags.has('keepers-door')&&!flags.has('seventh-page'))return {
+    id:'seventh-page',title:'The Seventh Page',chapter:7,
+    body:'The sealed compartment finally opens. There is no prophecy inside. There is a blank page surrounded by notes from the Keeper. The page has one rule written across its edge: “The Atlas cannot invent a choice. It can only make a choice easier to remember.”',
+    choices:[
+      {label:'Ask what the blank page is for',flags:['seventh-page','page-questioned'],relationship:2,reputation:1,reward:{xp:145,gold:85,item:'📖 Seventh Page'},epilogue:'Lyra realizes the blank page is not empty. It is waiting for a story that has not happened yet.'},
+      {label:'Refuse to write on the page',flags:['seventh-page','page-protected'],relationship:1,reputation:3,reward:{xp:145,gold:85,item:'🛡️ Page Ward'},epilogue:'You protect the blank page. The Atlas shudders as though something outside it has noticed.'}
+    ]
+  }
+  if(flags.has('seventh-page')&&!flags.has('hand-behind-ink'))return {
+    id:'hand-behind-ink',title:'The Hand Behind the Ink',chapter:8,
+    body:'For the first time, you see the ink moving while no one touches the Atlas. It draws the same symbol found on Sable’s clasp, Corin’s ledger, and the oldest observatory chart. The clues finally converge—but they point to more than one person.',
+    choices:[
+      {label:'Confront the Keep’s suspects together',flags:['hand-behind-ink','suspects-confronted'],relationship:2,reputation:2,reward:{xp:150,gold:90,item:'🕵️ Conspiracy Dossier'},epilogue:'Edda, Orin, Corin, Sable, and Lyra each know part of the truth. None admits to rebuilding the Atlas. Someone is lying—or someone is being used.'},
+      {label:'Follow the ink instead of confronting anyone',flags:['hand-behind-ink','ink-followed'],relationship:1,reputation:1,reward:{xp:150,gold:90,item:'🖋️ Living Ink Vial'},epilogue:'The ink leads away from every suspect and toward the place where the Atlas was first created.'}
+    ]
+  }
+  if(flags.has('hand-behind-ink')&&!flags.has('origin-chamber'))return {
+    id:'origin-chamber',title:'The First Map',chapter:8,
+    body:'The trail ends in an underground chamber beneath the Astral Sanctum. Carved into the wall is the first map ever drawn. It does not show countries or roads. It shows choices: stay, leave, remember, forget, trust, doubt.',
+    choices:[
+      {label:'Study the first map',flags:['origin-chamber','map-studied'],relationship:2,reputation:1,reward:{xp:155,gold:90,item:'🗺️ First Map Fragment'},epilogue:'You realize the Atlas was never designed to control the world. It was designed to preserve the paths people chose.'},
+      {label:'Search for who altered the first map',flags:['origin-chamber','map-altered'],relationship:1,reputation:3,reward:{xp:155,gold:90,item:'🔎 Cartographer’s Evidence'},epilogue:'Someone added a new symbol centuries later: a hand writing over the map from outside the lines.'}
+    ]
+  }
+  if(flags.has('origin-chamber')&&!flags.has('keeper-return'))return {
+    id:'keeper-return',title:'The Keeper Returns',chapter:8,
+    body:'The Atlas Keeper finally steps out of the shadows. They are not trapped. They have been moving between the forgotten places, trying to stay ahead of the force rewriting the Atlas. “I shattered it because I thought the fragments would be safer apart,” they say. “I was wrong.”',
+    choices:[
+      {label:'Ask the Keeper who is rewriting it',flags:['keeper-return','keeper-accused'],relationship:1,reputation:2,reward:{xp:160,gold:95,item:'📜 Keeper’s Testimony'},epilogue:'The Keeper refuses to name anyone. “Because the hand behind the ink is not always a person.”'},
+      {label:'Ask the Keeper why they trusted Lyra',flags:['keeper-return','lyra-truth'],relationship:3,reputation:1,reward:{xp:160,gold:95,item:'🌙 Keeper’s Memory'},epilogue:'The Keeper tells you Lyra was present at the beginning—but her memory was deliberately divided so no one could use her as a key.'}
+    ]
+  }
+  if(flags.has('keeper-return')&&!flags.has('lyra-fracture'))return {
+    id:'lyra-fracture',title:'Lyra’s Missing Memory',chapter:8,
+    body:'Lyra finally remembers the lost town of Elaria. She remembers standing beside the Keeper, but she also remembers another version of herself watching from across the square. The Atlas did not erase one Lyra. It split one story into two possibilities.',
+    choices:[
+      {label:'Help Lyra recover both memories',flags:['lyra-fracture','lyra-restored'],relationship:3,reputation:1,reward:{xp:165,gold:100,item:'🌌 Lyra’s Star Shard'},epilogue:'Lyra remembers why she trusted the Keeper—and why she once feared them. Both memories are true.'},
+      {label:'Let Lyra keep the memories she can carry',flags:['lyra-fracture','lyra-protected'],relationship:4,reputation:2,reward:{xp:165,gold:100,item:'💙 Stargazer’s Charm'},epilogue:'Lyra chooses not to recover everything. “A person is allowed to be more than their history,” she says.'}
+    ]
+  }
+  if(flags.has('lyra-fracture')&&!flags.has('final-convergence'))return {
+    id:'final-convergence',title:'All Roads Remember',chapter:9,
+    body:'The fragments begin returning to the Atlas on their own. Elaria appears on the map. The second Keep flickers into view. The Moonlit Observatory turns toward the same point in the sky. Every suspect receives the same message: COME TO THE KEEP BEFORE MIDNIGHT.',
+    choices:[
+      {label:'Bring everyone together',flags:['final-convergence','allies-gathered'],relationship:3,reputation:3,reward:{xp:175,gold:110,item:'🤝 Circle of Witnesses'},chapter:9,epilogue:'For once, no one has to guess what the others know. The truth is finally shared—and it is stranger than any one person’s confession.'},
+      {label:'Meet the message alone',flags:['final-convergence','alone-at-keep'],relationship:1,reputation:2,reward:{xp:175,gold:110,item:'🕯️ Midnight Lantern'},chapter:9,epilogue:'The Keep is empty when you arrive. On the table is a single fresh page with your handwriting on it.'}
+    ]
+  }
+  if(flags.has('final-convergence')&&!flags.has('atlas-choice'))return {
+    id:'atlas-choice',title:'The Page About You',chapter:9,
+    body:'At midnight, the Atlas opens to a page that was not there before. It does not predict your future. It records every choice you made during the search—the people you trusted, the roads you took, the moments you hesitated. At the bottom is a final question: “Who should decide what the world remembers?”',
+    choices:[
+      {label:'Restore the Atlas and its memories',flags:['atlas-choice','restore-atlas','atlas-saga-complete'],relationship:2,reputation:3,reward:{xp:200,gold:150,item:'🌟 Restored Atlas'},chapter:9,epilogue:'The world remembers. Elaria returns to the maps. The Keep settles into a new quiet. But one blank page remains, waiting for whatever story comes next.'},
+      {label:'Break the Atlas beyond repair',flags:['atlas-choice','break-atlas','atlas-saga-complete'],relationship:2,reputation:2,reward:{xp:200,gold:150,item:'🪶 Free Cartographer’s Quill'},chapter:9,epilogue:'The Atlas breaks into harmless light. No more history can be erased by its pages. The world is free to become something the map never predicted.'},
+      {label:'Leave the Seventh Page unwritten',flags:['atlas-choice','leave-page','atlas-saga-complete'],relationship:4,reputation:4,reward:{xp:200,gold:150,item:'📖 Unwritten Future'},chapter:9,epilogue:'You refuse to let the Atlas decide what comes next. The page stays blank. Lyra smiles. “Good. Then the next story belongs to us.”'}
+    ]
+  }
+
   return null
 }
 
@@ -434,7 +580,7 @@ export default function App() {
     if(campaign.lastEncounterDate){
       const [year,month,day]=campaign.lastEncounterDate.split('-').map(Number)
       const lastSeen=new Date(year,month-1,day).getTime()
-      if(now.getTime()-lastSeen<36*60*60*1000)return
+      if(now.getTime()-lastSeen<60*60*60*1000)return
     }
     const scene=getCampaignScene(campaign)
     if(!scene)return
