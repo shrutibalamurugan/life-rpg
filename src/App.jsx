@@ -381,7 +381,7 @@ export default function App() {
       if(error)console.error('Cloud save failed',error)
     },400)
     return ()=>clearTimeout(saveTimerRef.current)
-  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
+  },[session?.user?.id,cloudHydrated,quests,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
 
   useEffect(()=>{
     if(!session)return
@@ -406,6 +406,8 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-daily',JSON.stringify(daily)),[daily])
   useEffect(()=>localStorage.setItem('life-rpg-achievements',JSON.stringify(achievements)),[achievements])
   useEffect(()=>localStorage.setItem('life-rpg-companions',JSON.stringify(companions)),[companions])
+  useEffect(()=>localStorage.setItem('life-rpg-companion-bonds',JSON.stringify(companionBonds)),[companionBonds])
+  useEffect(()=>localStorage.setItem('life-rpg-companion-uses',JSON.stringify(companionUses)),[companionUses])
   useEffect(()=>localStorage.setItem('life-rpg-inventory',JSON.stringify(inventory)),[inventory])
   useEffect(()=>localStorage.setItem('life-rpg-event',JSON.stringify(event)),[event])
   useEffect(()=>localStorage.setItem('life-rpg-villager-quests',JSON.stringify(villagerQuests)),[villagerQuests])
