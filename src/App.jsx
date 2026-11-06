@@ -503,7 +503,7 @@ export default function App() {
   },[session?.user?.id])
 
   const xp=heroProgress.xp, level=heroProgress.level
-  const cloudData={version:3,quests,journalDate,xp,heroXp:xp,heroLevel:level,gold,routine,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,explorationResetVersion:EXPLORATION_RESET_VERSION,campaign,storyEncounter,weightJourney}
+  const cloudData={version:3,quests,journalDate,xp:heroProgress.xp,heroXp:heroProgress.xp,heroLevel:heroProgress.level,gold,routine,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,explorationResetVersion:EXPLORATION_RESET_VERSION,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -614,8 +614,6 @@ export default function App() {
     setCampaign(c=>({...c,lastEncounterDate:today}))
   },[discoveries,campaign.flags,campaign.lastEncounterDate,storyEncounter?.resolved])
 
-  const xp=heroProgress.xp
-  const level=heroProgress.level
   const levelXp=xp
   const levelNeeded=getLevelRequirement(level)
   const progress=Math.min(100,(levelXp/levelNeeded)*100)
