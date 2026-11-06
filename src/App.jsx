@@ -512,7 +512,7 @@ export default function App() {
       if(error)console.error('Cloud save failed',error)
     },400)
     return ()=>clearTimeout(saveTimerRef.current)
-  },[session?.user?.id,cloudHydrated,quests,journalDate,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
+  },[session?.user?.id,cloudHydrated,quests,journalDate,xp,level,gold,routine,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
 
   useEffect(()=>{
     if(!session)return
