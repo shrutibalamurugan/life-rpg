@@ -13,6 +13,36 @@ function getESTDateKey(date=new Date()){
   return map.year+'-'+map.month+'-'+map.day
 }
 
+const EXPLORATION_RESET_VERSION=1
+const STUDY_REWARD_TIERS=[
+  {hours:10,gold:40,label:'Archive Apprentice'},
+  {hours:20,gold:90,label:'Dedicated Scholar'},
+  {hours:30,gold:200,label:'Grand Archivist'},
+  {hours:40,gold:325,label:'Master of the Archive'}
+]
+function getWeekStartKey(date=new Date()){
+  const parts=new Intl.DateTimeFormat('en-US',{timeZone:EST_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}).formatToParts(date)
+  const map=Object.fromEntries(parts.map(p=>[p.type,p.value]))
+  const d=new Date(Number(map.year),Number(map.month)-1,Number(map.day))
+  const day=d.getDay(); d.setDate(d.getDate()-(day===0?6:day-1))
+  return getESTDateKey(d)
+}
+function getWeekDateKeys(date=new Date()){
+  const startKey=getWeekStartKey(date); const [y,m,d]=startKey.split('-').map(Number)
+  const start=new Date(y,m-1,d)
+  return Array.from({length:7},(_,i)=>{const x=new Date(start);x.setDate(start.getDate()+i);return getESTDateKey(x)})
+}
+function formatStudyDay(key){
+  const [y,m,d]=key.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone:EST_TIME_ZONE}).format(new Date(Date.UTC(y,m-1,d,12)))
+}
+function getLevelRequirement(level){return 250+(Math.max(1,level)-1)*150}
+function getLevelData(totalXp){
+  let level=1,remaining=Math.max(0,Number(totalXp)||0),needed=getLevelRequirement(level)
+  while(remaining>=needed){remaining-=needed;level+=1;needed=getLevelRequirement(level)}
+  return {level,levelXp:remaining,needed,progress:Math.min(100,(remaining/needed)*100)}
+}
+
 const QUESTS = [
   { id: 1, title: 'Morning Expedition', subtitle: 'Move your body for 20+ minutes', xp: 40, gold: 12, type: 'body', stat: 'VIT' },
   { id: 2, title: 'Arcane Study', subtitle: 'Complete one focused study block', xp: 55, gold: 15, type: 'mind', stat: 'INT' },
@@ -117,13 +147,19 @@ const DISCOVERY_INFO = {
   'moonwell': {level:3,icon:'💧',name:'Moonwell',desc:'A quiet place to reset.',reward:'Unlocks the Moonwell recovery stop.'},
   'old-bridge': {level:5,icon:'🌉',name:'Old Bridge',desc:'A forgotten crossing beyond the familiar road.',reward:'Unlocks a new route on the realm map.'},
   'starlit-grove': {level:7,icon:'🌌',name:'Starlit Grove',desc:'A hidden reflection spot beneath an open sky.',reward:'Introduces Lyra, the Stargazer.'},
-  'market-square': {level:10,icon:'🏮',name:'Market Square',desc:'A bustling market beyond the Keep.',reward:'Unlocks the traveling market and new equipment.'}
+  'market-square': {level:10,icon:'🏮',name:'Market Square',desc:'A bustling market beyond the Keep.',reward:'Unlocks the traveling market and new equipment.'},
+  'ember-library': {level:11,icon:'🔥',name:'Ember Library',desc:'A sealed library whose books glow only for persistent scholars.',reward:'Unlocks an Archive side quest and a forgotten study chamber.'},
+  'glass-garden': {level:13,icon:'🌿',name:'Glass Garden',desc:'A greenhouse of impossible plants growing beneath crystal panes.',reward:'Unlocks a restorative garden route.'},
+  'hollow-bell-tower': {level:15,icon:'🔔',name:'Hollow Bell Tower',desc:'A tower whose bell rings only when a new road is near.',reward:'Unlocks a new clue about the Atlas.'},
+  'sunforge-terrace': {level:17,icon:'☀️',name:'Sunforge Terrace',desc:'An abandoned terrace where daylight seems to linger after sunset.',reward:'Unlocks a rare crafting and reward route.'},
+  'silver-marsh': {level:19,icon:'🪷',name:'Silver Marsh',desc:'A quiet wetland that appears only after the realm has changed.',reward:'Unlocks a deeper route toward the outer map.'},
+  'horizon-shrine': {level:22,icon:'🗿',name:'Horizon Shrine',desc:'A shrine at the edge of every known road.',reward:'A major late-Atlas discovery waits beyond it.'}
 }
 
 const EXPLORATION_AREAS = [
-  {id:'whispering-ruins',name:'Whispering Ruins',icon:'🏛️',description:'A half-buried archive where old roads are etched into stone.',requiredItems:['🗺️ Map Fragment','🗺️ Atlas Fragment','📜 Torn Atlas Fragment'],rewardItem:'🧭 Ruins Inscription',xp:50,gold:25,discovery:'The ruins reveal a forgotten road leading east.',npc:'Edda the Archivist',dialogue:'The stones remember a keeper who vanished before the Atlas shattered. Read the inscription aloud, and listen for the answer.',bondDialogue:{new:['Travelers rarely stay long enough to hear what the stones are saying.','The dust settles differently when someone is willing to listen.'],quest:['You returned with patience in your hands. The inscription is clearer now.','The old words were waiting for someone to give them time.'],complete:['You chose what should be remembered—and helped me preserve it. I will remember that.','The ruins feel less lonely now. Perhaps the past can trust the present after all.']},quest:{title:'Translate the fallen inscription',task:'Spend 15 focused minutes reviewing or studying something you have been putting off.',xp:35,gold:15},encounter:{title:'The Whispering Wall',body:'A line of silver writing appears between the stones. It asks what should be preserved when a story begins to fade.',choices:[{label:'Preserve the names of those who came before',item:'📜 Keeper’s Rubbing',gold:15},{label:'Preserve the road so others can find it',item:'🧭 Wayfinder Mark',gold:20}]}},
-  {id:'moonlit-observatory',name:'Moonlit Observatory',icon:'🔭',description:'A sealed tower that still tracks stars no longer in the sky.',requiredItems:['🔑 Observatory Key'],rewardItem:'⭐ Star Lens',xp:65,gold:30,discovery:'The Star Lens reveals a constellation pointing beneath the lake.',npc:'Orin the Nightwatcher',dialogue:'I have watched these stars for forty years. Tonight, one constellation is missing—and another is shining where the lake should be.',bondDialogue:{new:['Most visitors ask what the telescope can show them. Few ask what it has lost.','The night sky rewards a patient eye. Stay a moment.'],quest:['You noticed what most people overlook. That is the beginning of good stargazing.','The sky seems brighter tonight. Perhaps it is easier to see when someone shares the watch.'],complete:['I have kept watch alone for decades. It is good to have a fellow nightwatcher.','Whatever waits beneath the lake, I am glad you chose your own light.']},quest:{title:'Chart the missing constellation',task:'Take a 10-minute screen-free break outdoors or by a window, then return and note one thing you noticed.',xp:40,gold:20},encounter:{title:'The Unlit Telescope',body:'The telescope moves by itself and settles on a dark patch of sky. A voice asks which light you would follow.',choices:[{label:'Follow the faint star toward the lake',item:'🌊 Lakeway Map',gold:20},{label:'Follow the bright, unfamiliar flare',item:'🌠 Comet Shard',gold:25}]}},
-  {id:'sunken-causeway',name:'Sunken Causeway',icon:'🌊',description:'A submerged road visible only when the Atlas and lake agree.',requiredItems:['🌊 Lakeway Map'],rewardItem:'🫧 Deepwater Pearl',xp:75,gold:35,discovery:'The causeway opens a path toward the forgotten shoreline.',npc:'Mira the Ferrier',dialogue:'The water is lower than it has been in a century. The road is waiting, but it only appears to those who move with patience.',bondDialogue:{new:['The causeway is not kind to hurried feet. Let the water set the pace.','Few travelers come this far. I wondered when the road would bring someone.'],quest:['You walked with care. The shoreline remembers every gentle step.','You understand now: patience is not standing still. It is moving without forcing the river.'],complete:['You helped me guide the lantern onward. The crossing feels safer with you beside me.','When the waters rise again, you will always have a place on this shore.']},quest:{title:'Walk the old shoreline',task:'Take a gentle 15-minute walk or complete a short mobility session.',xp:45,gold:25},encounter:{title:'The Drowned Lantern',body:'A lantern glows beneath the water. Something is trying to guide travelers across the causeway.',choices:[{label:'Lift the lantern carefully',item:'🏮 Drowned Lantern',gold:25},{label:'Leave it as a guide for the next traveler',item:'🌊 Tidekeeper’s Token',gold:30}]}}
+  {id:'whispering-ruins',requiredLevel:12,name:'Whispering Ruins',icon:'🏛️',description:'A half-buried archive where old roads are etched into stone.',requiredItems:['🗺️ Map Fragment','🗺️ Atlas Fragment','📜 Torn Atlas Fragment'],rewardItem:'🧭 Ruins Inscription',xp:50,gold:25,discovery:'The ruins reveal a forgotten road leading east.',npc:'Edda the Archivist',dialogue:'The stones remember a keeper who vanished before the Atlas shattered. Read the inscription aloud, and listen for the answer.',bondDialogue:{new:['Travelers rarely stay long enough to hear what the stones are saying.','The dust settles differently when someone is willing to listen.'],quest:['You returned with patience in your hands. The inscription is clearer now.','The old words were waiting for someone to give them time.'],complete:['You chose what should be remembered—and helped me preserve it. I will remember that.','The ruins feel less lonely now. Perhaps the past can trust the present after all.']},quest:{title:'Translate the fallen inscription',task:'Spend 15 focused minutes reviewing or studying something you have been putting off.',xp:35,gold:15},encounter:{title:'The Whispering Wall',body:'A line of silver writing appears between the stones. It asks what should be preserved when a story begins to fade.',choices:[{label:'Preserve the names of those who came before',item:'📜 Keeper’s Rubbing',gold:15},{label:'Preserve the road so others can find it',item:'🧭 Wayfinder Mark',gold:20}]}},
+  {id:'moonlit-observatory',requiredLevel:15,name:'Moonlit Observatory',icon:'🔭',description:'A sealed tower that still tracks stars no longer in the sky.',requiredItems:['🔑 Observatory Key'],rewardItem:'⭐ Star Lens',xp:65,gold:30,discovery:'The Star Lens reveals a constellation pointing beneath the lake.',npc:'Orin the Nightwatcher',dialogue:'I have watched these stars for forty years. Tonight, one constellation is missing—and another is shining where the lake should be.',bondDialogue:{new:['Most visitors ask what the telescope can show them. Few ask what it has lost.','The night sky rewards a patient eye. Stay a moment.'],quest:['You noticed what most people overlook. That is the beginning of good stargazing.','The sky seems brighter tonight. Perhaps it is easier to see when someone shares the watch.'],complete:['I have kept watch alone for decades. It is good to have a fellow nightwatcher.','Whatever waits beneath the lake, I am glad you chose your own light.']},quest:{title:'Chart the missing constellation',task:'Take a 10-minute screen-free break outdoors or by a window, then return and note one thing you noticed.',xp:40,gold:20},encounter:{title:'The Unlit Telescope',body:'The telescope moves by itself and settles on a dark patch of sky. A voice asks which light you would follow.',choices:[{label:'Follow the faint star toward the lake',item:'🌊 Lakeway Map',gold:20},{label:'Follow the bright, unfamiliar flare',item:'🌠 Comet Shard',gold:25}]}},
+  {id:'sunken-causeway',requiredLevel:18,name:'Sunken Causeway',icon:'🌊',description:'A submerged road visible only when the Atlas and lake agree.',requiredItems:['🌊 Lakeway Map'],rewardItem:'🫧 Deepwater Pearl',xp:75,gold:35,discovery:'The causeway opens a path toward the forgotten shoreline.',npc:'Mira the Ferrier',dialogue:'The water is lower than it has been in a century. The road is waiting, but it only appears to those who move with patience.',bondDialogue:{new:['The causeway is not kind to hurried feet. Let the water set the pace.','Few travelers come this far. I wondered when the road would bring someone.'],quest:['You walked with care. The shoreline remembers every gentle step.','You understand now: patience is not standing still. It is moving without forcing the river.'],complete:['You helped me guide the lantern onward. The crossing feels safer with you beside me.','When the waters rise again, you will always have a place on this shore.']},quest:{title:'Walk the old shoreline',task:'Take a gentle 15-minute walk or complete a short mobility session.',xp:45,gold:25},encounter:{title:'The Drowned Lantern',body:'A lantern glows beneath the water. Something is trying to guide travelers across the causeway.',choices:[{label:'Lift the lantern carefully',item:'🏮 Drowned Lantern',gold:25},{label:'Leave it as a guide for the next traveler',item:'🌊 Tidekeeper’s Token',gold:30}]}}
 ]
 
 const EXTRA_ACHIEVEMENTS = {
@@ -323,7 +359,11 @@ export default function App() {
   const saveTimerRef=useRef(null)
   const [quests,setQuests] = useState(() => load('quests', []).filter(q=>![1,2,3,4].includes(q.id)))
   const [journalDate,setJournalDate] = useState(() => load('journal-date', getESTDateKey()))
-  const [xp,setXp] = useState(() => load('xp',245))
+  const [heroProgress,setHeroProgress] = useState(() => {
+    const savedLevel=load('hero-level',null), savedXp=load('hero-xp',null)
+    if(Number.isInteger(savedLevel)&&typeof savedXp==='number')return {level:savedLevel,xp:savedXp}
+    return getLevelData(load('xp',245))
+  })
   const [gold,setGold] = useState(() => load('gold',86))
   const [active,setActive] = useState('dashboard')
   const [showQuest,setShowQuest] = useState(false)
@@ -341,6 +381,9 @@ export default function App() {
     {id:2,module:'Current Module',quiz:'Quiz 2',score:91},
     {id:3,module:'Current Module',quiz:'Quiz 3',score:76},
   ]))
+  const [studySessions,setStudySessions] = useState(() => load('study-sessions', []))
+  const [studyWeekClaims,setStudyWeekClaims] = useState(() => load('study-week-claims', {}))
+  const [studyDraft,setStudyDraft] = useState({date:getESTDateKey(),minutes:'',subject:'',note:''})
   const [newGrade,setNewGrade] = useState({quiz:'',score:''})
   const [editingGrade,setEditingGrade] = useState(null)
   const [gradeDraft,setGradeDraft] = useState({quiz:'',score:''})
@@ -385,9 +428,9 @@ export default function App() {
   const [questChains,setQuestChains] = useState(() => load('quest-chains', QUEST_CHAINS.map(c=>({...c,progress:0,completed:false}))))
   const [realmBosses,setRealmBosses] = useState(() => load('realm-bosses', REALM_BOSSES.map(b=>({...b,hp:b.maxHp,defeated:false}))))
   const [equipment,setEquipment] = useState(() => load('equipment', {owned:[],equipped:{weapon:null,armor:null,accessory:null}}))
-  const [discoveries,setDiscoveries] = useState(() => load('discoveries', []))
-  const [exploredAreas,setExploredAreas] = useState(() => load('explored-areas', []))
-  const [locationProgress,setLocationProgress] = useState(() => load('location-progress', {}))
+  const [discoveries,setDiscoveries] = useState(() => load('exploration-reset-version',0)<EXPLORATION_RESET_VERSION ? [] : load('discoveries', []))
+  const [exploredAreas,setExploredAreas] = useState(() => load('exploration-reset-version',0)<EXPLORATION_RESET_VERSION ? [] : load('explored-areas', []))
+  const [locationProgress,setLocationProgress] = useState(() => load('exploration-reset-version',0)<EXPLORATION_RESET_VERSION ? {} : load('location-progress', {}))
   const [activeLocation,setActiveLocation] = useState(null)
   const [campaign,setCampaign] = useState(() => load('campaign', {chapter:1,flags:[],choices:[],relationship:0,reputation:0,lastEncounterDate:'',lastEncounterAt:'',productivityDate:getESTDateKey(),productivity:{xp:0,quests:0}}))
   const [storyEncounter,setStoryEncounter] = useState(() => load('story-encounter', null))
@@ -407,7 +450,11 @@ export default function App() {
     applyingRemoteRef.current=true
     if(data.quests)setQuests(data.quests.filter(q=>![1,2,3,4].includes(q.id)))
     if(data.journalDate)setJournalDate(data.journalDate)
-    if(typeof data.xp==='number')setXp(data.xp)
+    if(typeof data.heroLevel==='number'){
+      setHeroProgress({level:data.heroLevel,xp:typeof data.heroXp==='number'?data.heroXp:0})
+    }else if(typeof data.xp==='number'){
+      setHeroProgress(getLevelData(data.xp))
+    }
     if(typeof data.gold==='number')setGold(data.gold)
     if(data.routine)setRoutine(data.routine)
     if(data.grades)setGrades(data.grades)
@@ -428,9 +475,15 @@ export default function App() {
     if(data.questChains)setQuestChains(data.questChains)
     if(data.realmBosses)setRealmBosses(data.realmBosses)
     if(data.equipment)setEquipment(data.equipment)
-    if(data.discoveries)setDiscoveries(data.discoveries)
-    if(data.exploredAreas)setExploredAreas(data.exploredAreas)
-    if(data.locationProgress)setLocationProgress(data.locationProgress)
+    if((data.explorationResetVersion||0)<EXPLORATION_RESET_VERSION){
+      setDiscoveries([]);setExploredAreas([]);setLocationProgress({})
+    }else{
+      if(data.discoveries)setDiscoveries(data.discoveries)
+      if(data.exploredAreas)setExploredAreas(data.exploredAreas)
+      if(data.locationProgress)setLocationProgress(data.locationProgress)
+    }
+    if(data.studySessions)setStudySessions(data.studySessions)
+    if(data.studyWeekClaims)setStudyWeekClaims(data.studyWeekClaims)
     if(data.campaign)setCampaign({...data.campaign,lastEncounterAt:data.campaign.lastEncounterAt||'',productivityDate:data.campaign.productivityDate||data.campaign.lastEncounterDate||getESTDateKey()})
     if(data.storyEncounter)setStoryEncounter(data.storyEncounter)
     if(data.weightJourney)setWeightJourney(data.weightJourney)
@@ -449,7 +502,8 @@ export default function App() {
     return ()=>{cancelled=true}
   },[session?.user?.id])
 
-  const cloudData={version:2,quests,journalDate,xp,gold,routine,grades,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney}
+  const xp=heroProgress.xp, level=heroProgress.level
+  const cloudData={version:3,quests,journalDate,xp,heroXp:xp,heroLevel:level,gold,routine,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,explorationResetVersion:EXPLORATION_RESET_VERSION,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -473,6 +527,8 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-quests',JSON.stringify(quests)),[quests])
   useEffect(()=>localStorage.setItem('life-rpg-journal-date',JSON.stringify(journalDate)),[journalDate])
   useEffect(()=>localStorage.setItem('life-rpg-xp',JSON.stringify(xp)),[xp])
+  useEffect(()=>localStorage.setItem('life-rpg-hero-xp',JSON.stringify(xp)),[xp])
+  useEffect(()=>localStorage.setItem('life-rpg-hero-level',JSON.stringify(level)),[level])
   useEffect(()=>localStorage.setItem('life-rpg-gold',JSON.stringify(gold)),[gold])
   useEffect(()=>localStorage.setItem('life-rpg-routine',JSON.stringify(routine)),[routine])
   useEffect(()=>localStorage.setItem('life-rpg-grades',JSON.stringify(grades)),[grades])
@@ -495,8 +551,11 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-realm-bosses',JSON.stringify(realmBosses)),[realmBosses])
   useEffect(()=>localStorage.setItem('life-rpg-equipment',JSON.stringify(equipment)),[equipment])
   useEffect(()=>localStorage.setItem('life-rpg-discoveries',JSON.stringify(discoveries)),[discoveries])
+  useEffect(()=>localStorage.setItem('life-rpg-exploration-reset-version',JSON.stringify(EXPLORATION_RESET_VERSION)),[])
   useEffect(()=>localStorage.setItem('life-rpg-explored-areas',JSON.stringify(exploredAreas)),[exploredAreas])
   useEffect(()=>localStorage.setItem('life-rpg-location-progress',JSON.stringify(locationProgress)),[locationProgress])
+  useEffect(()=>localStorage.setItem('life-rpg-study-sessions',JSON.stringify(studySessions)),[studySessions])
+  useEffect(()=>localStorage.setItem('life-rpg-study-week-claims',JSON.stringify(studyWeekClaims)),[studyWeekClaims])
   useEffect(()=>localStorage.setItem('life-rpg-campaign',JSON.stringify(campaign)),[campaign])
   useEffect(()=>localStorage.setItem('life-rpg-story-encounter',JSON.stringify(storyEncounter)),[storyEncounter])
   useEffect(()=>{const timer=setInterval(()=>setRealmTime(new Date()),60000);return()=>clearInterval(timer)},[])
@@ -555,16 +614,22 @@ export default function App() {
     setCampaign(c=>({...c,lastEncounterDate:today}))
   },[discoveries,campaign.flags,campaign.lastEncounterDate,storyEncounter?.resolved])
 
-  function getLevelData(totalXp){
-    let level=1, spent=0, needed=250
-    while(totalXp>=spent+needed){
-      spent+=needed
-      level+=1
-      needed=250+(level-1)*150
-    }
-    return {level,levelXp:totalXp-spent,needed,progress:Math.min(100,((totalXp-spent)/needed)*100)}
+  const xp=heroProgress.xp
+  const level=heroProgress.level
+  const levelXp=xp
+  const levelNeeded=getLevelRequirement(level)
+  const progress=Math.min(100,(levelXp/levelNeeded)*100)
+  function addXp(amount){
+    const gain=Math.max(0,Number(amount)||0)
+    if(!gain)return
+    setHeroProgress(prev=>{
+      let nextXp=prev.xp+gain, nextLevel=prev.level
+      let needed=getLevelRequirement(nextLevel)
+      while(nextXp>=needed){nextXp-=needed;nextLevel+=1;needed=getLevelRequirement(nextLevel)}
+      if(nextLevel>prev.level)notify('LEVEL UP! You reached Hero Level '+nextLevel+'.')
+      return {level:nextLevel,xp:nextXp}
+    })
   }
-  const {level,levelXp,needed:levelNeeded,progress}=getLevelData(xp)
   const gearBonus=useMemo(()=>Object.values(equipment.equipped||{}).reduce((out,id)=>{const item=EQUIPMENT_CATALOG.find(x=>x.id===id);if(item)Object.entries(item.bonus).forEach(([k,v])=>out[k]=(out[k]||0)+v);return out},{}) ,[equipment.equipped])
   const townBonus=useMemo(()=>({VIT:(town.buildings.garden||0),INT:(town.buildings.library||0),SPI:(town.buildings.tavern||0)-1,RAD:0,DIS:(town.buildings.guild||0)-1}),[town.buildings])
   const stats=useMemo(()=>[
@@ -581,9 +646,9 @@ export default function App() {
     if(companionUses[id]===today){notify('That companion has already helped today.');return}
     setCompanionUses(u=>({...u,[id]:today}))
     if(id==='🦊 Moss the Fox')setGold(g=>g+15)
-    if(id==='🐦 Edda’s Raven')setXp(v=>v+20)
+    if(id==='🐦 Edda’s Raven')addXp(20)
     if(id==='🦉 Orin’s Owl')setGold(g=>g+20)
-    if(id==='🦦 Mira’s Otter')setXp(v=>v+20)
+    if(id==='🦦 Mira’s Otter')addXp(20)
     setCompanionBonds(b=>({...b,[id]:(b[id]||0)+2}))
     notify((COMPANION_INFO[id]?.name||'Companion')+' used its special ability!')
   }
@@ -657,13 +722,13 @@ export default function App() {
     setDaily(d=>({...d,completed:next,streak,lastCompletedDate:todayKey}))
     if(streak>=3)unlockAchievement('three-day-flame')
     if(streak>=7)unlockAchievement('week-warrior')
-    setXp(v=>v+q.xp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus)
-    if(next.length===dailyQuests.length&&!daily.bonusClaimed){setDaily(d=>({...d,bonusClaimed:true}));setXp(v=>v+100);recordProductivityProgress(100);setGold(g=>g+50);unlockAchievement('main-character');notify('DAILY ADVENTURE COMPLETE! +100 bonus XP · +50 gold')}
+    addXp(q.xp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus)
+    if(next.length===dailyQuests.length&&!daily.bonusClaimed){setDaily(d=>({...d,bonusClaimed:true}));addXp(100);recordProductivityProgress(100);setGold(g=>g+50);unlockAchievement('main-character');notify('DAILY ADVENTURE COMPLETE! +100 bonus XP · +50 gold')}
     else notify(`${q.title} complete! +${q.xp} XP · +${q.gold} gold · ${streak}-day streak`)
   }
   function resolveEvent(option){
     if(event.resolved)return
-    const r=option.reward||{};if(r.xp)setXp(v=>v+r.xp);if(r.gold)setGold(g=>g+r.gold)
+    const r=option.reward||{};if(r.xp)addXp(r.xp);if(r.gold)setGold(g=>g+r.gold)
     if(r.pet)setCompanions(p=>p.includes(r.pet)?p:[...p,r.pet]);if(r.item)setInventory(i=>[...i,r.item])
     setEvent(e=>({...e,resolved:true}));notify(option.message||'The realm remembers your choice.')
   }
@@ -672,7 +737,7 @@ export default function App() {
     const earned=campaign.productivity||{xp:0,quests:0}
     if((earned.xp||0)<100||(earned.quests||0)<3){notify('The Atlas is sealed. Earn 100 productivity XP and complete 3 quests to choose your path.');return}
     const reward=choice.reward||{}
-    if(reward.xp)setXp(v=>v+reward.xp)
+    if(reward.xp)addXp(reward.xp)
     if(reward.gold)setGold(g=>g+reward.gold)
     if(reward.item)setInventory(items=>items.includes(reward.item)?items:[...items,reward.item])
     setCampaign(c=>({
@@ -694,7 +759,7 @@ export default function App() {
     setGold(g=>g-100)
     const drops=[{text:'+75 XP',reward:{xp:75}},{text:'+150 gold',reward:{gold:150}},{text:'A fox companion!',reward:{pet:'🦊 Moss the Fox'}},{text:'A rare map fragment',reward:{item:'🗺️ Map Fragment'}},{text:'An old brass key',reward:{item:'🔑 Observatory Key'}}]
     const d=drops[Math.floor(Math.random()*drops.length)],r=d.reward
-    if(r.xp)setXp(v=>v+r.xp);if(r.gold)setGold(g=>g+r.gold);if(r.pet)setCompanions(p=>p.includes(r.pet)?p:[...p,r.pet]);if(r.item)setInventory(i=>[...i,r.item])
+    if(r.xp)addXp(r.xp);if(r.gold)setGold(g=>g+r.gold);if(r.pet)setCompanions(p=>p.includes(r.pet)?p:[...p,r.pet]);if(r.item)setInventory(i=>[...i,r.item])
     notify('MYSTERY CHEST: '+d.text)
   }
   function acceptVillagerQuest(id){
@@ -706,7 +771,7 @@ export default function App() {
     if(!villagerQuests.active.includes(id)||villagerQuests.completed.includes(id))return
     const q=VILLAGER_QUESTS.find(x=>x.id===id);if(!q)return
     setVillagerQuests(v=>({...v,active:v.active.filter(x=>x!==id),completed:[...v.completed,id]}))
-    setXp(v=>v+q.xp);setGold(g=>g+q.gold);notify(`${q.villager}: ${VILLAGER_COMPLETE_DIALOGUE[q.villager]||'Well done, adventurer.'} · +${q.xp} XP · +${q.gold} gold`)
+    addXp(q.xp);setGold(g=>g+q.gold);notify(`${q.villager}: ${VILLAGER_COMPLETE_DIALOGUE[q.villager]||'Well done, adventurer.'} · +${q.xp} XP · +${q.gold} gold`)
   }
 
   function completeChainStep(chainId){
@@ -714,7 +779,7 @@ export default function App() {
     const step=chain.steps[chain.progress]; if(!step)return
     const nextProgress=chain.progress+1; const finished=nextProgress>=chain.steps.length
     setQuestChains(xs=>xs.map(c=>c.id===chainId?{...c,progress:nextProgress,completed:finished}:c))
-    setXp(v=>v+step.xp+(finished?75:0)); setGold(g=>g+step.gold+(finished?50:0)+companionGoldBonus)
+    addXp(step.xp+(finished?75:0)); setGold(g=>g+step.gold+(finished?50:0)+companionGoldBonus)
     if(finished){setTown(t=>({...t,xp:t.xp+100}));unlockAchievement('chain-complete');notify('QUEST CHAIN COMPLETE! '+(chain.completion||'The realm remembers your deeds.')+' · +75 bonus XP · +50 gold')}
     else notify('Quest step complete! '+step.title+' · +'+step.xp+' XP')
   }
@@ -733,7 +798,7 @@ export default function App() {
     const damage=Math.max(25,Math.round(statValue*8))
     const hp=Math.max(0,boss.hp-damage); const defeated=hp===0
     setRealmBosses(xs=>xs.map(b=>b.id===id?{...b,hp,defeated}:b))
-    if(defeated){const reward=REALM_BOSSES.find(b=>b.id===id);setXp(v=>v+120+(boss.unlock*20));setGold(g=>g+60+(boss.unlock*10)+companionGoldBonus);unlockAchievement('realm-slayer');notify(boss.name+' defeated! '+reward.reward)}
+    if(defeated){const reward=REALM_BOSSES.find(b=>b.id===id);addXp(120+(boss.unlock*20));setGold(g=>g+60+(boss.unlock*10)+companionGoldBonus);unlockAchievement('realm-slayer');notify(boss.name+' defeated! '+reward.reward)}
     else notify(boss.name+' takes '+damage+' damage.')
   }
   function buyEquipment(item){
@@ -751,7 +816,7 @@ export default function App() {
     const place=DISCOVERY_INFO[id]
     if(!place)return
     if(level<place.level){notify(place.name+' reveals itself at hero level '+place.level+'. Keep adventuring!');return}
-    setDiscoveries(d=>[...d,id]);setXp(v=>v+35);setGold(g=>g+15+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! '+place.name+' · +35 XP · +15 gold')
+    setDiscoveries(d=>[...d,id]);addXp(35);setGold(g=>g+15+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! '+place.name+' · +35 XP · +15 gold')
   }
   function finishExplorationArea(areaId,progress){
     const area=EXPLORATION_AREAS.find(x=>x.id===areaId)
@@ -759,7 +824,7 @@ export default function App() {
     setLocationProgress(p=>({...p,[areaId]:{...(p[areaId]||{}),discoveryClaimed:true}}))
     if(progress.clueItem){
       setInventory(items=>{const index=items.indexOf(progress.clueItem);const without=index>=0?items.filter((_,i)=>i!==index):items;return without.includes(area.rewardItem)?without:[...without,area.rewardItem]})
-      setXp(v=>v+area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder');bondCompanions()
+      addXp(area.xp);setGold(g=>g+area.gold+companionGoldBonus);unlockAchievement('pathfinder');bondCompanions()
       const companionReward=areaId==='whispering-ruins'?'🐦 Edda’s Raven':areaId==='moonlit-observatory'?'🦉 Orin’s Owl':areaId==='sunken-causeway'?'🦦 Mira’s Otter':null
       if(companionReward)setCompanions(items=>items.includes(companionReward)?items:[...items,companionReward])
       notify(area.name+' fully explored! Clue used · +'+area.xp+' XP · +'+area.gold+' gold · '+area.rewardItem)
@@ -771,6 +836,7 @@ export default function App() {
     if(exploredAreas.includes(id))return
     const area=EXPLORATION_AREAS.find(x=>x.id===id)
     if(!area)return
+    if(level<(area.requiredLevel||1)){notify(area.name+' is sealed until Hero Level '+area.requiredLevel+'.');return}
     const key=area.requiredItems.find(item=>inventory.includes(item))
     if(!key){notify('You need a map clue to explore '+area.name+'. Check your Hero inventory.');return}
     setExploredAreas(xs=>[...xs,id])
@@ -784,7 +850,7 @@ export default function App() {
     if(!area||!exploredAreas.includes(areaId)||progress.questDone)return
     const next={...progress,questDone:true}
     setLocationProgress(p=>({...p,[areaId]:next}))
-    setXp(v=>v+area.quest.xp);setGold(g=>g+area.quest.gold+companionGoldBonus+companionQuestGoldBonus('location'));bondCompanions()
+    addXp(area.quest.xp);setGold(g=>g+area.quest.gold+companionGoldBonus+companionQuestGoldBonus('location'));bondCompanions()
     recordProductivityProgress(area.quest.xp,1)
     notify('Location quest complete! +'+area.quest.xp+' XP · +'+area.quest.gold+' gold')
     finishExplorationArea(areaId,next)
@@ -809,7 +875,7 @@ export default function App() {
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
     setQuests(xs=>xs.filter(x=>x.id!==id))
-    setXp(x=>x+q.xp+(companions.includes('🐦 Edda’s Raven')?5:0));recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus);bondCompanions()
+    addXp(q.xp+(companions.includes('🐦 Edda’s Raven')?5:0));recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus);bondCompanions()
     notify(`Journal quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
   function addQuest(e){
@@ -817,7 +883,7 @@ export default function App() {
     setQuests(xs=>[...xs,{id:Date.now(),title:newQuest.trim(),subtitle:'Custom quest from your adventurer’s journal',xp:25,gold:5,type:'custom',stat:'DIS',done:false}])
     setNewQuest('');setShowQuest(false);notify('New quest added to your journal.')
   }
-  function toggleRoutine(id){const item=routine.find(x=>x.id===id);if(!item||item.active===false)return;const next=!item.done;setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:next,xpAwarded:x.xpAwarded||next}:x));if(next&&!item.xpAwarded){setXp(v=>v+(item.xp||20));recordProductivityProgress(item.xp||20);setGold(g=>g+companionGoldBonus);notify(`Ritual complete! +${item.xp||20} XP · ${item.stat||'DIS'} strengthened`)}}
+  function toggleRoutine(id){const item=routine.find(x=>x.id===id);if(!item||item.active===false)return;const next=!item.done;setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:next,xpAwarded:x.xpAwarded||next}:x));if(next&&!item.xpAwarded){addXp((item.xp||20));recordProductivityProgress(item.xp||20);setGold(g=>g+companionGoldBonus);notify(`Ritual complete! +${item.xp||20} XP · ${item.stat||'DIS'} strengthened`)}}
   function openRoutineEditor(item){setRoutineEditorMode('edit');setEditingRoutine(item.id);setRoutineDraft({time:item.time,title:item.title,xp:item.xp||20,stat:item.stat||'DIS',repeat:item.repeat||'daily',active:item.active!==false})}
   function openRoutineCreator(){setRoutineEditorMode('add');setEditingRoutine(null);setRoutineDraft({time:'',title:'',xp:20,stat:'DIS',repeat:'daily',active:true})}
   function saveRoutine(e){e.preventDefault();if(!routineDraft.time.trim()||!routineDraft.title.trim())return;const clean={time:routineDraft.time.trim(),title:routineDraft.title.trim(),xp:Number(routineDraft.xp)||20,stat:routineDraft.stat,repeat:routineDraft.repeat,active:routineDraft.active};if(routineEditorMode==='add'){setRoutine(xs=>[...xs,{id:Date.now(),...clean,done:false}]);notify('New routine quest added.')}else{setRoutine(xs=>xs.map(x=>x.id===editingRoutine?{...x,...clean}:x));notify('Routine quest updated.')}setEditingRoutine(null)}
@@ -829,6 +895,30 @@ export default function App() {
     if(!newGrade.quiz||!Number.isFinite(score)||score<0||score>100)return
     setGrades(xs=>[...xs,{id:Date.now(),module:'Current Module',quiz:newGrade.quiz,score}])
     setNewGrade({quiz:'',score:''});notify('Quiz recorded in the Grand Archive.')
+  }
+  function addStudySession(e){
+    e.preventDefault()
+    const minutes=Math.round(Number(studyDraft.minutes))
+    if(!Number.isFinite(minutes)||minutes<10||minutes>1440)return
+    const date=studyDraft.date||getESTDateKey()
+    const session={id:Date.now(),date,minutes,subject:studyDraft.subject.trim()||'Independent study',note:studyDraft.note.trim()}
+    const weekKey=getWeekStartKey(new Date(date+'T12:00:00'))
+    const before=studySessions.filter(x=>getWeekStartKey(new Date(x.date+'T12:00:00'))===weekKey).reduce((sum,x)=>sum+Number(x.minutes||0),0)
+    const after=before+minutes
+    setStudySessions(xs=>[...xs,session])
+    setStudyDraft({date:getESTDateKey(),minutes:'',subject:'',note:''})
+    STUDY_REWARD_TIERS.forEach(tier=>{
+      if(before/60<tier.hours&&after/60>=tier.hours&&!studyWeekClaims[weekKey+'-'+tier.hours]){
+        setGold(g=>g+tier.gold)
+        setStudyWeekClaims(c=>({...c,[weekKey+'-'+tier.hours]:true}))
+        notify('WEEKLY STUDY REWARD: '+tier.label+' · +'+tier.gold+' gold!')
+      }
+    })
+    notify('Study session recorded · '+(minutes/60).toFixed(minutes%60?1:0)+' hr')
+  }
+  function deleteStudySession(id){
+    setStudySessions(xs=>xs.filter(x=>x.id!==id))
+    notify('Study session removed.')
   }
   function openGradeEditor(g){
     setEditingGrade(g.id); setGradeDraft({quiz:g.quiz,score:String(g.score)})
@@ -852,7 +942,7 @@ export default function App() {
     const damage=Math.max(10,Math.round(avg>=85?160:avg>=70?100:35))
     const hp=Math.max(0,Number(boss.hp??1000)-damage);const ready=hp===0
     setBoss(b=>({...b,attempts:b.attempts+1,hp,defeated:ready}))
-    if(ready){setXp(v=>v+250);setGold(g=>g+100);unlockAchievement('boss-slayer');notify('KNOWLEDGE WARDEN DEFEATED! +250 XP · +100 gold')}
+    if(ready){addXp(250);setGold(g=>g+100);unlockAchievement('boss-slayer');notify('KNOWLEDGE WARDEN DEFEATED! +250 XP · +100 gold')}
     else notify(`The Warden takes ${damage} damage. Keep studying your weakest topics.`)
   }
   function saveCharacter(e){e.preventDefault();if(!characterDraft.name.trim())return;setCharacter({...characterDraft,name:characterDraft.name.trim(),created:true});setCharacterEditor(false);notify('Character sheet updated.')}
@@ -865,7 +955,7 @@ export default function App() {
     if(weight>Number(ex.best||0)){
       const gain=Math.max(1,Math.round((weight-Number(ex.best||0))/5))
       setWorkouts(xs=>xs.map(w=>w.id===workoutId?{...w,exercises:w.exercises.map(e=>e.id===exerciseId?{...e,best:weight}:e)}:w))
-      setXp(v=>v+50);setGold(g=>g+15);setStatBonus(s=>({...s,VIT:(s.VIT||0)+gain}));unlockAchievement('pr-hunter')
+      addXp(50);setGold(g=>g+15);setStatBonus(s=>({...s,VIT:(s.VIT||0)+gain}));unlockAchievement('pr-hunter')
       notify('NEW PR! '+ex.name+' at '+weight+' lb · +50 XP · +15 gold · VIT +'+gain)
     }else notify(ex.name+' logged at '+weight+' lb. Keep building.')
   }
@@ -976,8 +1066,30 @@ function VillagerQuestCard({q,state,onClick,onTalk}){const buttonText=state==='a
 
 function RoutinePage({routine,toggleRoutine,openRoutineEditor,openRoutineCreator}){const day=new Date().getDay();const due=routine.filter(x=>x.active!==false&&((x.repeat||'daily')==='daily'||((x.repeat||'daily')==='weekdays'&&day>=1&&day<=5)||((x.repeat||'daily')==='weekends'&&(day===0||day===6))));const active=routine.filter(x=>x.active!==false);const done=active.filter(x=>x.done).length;return <div className="content"><PageIntro eyebrow="ADVENTURER'S KEEP" title="Today's routine" text="Your real-life schedule becomes a questline." action="+ Add Ritual" onAction={openRoutineCreator}/><div className="routine-summary panel"><div><span className="eyebrow">DAILY PROGRESS</span><strong>{done}/{active.length}</strong><span>rituals completed · completion grants XP</span></div><div className="xp-bar"><i style={{width:(active.length?done/active.length*100:0)+'%'}}/></div></div><div className="routine-list">{routine.map(item=><div className={'routine-row panel '+(item.done?'done ':'')+(item.active===false?'inactive':'')} key={item.id}><button className="routine-main" onClick={()=>toggleRoutine(item.id)}><span className="routine-time">{item.time}</span><span className="routine-check">{item.done?<Check size={15}/>:''}</span><span className="routine-title"><b>{item.title}</b><small>{item.repeat||'daily'} · +{item.xp||20} XP · {item.stat||'DIS'}</small></span></button><button className="row-edit" onClick={()=>openRoutineEditor(item)}>Edit</button></div>)}</div></div>}
 
-function StudyPage({grades,newGrade,setNewGrade,addGrade,openGradeEditor,module,setModule,topicDraft,setTopicDraft,addTopic,editingTopic,setEditingTopic,saveTopic,deleteTopic,boss,prepareBoss,attemptBoss}){const avg=module.topics.length?Math.round(module.topics.reduce((a,t)=>a+t.score,0)/module.topics.length):0;const weak=[...module.topics].sort((a,b)=>a.score-b.score).slice(0,3);return <div className="content"><PageIntro eyebrow="GRAND ARCHIVE" title="Medical school command center" text="Quizzes become evidence, weak topics become study quests, and exams become boss battles."/><div className="module-header panel"><div><span className="eyebrow">CURRENT MODULE</span><input className="module-name" value={module.name} onChange={e=>setModule({...module,name:e.target.value})}/></div><label>Exam date<input type="date" value={module.examDate} onChange={e=>setModule({...module,examDate:e.target.value})}/></label></div><div className="study-grid"><div className="panel mastery"><span className="eyebrow">MODULE MASTERY</span><strong>{avg}%</strong><div className="xp-bar"><i style={{width:avg+'%'}}/></div><p>{weak.length?'Weakest target: '+weak[0].name:'Add topics to build your map.'}</p><button className="primary" onClick={prepareBoss}>{boss.active&&!boss.defeated?'Boss Battle Ready':'Prepare for Boss Battle'} <Sword size={15}/></button></div><div className="panel grade-form"><span className="eyebrow">RECORD A QUIZ</span><form onSubmit={addGrade}><input placeholder="Quiz name" value={newGrade.quiz} onChange={e=>setNewGrade({...newGrade,quiz:e.target.value})}/><input type="number" min="0" max="100" placeholder="Score %" value={newGrade.score} onChange={e=>setNewGrade({...newGrade,score:e.target.value})}/><button className="primary">Record Score <Plus size={15}/></button></form></div></div>{boss.active&&<div className={'boss-panel panel '+(boss.defeated?'defeated':'')}><div><span className="eyebrow">MODULE BOSS · ATTEMPT {boss.attempts}</span><h3>{boss.defeated?'✦ KNOWLEDGE WARDEN DEFEATED':'👹 THE KNOWLEDGE WARDEN'}</h3><p>{boss.defeated?'Module cleared! Your final strike shattered the Warden.':'85%+ = critical hit · 70–84% = strong hit · below 70% = glancing blow'}</p>{!boss.defeated&&<div className="boss-hp"><span>HP {boss.hp??1000} / 1000</span><div><i style={{width:((boss.hp??1000)/10)+'%'}}/></div></div>}</div>{!boss.defeated&&<button className="primary" onClick={attemptBoss}>Face Boss <Sword size={15}/></button>}</div>}<div className="archive-section"><div className="section-head"><div><span className="eyebrow">WEAK TOPICS</span><h2>Study targets</h2></div></div><div className="topic-grid">{module.topics.map(t=><div className="topic-row panel" key={t.id}><span><b>{t.name}</b><small>{t.score<80?'Needs another pass':'Ready for review'}</small></span><strong className={t.score>=85?'great':t.score>=70?'warning':'needs'}>{t.score}%</strong><button className="row-edit" onClick={()=>{setEditingTopic(t.id);setTopicDraft({name:t.name,score:String(t.score)})}}>Edit</button></div>)}</div><form className="topic-form panel" onSubmit={editingTopic?saveTopic:addTopic}><input placeholder="Topic name" value={topicDraft.name} onChange={e=>setTopicDraft({...topicDraft,name:e.target.value})}/><input type="number" min="0" max="100" placeholder="Mastery %" value={topicDraft.score} onChange={e=>setTopicDraft({...topicDraft,score:e.target.value})}/><button className="primary">{editingTopic?'Save Topic':'Add Topic'} <Plus size={15}/></button>{editingTopic&&<button type="button" className="ghost" onClick={()=>{setEditingTopic(null);setTopicDraft({name:'',score:''})}}>Cancel</button>}</form></div><div className="archive-section"><div className="section-head"><div><span className="eyebrow">QUIZ HISTORY</span><h2>Recorded battles</h2></div></div><div className="grade-list">{grades.map(g=><div className="grade-row panel" key={g.id}><BookOpen size={17}/><span>{g.quiz}<small>{g.module}</small></span><strong className={g.score>=85?'great':g.score>=70?'warning':'needs'}>{g.score}%</strong><button className="row-edit" onClick={()=>openGradeEditor(g)}>Edit</button></div>)}</div></div></div>}
-
+function StudyPage({grades,newGrade,setNewGrade,addGrade,openGradeEditor,module,setModule,topicDraft,setTopicDraft,addTopic,editingTopic,setEditingTopic,saveTopic,deleteTopic,boss,prepareBoss,attemptBoss,studySessions,studyDraft,setStudyDraft,addStudySession,deleteStudySession}){
+ const avg=module.topics.length?Math.round(module.topics.reduce((a,t)=>a+t.score,0)/module.topics.length):0
+ const weak=[...module.topics].sort((a,b)=>a.score-b.score).slice(0,3)
+ const weekKeys=getWeekDateKeys(); const weekStart=weekKeys[0]
+ const weekSessions=studySessions.filter(x=>weekKeys.includes(x.date))
+ const totalMinutes=weekSessions.reduce((sum,x)=>sum+Number(x.minutes||0),0)
+ const totalHours=totalMinutes/60
+ const maxDay=Math.max(60,...weekKeys.map(k=>weekSessions.filter(x=>x.date===k).reduce((sum,x)=>sum+Number(x.minutes||0),0)))
+ const rewardStatus=STUDY_REWARD_TIERS.map(t=>({tier:t,reached:totalHours>=t.hours}))
+ const fmtHours=(m)=>{const h=Math.floor(m/60),min=m%60;return min?(h+'h '+min+'m'):h+'h'}
+ return <div className="content"><PageIntro eyebrow="GRAND ARCHIVE" title="Medical school command center" text="Quizzes become evidence, focused study becomes a real record, and exams become boss battles."/>
+  <div className="module-header panel"><div><span className="eyebrow">CURRENT MODULE</span><input className="module-name" value={module.name} onChange={e=>setModule({...module,name:e.target.value})}/></div><label>Exam date<input type="date" value={module.examDate} onChange={e=>setModule({...module,examDate:e.target.value})}/></label></div>
+  <div className="study-grid"><div className="panel mastery"><span className="eyebrow">MODULE MASTERY</span><strong>{avg}%</strong><div className="xp-bar"><i style={{width:avg+'%'}}/></div><p>{weak.length?'Weakest target: '+weak[0].name:'Add topics to build your map.'}</p><button className="primary" onClick={prepareBoss}>{boss.active&&!boss.defeated?'Boss Battle Ready':'Prepare for Boss Battle'} <Sword size={15}/></button></div><div className="panel grade-form"><span className="eyebrow">RECORD A QUIZ</span><form onSubmit={addGrade}><input placeholder="Quiz name" value={newGrade.quiz} onChange={e=>setNewGrade({...newGrade,quiz:e.target.value})}/><input type="number" min="0" max="100" placeholder="Score %" value={newGrade.score} onChange={e=>setNewGrade({...newGrade,score:e.target.value})}/><button className="primary">Record Score <Plus size={15}/></button></form></div></div>
+  {boss.active&&<div className={'boss-panel panel '+(boss.defeated?'defeated':'')}><div><span className="eyebrow">MODULE BOSS · ATTEMPT {boss.attempts}</span><h3>{boss.defeated?'✦ KNOWLEDGE WARDEN DEFEATED':'👹 THE KNOWLEDGE WARDEN'}</h3><p>{boss.defeated?'Module cleared! Your final strike shattered the Warden.':'85%+ = critical hit · 70–84% = strong hit · below 70% = glancing blow'}</p>{!boss.defeated&&<div className="boss-hp"><span>HP {boss.hp??1000} / 1000</span><div><i style={{width:((boss.hp??1000)/10)+'%'}}/></div></div>}</div>{!boss.defeated&&<button className="primary" onClick={attemptBoss}>Face Boss <Sword size={15}/></button>}</div>}
+  <div className="archive-section study-tracker"><div className="section-head"><div><span className="eyebrow">WEEKLY STUDY LOG</span><h2>Study sessions</h2><p className="muted">Track the real time you spend studying. The week resets every Monday.</p></div><div className="study-week-total"><b>{totalHours.toFixed(1)}h</b><small>this week</small></div></div>
+   <form className="study-session-form panel" onSubmit={addStudySession}><label>Date<input type="date" value={studyDraft.date} onChange={e=>setStudyDraft({...studyDraft,date:e.target.value})}/></label><label>Minutes<input type="number" min="10" max="1440" step="5" placeholder="60" value={studyDraft.minutes} onChange={e=>setStudyDraft({...studyDraft,minutes:e.target.value})}/></label><label>What did you study?<input placeholder="Anatomy · bugs · practice questions..." value={studyDraft.subject} onChange={e=>setStudyDraft({...studyDraft,subject:e.target.value})}/></label><label>Note <span className="muted">(optional)</span><input placeholder="Optional note" value={studyDraft.note} onChange={e=>setStudyDraft({...studyDraft,note:e.target.value})}/></label><button className="primary">Log Session <Plus size={15}/></button></form>
+   <div className="study-week-grid">{weekKeys.map(key=>{const mins=weekSessions.filter(x=>x.date===key).reduce((sum,x)=>sum+Number(x.minutes||0),0);return <div className="study-day" key={key}><b>{formatStudyDay(key)}</b><div className="study-day-bar"><i style={{height:Math.max(4,Math.round((mins/maxDay)*100))+'%'}}/></div><strong>{fmtHours(mins)}</strong></div>})}</div>
+   <div className="study-reward-track"><div className="section-head"><div><span className="eyebrow">WEEKLY SCHOLARSHIP</span><h3>Study more, earn more</h3><p className="muted">Gold rewards are awarded once when you cross each weekly milestone.</p></div></div><div className="study-reward-grid">{rewardStatus.map(({tier,reached})=><div className={'study-reward panel '+(reached?'reached':'')} key={tier.hours}><span>{reached?'✓':'◈'}</span><div><b>{tier.hours} hours</b><small>+{tier.gold} gold · {tier.label}</small></div></div>)}</div></div>
+   {weekSessions.length>0&&<div className="study-session-list">{[...weekSessions].sort((a,b)=>b.id-a.id).map(session=><div className="study-session-row panel" key={session.id}><div><b>{session.subject}</b><small>{session.date}{session.note?' · '+session.note:''}</small></div><strong>{fmtHours(Number(session.minutes||0))}</strong><button type="button" className="row-edit" onClick={()=>deleteStudySession(session.id)}>Remove</button></div>)}</div>}
+  </div>
+  <div className="archive-section"><div className="section-head"><div><span className="eyebrow">QUIZ HISTORY</span><h2>Recorded battles</h2></div></div><div className="grade-list">{grades.map(g=><div className="grade-row panel" key={g.id}><BookOpen size={17}/><span>{g.quiz}<small>{g.module}</small></span><strong className={g.score>=85?'great':g.score>=70?'warning':'needs'}>{g.score}%</strong><button className="row-edit" onClick={()=>openGradeEditor(g)}>Edit</button></div>)}</div></div>
+  <div className="archive-section"><div className="section-head"><div><span className="eyebrow">TOPIC MAP</span><h2>Module mastery targets</h2></div></div><div className="topic-grid">{module.topics.map(t=><div className="topic-row panel" key={t.id}><span><b>{t.name}</b><small>{t.score<80?'Needs another pass':'Ready for review'}</small></span><strong className={t.score>=85?'great':t.score>=70?'warning':'needs'}>{t.score}%</strong><button className="row-edit" onClick={()=>{setEditingTopic(t.id);setTopicDraft({name:t.name,score:String(t.score)})}}>Edit</button></div>)}</div><form className="topic-form panel" onSubmit={editingTopic?saveTopic:addTopic}><input placeholder="Topic name" value={topicDraft.name} onChange={e=>setTopicDraft({...topicDraft,name:e.target.value})}/><input type="number" min="0" max="100" placeholder="Mastery %" value={topicDraft.score} onChange={e=>setTopicDraft({...topicDraft,score:e.target.value})}/><button className="primary">{editingTopic?'Save Topic':'Add Topic'} <Plus size={15}/></button>{editingTopic&&<button type="button" className="ghost" onClick={()=>{setEditingTopic(null);setTopicDraft({name:'',score:''})}}>Cancel</button>}</form></div>
+ </div>
+}
 function BodyPage({workouts,activeWorkout,setActiveWorkout,updateExercise,logWorkout,showWorkoutForm,setShowWorkoutForm,workoutDraft,setWorkoutDraft,addExercise,deleteExercise,setActive,weightJourney,setWeightJourney}){
  const workout=workouts.find(w=>w.id===activeWorkout)||workouts[0]
  const latest=weightJourney.logs[weightJourney.logs.length-1]
@@ -1106,15 +1218,15 @@ function RealmPage({level,timeLabel,isNight,town,upgradeTown,questChains,complet
     <div className="pixel-mountains mountain-one"><i/><i/><i/></div><div className="pixel-mountains mountain-two"><i/><i/><i/><i/></div>
     <div className="pixel-village"><span className="village-banner">ADVENTURER'S KEEP</span><i/><i/><i/><i/><i/><i/><i/><i/></div><div className="pixel-market"><i/><span>MARKET</span></div><div className="pixel-ruins"><i/><i/><span>OLD RUINS</span></div><div className="pixel-camp"><i/><span>YOUR CAMP</span></div>
     {WORLDS.map(w=>{const unlocked=level>=(w.unlockLevel||1);const destinations={body:'body',study:'study',life:'planner',glow:'dashboard',spirit:'dashboard',explore:'dashboard'};return <button key={w.id} className={'map-zone map-zone-'+w.id+(unlocked?'':' locked')} disabled={!unlocked} onClick={()=>unlocked&&setActive(destinations[w.id]||'dashboard')} title={unlocked?w.desc:'Unlock at level '+w.unlockLevel}><span className="map-zone-icon">{w.id==='body'?'🌲':w.id==='study'?'📚':w.id==='spirit'?'🔮':w.id==='glow'?'✨':w.id==='life'?'🏰':'🧭'}</span><strong>{unlocked?'':'🔒 '}{w.name}</strong><small>{unlocked?w.desc:'Level '+w.unlockLevel}</small></button>})}
-    {places.map(([id,place],index)=>{const found=discoveries.includes(id);const locked=level<place.level&&!found;const positions=[{left:'13%',top:'59%'},{left:'86%',top:'25%'},{left:'72%',top:'67%'},{left:'30%',top:'77%'}];const pos=positions[index]||{left:'50%',top:'50%'};return <button key={id} className={'map-discovery-marker '+(found?'found':'')+(locked?' locked':'')} style={pos} disabled={locked||found} onClick={()=>discoverRealm(id)} title={found?place.name:'Discover '+place.name}><span>{locked?'🔒':place.icon}</span><b>{place.name}</b><small>{found?'Discovered':'Lv '+place.level}</small></button>})}
-    {EXPLORATION_AREAS.map((area,index)=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));const positions=[{left:'23%',top:'30%'},{left:'61%',top:'36%'},{left:'86%',top:'70%'}];const pos=positions[index]||{left:'50%',top:'50%'};return <button key={area.id} className={'map-exploration-marker '+(explored?'found':'')+(!explored&&!key?'locked':'')} style={pos} disabled={!explored&&!key} onClick={()=>explored?setActiveLocation(area.id):exploreArea(area.id)} title={explored?'Enter '+area.name:key?'Explore '+area.name:'Find clue for '+area.name}><span>{explored?'✓':key?'❔':'🔒'}</span><b>{area.name}</b><small>{explored?'Enter':key?'Clue found':'Hidden'}</small></button>})}
+    {places.map(([id,place],index)=>{const found=discoveries.includes(id);const locked=level<place.level&&!found;const positions=[{left:'13%',top:'59%'},{left:'86%',top:'25%'},{left:'72%',top:'67%'},{left:'30%',top:'77%'},{left:'48%',top:'18%'},{left:'18%',top:'37%'},{left:'79%',top:'43%'},{left:'54%',top:'78%'},{left:'36%',top:'55%'},{left:'88%',top:'55%'}];const pos=positions[index]||{left:(20+((index*17)%65))+'%',top:(20+((index*23)%58))+'%'};return <button key={id} className={'map-discovery-marker '+(found?'found':'')+(locked?' locked':'')} style={pos} disabled={locked||found} onClick={()=>discoverRealm(id)} title={found?place.name:'Discover '+place.name}><span>{locked?'🔒':place.icon}</span><b>{place.name}</b><small>{found?'Discovered':'Lv '+place.level}</small></button>})}
+    {EXPLORATION_AREAS.map((area,index)=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));const sealed=level<(area.requiredLevel||1);const positions=[{left:'23%',top:'30%'},{left:'61%',top:'36%'},{left:'86%',top:'70%'},{left:'16%',top:'78%'},{left:'73%',top:'16%'},{left:'43%',top:'88%'}];const pos=positions[index]||{left:(15+((index*19)%70))+'%',top:(20+((index*29)%62))+'%'};return <button key={area.id} className={'map-exploration-marker '+(explored&&!sealed?'found':'')+((sealed||(!explored&&!key))?'locked':'')} style={pos} disabled={sealed||(!explored&&!key)} onClick={()=>explored?setActiveLocation(area.id):exploreArea(area.id)} title={sealed?area.name+' · unlocks at level '+area.requiredLevel:explored?'Enter '+area.name:key?'Explore '+area.name:'Find clue for '+area.name}><span>{sealed?'🔒':explored?'✓':key?'❔':'🔒'}</span><b>{area.name}</b><small>{sealed?'Lv '+area.requiredLevel:explored?'Enter':key?'Clue found':'Hidden'}</small></button>})}
     <div className="map-legend"><span><i className="legend-dot unlocked-dot"/>Known</span><span><i className="legend-dot locked-dot"/>Locked</span><span>New discoveries appear here permanently</span></div>
    </div>
    <div className="map-tip panel"><Compass size={17}/><span><b>The Atlas grows with you:</b> discoveries are permanent, hidden locations appear when you find their clues, and future map entries can be added without changing the map system.</span></div>
   </section>
   <section><div className="section-head"><div><span className="eyebrow">YOUR TOWN</span><h2>Build the Keep</h2></div><span className="muted">Upgrades permanently improve your hero</span></div><div className="town-grid">{buildings.map(([id,icon,name,desc])=>{const lvl=town.buildings[id]||0;const cost=100+lvl*75;return <div className="town-building panel" key={id}><div className="town-icon">{icon}</div><div><b>{name}</b><small>{desc}</small><span>Level {lvl}</span></div><button className="primary" onClick={()=>upgradeTown(id)}>Upgrade · {cost} ◈</button></div>})}</div></section>
   <section className="realm-section"><div className="section-head"><div><span className="eyebrow">DISCOVERIES</span><h2>Places you have found</h2><p className="muted">These landmarks are part of the world now. Future discoveries will automatically join this list.</p></div></div><div className="discovery-grid">{places.map(([id,place])=>{const found=discoveries.includes(id);const locked=level<place.level&&!found;return <button className={'discovery-card panel '+(found?'found ':'')+(locked?'locked':'')} key={id} disabled={locked||found} onClick={()=>discoverRealm(id)}><span>{locked?'🔒':place.icon}</span><div><b>{place.name}</b><small>{found?place.reward:locked?'Requires Hero Level '+place.level:place.desc}</small></div><strong>{found?'✓':locked?'LVL '+place.level:'+ Discover'}</strong></button>})}</div></section>
-  <section className="exploration-section"><div className="section-head"><div><span className="eyebrow">BEYOND THE KNOWN ROADS</span><h2>Hidden places</h2><p className="muted">Clues are held while you explore. A place becomes permanently marked when you finish both its real-life quest and its story encounter.</p></div></div><div className="exploration-grid">{EXPLORATION_AREAS.map(area=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));return <article className={'exploration-card panel '+(explored?'explored':'')} key={area.id}><div className="exploration-icon">{explored?'✓':area.icon}</div><div className="exploration-copy"><b>{area.name}</b><p>{explored?area.discovery:area.description}</p><small>{explored?'DISCOVERED · '+area.rewardItem:key?'CLUE FOUND · '+key:'NEEDS '+area.requiredItems.map(x=>x.replace(/^\S+\s/,'')).join(' OR ')}</small></div><button className={explored?'ghost':'primary'} disabled={explored?!!locationProgress[area.id]?.discoveryClaimed:!key} onClick={()=>explored?setActiveLocation(area.id):exploreArea(area.id)}>{explored?(locationProgress[area.id]?.discoveryClaimed?'Complete':'Continue'):key?'Explore':'Find clue'}</button></article>})}</div></section>
+  <section className="exploration-section"><div className="section-head"><div><span className="eyebrow">BEYOND THE KNOWN ROADS</span><h2>Hidden places</h2><p className="muted">Clues are held while you explore. A place becomes permanently marked when you finish both its real-life quest and its story encounter.</p></div></div><div className="exploration-grid">{EXPLORATION_AREAS.map(area=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));const sealed=level<(area.requiredLevel||1);return <article className={'exploration-card panel '+(explored&&!sealed?'explored':'')} key={area.id}><div className="exploration-icon">{sealed?'🔒':explored?'✓':area.icon}</div><div className="exploration-copy"><b>{area.name}</b><p>{sealed?'The Atlas has sealed this road again. It will return when you are strong enough.':explored?area.discovery:area.description}</p><small>{sealed?'SEALED · HERO LEVEL '+area.requiredLevel:explored?'DISCOVERED · '+area.rewardItem:key?'CLUE FOUND · '+key:'NEEDS '+area.requiredItems.map(x=>x.replace(/^\S+\s/,'')).join(' OR ')}</small></div><button className={explored?'ghost':'primary'} disabled={sealed||(explored?!!locationProgress[area.id]?.discoveryClaimed:!key)} onClick={()=>explored?setActiveLocation(area.id):exploreArea(area.id)}>{sealed?'Sealed':explored?(locationProgress[area.id]?.discoveryClaimed?'Complete':'Continue'):key?'Explore':'Find clue'}</button></article>})}</div></section>
   {discoveries.includes('starlit-grove')&&<section className="realm-section discovered-npc panel"><div className="section-head"><div><span className="eyebrow">NEW ARRIVAL</span><h2>Lyra the Stargazer</h2><p>Finding the Starlit Grove brought a new face to the realm.</p></div><span className="npc-avatar">🌌</span></div><div className="npc-speech">“{NPC_DIALOGUE['Lyra the Stargazer'][0]}”</div></section>}
   {discoveries.includes('market-square')&&<section className="realm-section"><div className="section-head"><div><span className="eyebrow">MARKET SQUARE · UNLOCKED</span><h2>Traveling Market</h2><p className="muted">New gear becomes available after you discover the market.</p></div></div><div className="equipment-grid">{equipmentCatalog.map(item=>{const owned=equipment.owned.includes(item.id);const equipped=equipment.equipped[item.slot]===item.id;return <div className="panel equipment-card" key={item.id}><span className="reward-icon">{item.icon}</span><h3>{item.name}</h3><p>{item.desc}</p><small>+{Object.entries(item.bonus).map(([k,v])=>v+' '+k).join(' · ')}</small>{owned?<button className="ghost" onClick={()=>equipItem(item)}>{equipped?'Unequip':'Equip'}</button>:<button className="primary" onClick={()=>buyEquipment(item)}>Buy · {item.cost} ◈</button>}</div>})}</div></section>}
  </div>
