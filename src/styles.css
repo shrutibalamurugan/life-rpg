@@ -420,3 +420,46 @@ nav button:hover{background:#292b31;color:#f1ead7}
 
 .story-villager-whisper{margin:15px 0;padding:12px 14px;background:rgba(105,126,79,.10);border:1px solid rgba(132,166,108,.28);border-left:3px solid #8a9a68}.story-villager-whisper>p{margin:6px 0 4px!important;color:#c5c0b3!important;font-size:10px!important;line-height:1.55!important}.story-villager-whisper small{color:#817e75;font-size:8px;line-height:1.4}
 @media(max-width:700px){.realm-map-wrap{min-height:680px}.map-zone{width:112px;min-height:78px;padding:7px 6px}.map-zone-icon{font-size:22px}.map-zone strong{font-size:6px}.map-zone small{font-size:7px}.map-zone-body{left:5%;top:40%}.map-zone-study{left:37%;top:27%}.map-zone-life{right:5%;top:40%}.map-zone-glow{left:7%;bottom:9%}.map-zone-spirit{right:7%;bottom:9%}.map-zone-explore{left:37%;bottom:2%}.map-discovery-marker,.map-exploration-marker{min-width:68px;max-width:82px;padding:4px}}
+
+/* Weekly study tracker */
+.study-tracker{margin-top:28px}
+.study-week-total{display:flex;flex-direction:column;align-items:flex-end;padding:9px 13px;border:2px solid #6d5938;background:#211e18;min-width:82px}
+.study-week-total b{font-size:20px;color:#e3c37d}
+.study-week-total small{font-size:7px;color:#9b968a;text-transform:uppercase;letter-spacing:.08em}
+.study-session-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.study-session-form label{display:flex;flex-direction:column;gap:5px;font-size:8px;color:#9f9b91;text-transform:uppercase;letter-spacing:.08em}
+.study-session-form input{margin-top:0}
+.study-session-form button{grid-column:1/-1}
+.study-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin:16px 0}
+.study-day{min-width:0;padding:10px 5px;background:#15171a;border:2px solid #373b39;text-align:center}
+.study-day>b{display:block;font-size:7px;color:#c9c2b3;text-transform:uppercase}
+.study-day-bar{height:82px;margin:8px auto 7px;width:18px;background:#22252a;border:1px solid #454947;display:flex;align-items:flex-end;justify-content:center}
+.study-day-bar i{display:block;width:100%;background:#6d845d;min-height:4px}
+.study-day strong{font-size:8px;color:#d5b66d}
+.study-reward-track{margin-top:22px;padding-top:8px;border-top:1px solid rgba(214,183,117,.18)}
+.study-reward-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.study-reward{display:flex;align-items:center;gap:8px;padding:10px!important;opacity:.5}
+.study-reward.reached{opacity:1;border-color:rgba(111,155,98,.65);background:rgba(91,126,73,.12)}
+.study-reward>span{font-size:17px;color:#d0a65a}
+.study-reward b{display:block;font-size:9px;color:#e0d9ca}
+.study-reward small{display:block;margin-top:3px;font-size:7px;color:#a59f92;line-height:1.35}
+.study-session-list{display:grid;gap:7px;margin-top:14px}
+.study-session-row{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.study-session-row>div{flex:1;min-width:0}
+.study-session-row b{display:block;font-size:9px;color:#ded7c8}
+.study-session-row small{display:block;margin-top:3px;font-size:7px;color:#88857c;line-height:1.4}
+.study-session-row strong{font-size:9px;color:#d5b66d;white-space:nowrap}
+@media(max-width:700px){
+ .study-session-form{grid-template-columns:1fr}
+ .study-session-form button{grid-column:auto}
+ .study-week-grid{gap:4px}
+ .study-day{padding:8px 2px}
+ .study-day-bar{height:65px;width:14px}
+ .study-reward-grid{grid-template-columns:1fr 1fr}
+ .study-session-row{align-items:flex-start;flex-wrap:wrap}
+ .study-session-row .row-edit{margin-left:auto}
+}
+@media(max-width:430px){
+ .study-week-grid{grid-template-columns:repeat(4,1fr)}
+ .study-week-total{align-self:flex-start}
+}
