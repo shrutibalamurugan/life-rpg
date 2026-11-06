@@ -175,7 +175,7 @@ const ATLAS_CLUE_INFO = {
   '🌱 Glass Garden Seed':'Quest Chain',
   '🔔 Bellkeeper’s Chime':'Quest Chain',
   '☀️ Sunforge Sigil':'Quest Chain',
-  '🪷 Silver Marsh Map':'Quest Chain',
+  '🪷 Silver Marsh Map':'Mystery Chest or Quest Chain',
   '🗿 Horizon Seal':'Chronicle'
 }
 
@@ -442,7 +442,13 @@ export default function App() {
   const [event,setEvent] = useState(() => load('event', {date:'',title:'',body:'',options:[],resolved:false}))
   const [villagerQuests,setVillagerQuests] = useState(() => load('villager-quests', {date:'',active:[],completed:[]}))
   const [town,setTown] = useState(() => load('town', {level:1,xp:0,buildings:{guild:1,tavern:1,garden:0,library:0}}))
-  const [questChains,setQuestChains] = useState(() => load('quest-chains', QUEST_CHAINS.map(c=>({...c,progress:0,completed:false}))))
+  const [questChains,setQuestChains] = useState(() => {
+    const saved=load('quest-chains',[])
+    return QUEST_CHAINS.map(base=>{
+      const existing=Array.isArray(saved)?saved.find(c=>c.id===base.id):null
+      return {...base,progress:existing?.progress||0,completed:!!existing?.completed}
+    })
+  })
   const [realmBosses,setRealmBosses] = useState(() => load('realm-bosses', REALM_BOSSES.map(b=>({...b,hp:b.maxHp,defeated:false}))))
   const [equipment,setEquipment] = useState(() => load('equipment', {owned:[],equipped:{weapon:null,armor:null,accessory:null}}))
   const [discoveries,setDiscoveries] = useState(() => load('exploration-reset-version',0)<EXPLORATION_RESET_VERSION ? [] : load('discoveries', []))
@@ -489,7 +495,7 @@ export default function App() {
     if(data.event)setEvent(data.event)
     if(data.villagerQuests)setVillagerQuests(data.villagerQuests)
     if(data.town)setTown(data.town)
-    if(data.questChains)setQuestChains(data.questChains)
+    if(data.questChains)setQuestChains(QUEST_CHAINS.map(base=>{const existing=Array.isArray(data.questChains)?data.questChains.find(c=>c.id===base.id):null;return {...base,progress:existing?.progress||0,completed:!!existing?.completed}}))
     if(data.realmBosses)setRealmBosses(data.realmBosses)
     if(data.equipment)setEquipment(data.equipment)
     if((data.explorationResetVersion||0)<EXPLORATION_RESET_VERSION){
@@ -772,14 +778,17 @@ export default function App() {
   function rollMysteryChest(){
     if(gold<100){notify('The Mystery Chest costs 100 gold.');return}
     setGold(g=>g-100)
-    const drops=[
+    const baseDrops=[
       {text:'+75 XP',reward:{xp:75}},
       {text:'+150 gold',reward:{gold:150}},
-      {text:'A fox companion!',reward:{pet:'🦊 Moss the Fox'}},
+      {text:'A fox companion!',reward:{pet:'🦊 Moss the Fox'}}
+    ]
+    const clueDrops=[
       {text:'A torn Atlas map fragment — clue to the Whispering Ruins',reward:{item:'🗺️ Map Fragment'}},
       {text:'An old brass key — clue to the Moonlit Observatory',reward:{item:'🔑 Observatory Key'}},
       {text:'A silver marsh chart — clue to a future Atlas road',reward:{item:'🪷 Silver Marsh Map'}}
-    ]
+    ].filter(drop=>!inventory.includes(drop.reward.item))
+    const drops=[...baseDrops,...clueDrops]
     const d=drops[Math.floor(Math.random()*drops.length)],r=d.reward
     if(r.xp)addXp(r.xp);if(r.gold)setGold(g=>g+r.gold);if(r.pet)setCompanions(p=>p.includes(r.pet)?p:[...p,r.pet]);if(r.item)setInventory(i=>[...i,r.item])
     notify('MYSTERY CHEST: '+d.text)
