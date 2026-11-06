@@ -380,8 +380,8 @@ export default function App() {
     {id:2,module:'Current Module',quiz:'Quiz 2',score:91},
     {id:3,module:'Current Module',quiz:'Quiz 3',score:76},
   ]))
-  const [studySessions,setStudySessions] = useState(() => { const saved=load('study-sessions', []); return Array.isArray(saved)?saved:[] })
-  const [studyWeekClaims,setStudyWeekClaims] = useState(() => { const saved=load('study-week-claims', {}); return saved && typeof saved==='object' && !Array.isArray(saved)?saved:{} })
+  const [studySessions,setStudySessions] = useState(() => load('study-sessions', []))
+  const [studyWeekClaims,setStudyWeekClaims] = useState(() => load('study-week-claims', {}))
   const [studyDraft,setStudyDraft] = useState({date:getESTDateKey(),minutes:'',subject:'',note:''})
   const [newGrade,setNewGrade] = useState({quiz:'',score:''})
   const [editingGrade,setEditingGrade] = useState(null)
@@ -481,8 +481,8 @@ export default function App() {
       if(data.exploredAreas)setExploredAreas(data.exploredAreas)
       if(data.locationProgress)setLocationProgress(data.locationProgress)
     }
-    if(Array.isArray(data.studySessions))setStudySessions(data.studySessions)
-    if(data.studyWeekClaims && typeof data.studyWeekClaims==='object' && !Array.isArray(data.studyWeekClaims))setStudyWeekClaims(data.studyWeekClaims)
+    if(data.studySessions)setStudySessions(data.studySessions)
+    if(data.studyWeekClaims)setStudyWeekClaims(data.studyWeekClaims)
     if(data.campaign)setCampaign({...data.campaign,lastEncounterAt:data.campaign.lastEncounterAt||'',productivityDate:data.campaign.productivityDate||data.campaign.lastEncounterDate||getESTDateKey()})
     if(data.storyEncounter)setStoryEncounter(data.storyEncounter)
     if(data.weightJourney)setWeightJourney(data.weightJourney)
@@ -999,7 +999,7 @@ export default function App() {
       {active==='quests'&&<QuestPage quests={quests} finishQuest={finishQuest} setShowQuest={setShowQuest} villagerQuests={villagerQuests} villagerQuestList={VILLAGER_QUESTS} acceptVillagerQuest={acceptVillagerQuest} completeVillagerQuest={completeVillagerQuest} townLevel={town.level} talkToNpc={talkToNpc} selectedNpc={selectedNpc} setSelectedNpc={setSelectedNpc} gold={gold} questChains={questChains} completeChainStep={completeChainStep}/>}
       {active==='planner'&&<RoutinePage routine={routine} toggleRoutine={toggleRoutine} openRoutineEditor={openRoutineEditor} openRoutineCreator={openRoutineCreator}/>}
       {active==='story'&&<StoryPage campaign={campaign} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice} setActive={setActive}/>}
-      {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} topicDraft={topicDraft} setTopicDraft={setTopicDraft} addTopic={addTopic} editingTopic={editingTopic} setEditingTopic={setEditingTopic} saveTopic={saveTopic} deleteTopic={deleteTopic} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss} studySessions={studySessions} studyDraft={studyDraft} setStudyDraft={setStudyDraft} addStudySession={addStudySession} deleteStudySession={deleteStudySession}/>}
+      {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} topicDraft={topicDraft} setTopicDraft={setTopicDraft} addTopic={addTopic} editingTopic={editingTopic} setEditingTopic={setEditingTopic} saveTopic={saveTopic} deleteTopic={deleteTopic} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss}/>}
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney}/>} 
       {active==='map'&&<RealmPage level={level} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea} activeLocation={activeLocation} setActiveLocation={setActiveLocation} locationProgress={locationProgress} completeLocationQuest={completeLocationQuest} resolveLocationEncounter={resolveLocationEncounter}/>} 
       {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} companionBonds={companionBonds} companionUses={companionUses} callCompanion={callCompanion}/>} />
@@ -1063,11 +1063,11 @@ function VillagerQuestCard({q,state,onClick,onTalk}){const buttonText=state==='a
 
 function RoutinePage({routine,toggleRoutine,openRoutineEditor,openRoutineCreator}){const day=new Date().getDay();const due=routine.filter(x=>x.active!==false&&((x.repeat||'daily')==='daily'||((x.repeat||'daily')==='weekdays'&&day>=1&&day<=5)||((x.repeat||'daily')==='weekends'&&(day===0||day===6))));const active=routine.filter(x=>x.active!==false);const done=active.filter(x=>x.done).length;return <div className="content"><PageIntro eyebrow="ADVENTURER'S KEEP" title="Today's routine" text="Your real-life schedule becomes a questline." action="+ Add Ritual" onAction={openRoutineCreator}/><div className="routine-summary panel"><div><span className="eyebrow">DAILY PROGRESS</span><strong>{done}/{active.length}</strong><span>rituals completed · completion grants XP</span></div><div className="xp-bar"><i style={{width:(active.length?done/active.length*100:0)+'%'}}/></div></div><div className="routine-list">{routine.map(item=><div className={'routine-row panel '+(item.done?'done ':'')+(item.active===false?'inactive':'')} key={item.id}><button className="routine-main" onClick={()=>toggleRoutine(item.id)}><span className="routine-time">{item.time}</span><span className="routine-check">{item.done?<Check size={15}/>:''}</span><span className="routine-title"><b>{item.title}</b><small>{item.repeat||'daily'} · +{item.xp||20} XP · {item.stat||'DIS'}</small></span></button><button className="row-edit" onClick={()=>openRoutineEditor(item)}>Edit</button></div>)}</div></div>}
 
-function StudyPage({grades,newGrade,setNewGrade,addGrade,openGradeEditor,module,setModule,topicDraft,setTopicDraft,addTopic,editingTopic,setEditingTopic,saveTopic,deleteTopic,boss,prepareBoss,attemptBoss,studySessions,studyDraft,setStudyDraft,addStudySession,deleteStudySession}){\n studyDraft=studyDraft||{date:getESTDateKey(),minutes:'',subject:'',note:''}; module=module||{name:'Current Module',examDate:'',topics:[]}; module.topics=Array.isArray(module.topics)?module.topics:[]; grades=Array.isArray(grades)?grades:[];
+function StudyPage({grades,newGrade,setNewGrade,addGrade,openGradeEditor,module,setModule,topicDraft,setTopicDraft,addTopic,editingTopic,setEditingTopic,saveTopic,deleteTopic,boss,prepareBoss,attemptBoss,studySessions,studyDraft,setStudyDraft,addStudySession,deleteStudySession}){
  const avg=module.topics.length?Math.round(module.topics.reduce((a,t)=>a+t.score,0)/module.topics.length):0
  const weak=[...module.topics].sort((a,b)=>a.score-b.score).slice(0,3)
  const weekKeys=getWeekDateKeys(); const weekStart=weekKeys[0]
- const weekSessions=(Array.isArray(studySessions)?studySessions:[]).filter(x=>weekKeys.includes(x.date))
+ const weekSessions=studySessions.filter(x=>weekKeys.includes(x.date))
  const totalMinutes=weekSessions.reduce((sum,x)=>sum+Number(x.minutes||0),0)
  const totalHours=totalMinutes/60
  const maxDay=Math.max(60,...weekKeys.map(k=>weekSessions.filter(x=>x.date===k).reduce((sum,x)=>sum+Number(x.minutes||0),0)))
