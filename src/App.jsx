@@ -38,9 +38,8 @@ function formatStudyDay(key){
 }
 function getLevelRequirement(level){return 250+(Math.max(1,level)-1)*150}
 function getLevelData(totalXp){
-  let level=1,remaining=Math.max(0,Number(totalXp)||0),needed=getLevelRequirement(level)
-  while(remaining>=needed){remaining-=needed;level+=1;needed=getLevelRequirement(level)}
-  return {level,levelXp:remaining,needed,progress:Math.min(100,(remaining/needed)*100)}
+  let level=Math.floor(Math.max(0,Number(totalXp)||0)/250)+1
+  return {level,levelXp:Math.max(0,Number(totalXp)||0)%250,needed:getLevelRequirement(level),progress:Math.min(100,(Math.max(0,Number(totalXp)||0)%250)/getLevelRequirement(level)*100)}
 }
 
 const QUESTS = [
