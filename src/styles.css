@@ -463,3 +463,10 @@ nav button:hover{background:#292b31;color:#f1ead7}
  .study-week-grid{grid-template-columns:repeat(4,1fr)}
  .study-week-total{align-self:flex-start}
 }
+
+
+.atlas-clue-source{display:block;margin-top:6px;font-size:.72rem;color:#bda36a;font-style:normal;letter-spacing:.03em}
+.atlas-clue-mini{display:flex;flex-direction:column;gap:4px;margin-top:10px;padding:9px 10px;border:1px dashed rgba(189,163,106,.45);background:rgba(189,163,106,.06);border-radius:8px}
+.atlas-clue-mini b{font-size:.78rem;color:#d7bc78}
+.atlas-clue-mini span{font-size:.72rem;color:#a9a29a;line-height:1.4}
+.chain-complete-line em{display:block;margin-top:8px;font-style:normal;color:#d7bc78;font-size:.8rem}
