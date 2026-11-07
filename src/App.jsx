@@ -387,6 +387,7 @@ export default function App() {
     {id:4,time:'6:30 PM',title:'Movement / gym',done:false,icon:'body',xp:25,stat:'VIT',repeat:'weekdays',active:true},
     {id:5,time:'10:00 PM',title:'Wind down & planner',done:false,icon:'spirit',xp:20,stat:'SPI',repeat:'daily',active:true},
   ]))
+  const [routineDate,setRoutineDate] = useState(() => load('routine-date', ''))
   const [grades,setGrades] = useState(() => load('grades', [
     {id:1,module:'Current Module',quiz:'Quiz 1',score:82},
     {id:2,module:'Current Module',quiz:'Quiz 2',score:91},
@@ -468,6 +469,7 @@ export default function App() {
     }
     if(typeof data.gold==='number')setGold(data.gold)
     if(data.routine)setRoutine(data.routine)
+    if(data.routineDate)setRoutineDate(data.routineDate)
     if(data.grades)setGrades(data.grades)
     if(data.module)setModule(data.module)
     if(data.boss)setBoss(data.boss)
@@ -514,7 +516,7 @@ export default function App() {
   },[session?.user?.id])
 
   const xp=heroProgress.xp, level=heroProgress.level
-  const cloudData={version:3,quests,journalDate,xp:heroProgress.xp,heroXp:heroProgress.xp,heroLevel:heroProgress.level,gold,routine,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,explorationResetVersion:EXPLORATION_RESET_VERSION,campaign,storyEncounter,weightJourney}
+  const cloudData={version:3,quests,journalDate,xp:heroProgress.xp,heroXp:heroProgress.xp,heroLevel:heroProgress.level,gold,routine,routineDate,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,explorationResetVersion:EXPLORATION_RESET_VERSION,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -542,6 +544,7 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-hero-level',JSON.stringify(level)),[level])
   useEffect(()=>localStorage.setItem('life-rpg-gold',JSON.stringify(gold)),[gold])
   useEffect(()=>localStorage.setItem('life-rpg-routine',JSON.stringify(routine)),[routine])
+  useEffect(()=>localStorage.setItem('life-rpg-routine-date',JSON.stringify(routineDate)),[routineDate])
   useEffect(()=>localStorage.setItem('life-rpg-grades',JSON.stringify(grades)),[grades])
   useEffect(()=>localStorage.setItem('life-rpg-module',JSON.stringify(module)),[module])
   useEffect(()=>localStorage.setItem('life-rpg-boss',JSON.stringify(boss)),[boss])
@@ -572,17 +575,21 @@ export default function App() {
   useEffect(()=>{const timer=setInterval(()=>setRealmTime(new Date()),60000);return()=>clearInterval(timer)},[])
   useEffect(()=>{
     const resetRoutineAtEST=()=>{
-      const today=getESTDateKey();const last=load('routine-date',null)
-      if(last!==today){setRoutine(xs=>xs.map(x=>({...x,done:false,xpAwarded:false})));localStorage.setItem('life-rpg-routine-date',JSON.stringify(today))}
+      if(!cloudHydrated)return
+      const today=getESTDateKey()
+      if(routineDate!==today){
+        setRoutine(xs=>xs.map(x=>({...x,done:false,xpAwarded:false})))
+        setRoutineDate(today)
+      }
     }
     resetRoutineAtEST()
     const timer=setInterval(resetRoutineAtEST,30000)
     return()=>clearInterval(timer)
-  },[])
+  },[cloudHydrated,routineDate])
   useEffect(()=>{
     const resetDailyAtEST=()=>{
       const today=getESTDateKey()
-      if(journalDate!==today){setQuests([]);setJournalDate(today)}
+      if(journalDate!==today){setJournalDate(today)}
       if(daily.date!==today)setDaily(x=>({...x,date:today,completed:[],bonusClaimed:false}))
       if(villagerQuests.date!==today)setVillagerQuests({date:today,active:[],completed:[]})
     }
