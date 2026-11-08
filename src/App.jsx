@@ -38,8 +38,9 @@ function formatStudyDay(key){
 }
 function getLevelRequirement(level){return 250+(Math.max(1,level)-1)*150}
 function getLevelData(totalXp){
-  let level=Math.floor(Math.max(0,Number(totalXp)||0)/250)+1
-  return {level,levelXp:Math.max(0,Number(totalXp)||0)%250,needed:getLevelRequirement(level),progress:Math.min(100,(Math.max(0,Number(totalXp)||0)%250)/getLevelRequirement(level)*100)}
+  const legacyXp=Math.max(0,Number(totalXp)||0)
+  const level=Math.floor(legacyXp/250)+1
+  return {level,xp:legacyXp%250}
 }
 
 const QUESTS = [
@@ -372,7 +373,7 @@ export default function App() {
   const [journalDate,setJournalDate] = useState(() => load('journal-date', getESTDateKey()))
   const [heroProgress,setHeroProgress] = useState(() => {
     const savedLevel=load('hero-level',null), savedXp=load('hero-xp',null)
-    if(Number.isInteger(savedLevel)&&typeof savedXp==='number')return {level:savedLevel,xp:savedXp}
+    if(Number.isInteger(savedLevel)&&typeof savedXp==='number')return {level:savedLevel,xp:Math.max(0,savedXp)}
     return getLevelData(load('xp',245))
   })
   const [gold,setGold] = useState(() => load('gold',86))
@@ -639,9 +640,14 @@ export default function App() {
     const gain=Math.max(0,Number(amount)||0)
     if(!gain)return
     setHeroProgress(prev=>{
-      let nextXp=prev.xp+gain, nextLevel=prev.level
+      let nextLevel=prev.level
+      let nextXp=Math.max(0,prev.xp)+gain
       let needed=getLevelRequirement(nextLevel)
-      while(nextXp>=needed){nextXp-=needed;nextLevel+=1;needed=getLevelRequirement(nextLevel)}
+      while(nextXp>=needed){
+        nextXp-=needed
+        nextLevel+=1
+        needed=getLevelRequirement(nextLevel)
+      }
       if(nextLevel>prev.level)notify('LEVEL UP! You reached Hero Level '+nextLevel+'.')
       return {level:nextLevel,xp:nextXp}
     })
