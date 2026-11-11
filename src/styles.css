@@ -503,7 +503,9 @@ nav button:hover{background:#292b31;color:#f1ead7}
 
 
 /* Grand Archive + Verdant Wilds · Hall-style page headers */
+.archive-page,.wilds-page{max-width:1100px}
 .archive-page .archive-hero{
+
   background:linear-gradient(145deg,#202733,#1b2029);
   border-color:rgba(140,169,216,.28);
 }
