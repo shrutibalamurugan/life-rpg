@@ -36,7 +36,7 @@ function formatStudyDay(key){
   const [y,m,d]=key.split('-').map(Number)
   return new Intl.DateTimeFormat('en-US',{weekday:'short',timeZone:EST_TIME_ZONE}).format(new Date(Date.UTC(y,m-1,d,12)))
 }
-function getLevelRequirement(level){return 250+(Math.max(1,level)-1)*150}
+function getLevelRequirement(level){return 250+(Math.max(1,level)-1)*200}
 function getLevelData(totalXp){
   const legacyXp=Math.max(0,Number(totalXp)||0)
   const level=Math.floor(legacyXp/250)+1
@@ -60,8 +60,8 @@ const WORLDS = [
 ]
 
 const REWARDS = [
-  {name:'Cozy Cafe Run', cost:30, icon:'☕'}, {name:'Movie Night', cost:60, icon:'🎬'},
-  {name:'New Book', cost:90, icon:'📖'}, {name:'Little Treat', cost:120, icon:'🍰'}
+  {name:'Cozy Cafe Run', cost:50, icon:'☕'}, {name:'Movie Night', cost:100, icon:'🎬'},
+  {name:'New Book', cost:150, icon:'📖'}, {name:'Little Treat', cost:200, icon:'🍰'}
 ]
 
 const ACHIEVEMENT_INFO = {
