@@ -1322,8 +1322,47 @@ function LocationPage({area,progress,onBack,onQuest,onEncounter}){
 
 function WorldCard({world,onClick,large=false,locked=false}){const Icon=world.icon;return <button className={'world-card panel '+(large?'large ':'')+(locked?'locked':'')} onClick={onClick} disabled={locked}><div className="world-art"><Icon size={large?38:28}/><span>{world.stat}</span></div><div><h3>{locked?'🔒 ':''}{world.name}</h3><p>{locked?'Unlock at level '+world.unlockLevel:world.desc}</p></div><span className="circle-btn">{locked?'🔒':<ChevronRight size={17}/>}</span></button>}
 
-function CharacterPage({character,level,xp,gold,stats,openCharacterEditor}){const levelNeeded=getLevelRequirement(level);const progress=Math.min(100,(Math.max(0,xp)/levelNeeded)*100);return <div className="hero-character-section"><div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:progress+'%'}}/></div><span>{xp} / {levelNeeded} XP</span><strong className="sheet-gold">◈ {gold} gold</strong></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div><div className="stat-cards">{stats.map(([label,value,name,Icon])=><div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name}</small></div>)}</div><div className="panel character-rules"><span className="eyebrow">HOW YOUR HERO GROWS</span><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> glow-up quests</div></div></div>}
-function AstralPage({astralState,stats,completeAstralRitual,setActive}){
+function getHeroIdentity(stats){
+ const values=Object.fromEntries(stats.map(s=>[s[0],s[1]]))
+ const pairs=[
+  {keys:['INT','DIS'],title:'Scholar',desc:'A deliberate learner who turns knowledge into consistent action.',threshold:16},
+  {keys:['VIT','DIS'],title:'Trailblazer',desc:'A steadfast adventurer who thrives by moving forward.',threshold:16},
+  {keys:['RAD','SPI'],title:'Radiant',desc:'A reflective hero who turns care and self-expression into strength.',threshold:16},
+  {keys:['SPI','INT'],title:'Seeker',desc:'A curious traveler drawn toward hidden meaning and quiet mysteries.',threshold:16}
+ ]
+ const hybrid=pairs.find(p=>p.keys.every(k=>values[k]>=p.threshold))
+ if(hybrid)return hybrid
+ const highest=Object.entries(values).sort((a,b)=>b[1]-a[1])[0]?.[0]||'DIS'
+ const solo={
+  VIT:{title:'Wayfarer',desc:'Your strength is built through movement and endurance.'},
+  INT:{title:'Scholar',desc:'Your strength is built through learning and curiosity.'},
+  SPI:{title:'Listener',desc:'Your strength is built through reflection and recovery.'},
+  DIS:{title:'Steadfast',desc:'Your strength is built through consistency and follow-through.'},
+  RAD:{title:'Polished',desc:'Your strength is built through self-care and personal expression.'}
+ }
+ return solo[highest]
+}
+function getStatTitle(stat,value){
+ const tiers={
+  VIT:[[30,'Ironheart'],[20,'Trailblazer'],[10,'Wayfarer']],
+  INT:[[30,'Lorekeeper'],[20,'Archivist'],[10,'Scholar']],
+  SPI:[[30,'Soulkeeper'],[20,'Stargazer'],[10,'Listener']],
+  DIS:[[30,'Iron Will'],[20,'Oathkeeper'],[10,'Steadfast']],
+  RAD:[[30,'Luminary'],[20,'Radiant'],[10,'Polished']]
+ }
+ return (tiers[stat]||[]).find(([min])=>value>=min)?.[1]||'Awakening'
+}
+
+function CharacterPage({character,level,xp,gold,stats,openCharacterEditor}){
+ const identity=getHeroIdentity(stats)
+ const strongest=stats.map(s=>({stat:s[0],value:s[1]})).sort((a,b)=>b.value-a.value)[0]
+ return <div className="hero-character-section">
+  <div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><div className="hero-identity"><span className="identity-badge">✦ {identity.title}</span><p>{identity.desc}</p></div><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:Math.min(100,(Math.max(0,xp)/getLevelRequirement(level))*100)+'%'}}/></div><span>{xp} / {getLevelRequirement(level)} XP</span><strong className="sheet-gold">◈ {gold} gold</strong></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div>
+  <div className="stat-cards">{stats.map(([label,value,name,Icon])=><div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name} · {getStatTitle(label,value)}</small></div>)}</div>
+  <div className="panel character-rules"><span className="eyebrow">YOUR CURRENT BUILD</span><div><b>IDENTITY</b> {identity.title} · {identity.desc}</div><div><b>STRONGEST STAT</b> {strongest.stat} · {getStatTitle(strongest.stat,strongest.value)}</div><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> self-care + personal development</div><small>Your identity is derived from your build and can evolve as your stats change.</small></div>
+ </div>
+}
+function AstralPage({astralState,stats,completeAstralRitual,setActive,setAstralState}){
  const spi=stats.find(s=>s[0]==='SPI')?.[1]||0
  const found=new Set(astralState.signs||[])
  const next=ASTRAL_SIGNS.find(x=>spi>=x.requirement&&!found.has(x.id))
