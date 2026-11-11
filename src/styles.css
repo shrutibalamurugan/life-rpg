@@ -502,69 +502,33 @@ nav button:hover{background:#292b31;color:#f1ead7}
 .character-rules small{display:block;margin-top:10px;color:#8e8277;font-size:11px;line-height:1.5}
 
 
-/* Grand Archive + Verdant Wilds · Hall-style presentation */
-.hall-page{max-width:1100px}
-.hall-page .page-intro{margin-bottom:18px}
-.hall-page .page-intro h2{font-size:clamp(18px,3vw,25px);margin-top:7px}
-.hall-page .page-intro p{max-width:700px}
-.hall-page .module-header,
-.hall-page .study-session-form,
-.hall-page .grade-form,
-.hall-page .mastery,
-.hall-page .boss-panel,
-.hall-page .archive-section>.section-head,
-.hall-page .workout-panel,
-.hall-page .weight-journey,
-.hall-page .meal-planner,
-.hall-page .gentle-note{border:1px solid rgba(214,183,117,.24);background:linear-gradient(145deg,#29262f,#211f27);box-shadow:0 10px 30px rgba(0,0,0,.18)}
-.hall-page .module-header{padding:18px 20px;border-top:3px solid rgba(169,139,196,.42)}
-.hall-page .study-grid{gap:12px}
-.hall-page .study-grid>.panel{padding:20px}
-.hall-page .study-grid .eyebrow,
-.hall-page .archive-section .eyebrow{color:#b8985c}
-.hall-page .module-name{font-size:17px;font-weight:700;color:var(--cream);background:transparent;border:0;border-bottom:1px solid #514c56;padding:6px 0;outline:none}
-.hall-page .module-header label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.hall-page .module-header label input{display:block;margin-top:6px}
-.hall-page .study-reward-track{padding:16px 0 0}
-.hall-page .study-reward-grid{gap:10px}
-.hall-page .study-reward{background:#211f27;border-color:#49454f}
-.hall-page .study-reward.reached{border-color:rgba(169,139,196,.55);background:linear-gradient(145deg,rgba(90,69,109,.3),rgba(35,31,42,.95));box-shadow:0 0 0 1px rgba(169,139,196,.08) inset}
-.hall-page .study-week-grid{padding:12px;background:#1d1c22;border:1px solid #3e3a43}
-.hall-page .study-day{background:#24232b;border-color:#46424c}
-.hall-page .study-day-bar i{background:linear-gradient(180deg,#9b86b5,#d0a34f)}
-.hall-page .study-session-form input,
-.hall-page .grade-form input{background:#18191f;border-color:#514c56}
-.hall-page .boss-panel{border-top:3px solid rgba(169,139,196,.5)}
-.hall-page .boss-panel h3{color:#e6d9ef}
-.hall-page .grade-list{gap:8px}
-.hall-page .grade-row{background:#211f27;border:1px solid #45414b;box-shadow:none}
+/* Grand Archive + Verdant Wilds · Hall-style page headers */
+.archive-page .archive-hero{
+  background:linear-gradient(145deg,#202733,#1b2029);
+  border-color:rgba(140,169,216,.28);
+}
+.archive-page .archive-orb{
+  background:radial-gradient(circle,rgba(120,155,215,.34),rgba(55,75,105,.08) 60%,transparent 72%);
+  border-color:rgba(140,169,216,.42);
+}
+.archive-page .archive-hero h2{color:#e6edf8}
+.archive-page .archive-hero p{max-width:680px}
 
-.wilds-page .page-intro{margin-bottom:18px}
-.wilds-page .weight-journey{border-top:3px solid rgba(111,155,98,.55)}
-.wilds-page .journey-heading h2,
-.wilds-page .section-head h2{color:#e8e3d4}
-.wilds-page .journey-badge{background:#263528;border:1px solid rgba(111,155,98,.5);color:#a9c59d}
-.wilds-page .milestone-track{background:#1b1d1a;border:1px solid #3d4938;padding:10px}
-.wilds-page .milestone.reached{border-color:rgba(111,155,98,.65);background:rgba(91,126,73,.14)}
-.wilds-page .meal-planner{border-top:3px solid rgba(111,155,98,.45)}
-.wilds-page .meal-row{background:#211f27;border:1px solid #45414b}
-.wilds-page .meal-row.done{border-color:rgba(111,155,98,.55);background:rgba(91,126,73,.1)}
-.wilds-page .body-grid{gap:10px}
-.wilds-page .body-card{background:linear-gradient(145deg,#292d2a,#211f24);border:1px solid rgba(111,155,98,.28);box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.wilds-page .body-card svg:first-child{color:#9dbb8e}
-.wilds-page .body-card strong{color:#eee8d5}
-.wilds-page .workout-book{margin-top:30px}
-.wilds-page .split-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
-.wilds-page .split-tabs button{background:#211f27;border:1px solid #45414b;color:#aaa59a;padding:9px 12px}
-.wilds-page .split-tabs button.active{background:#394634;border-color:rgba(111,155,98,.65);color:#f1ead7;box-shadow:2px 2px 0 #111217}
-.wilds-page .workout-panel{border-top:3px solid rgba(111,155,98,.5)}
-.wilds-page .exercise-row{background:#211f27;border-color:#45414b}
-.wilds-page .pr-note,.wilds-page .gentle-note{background:#20251f;border-color:rgba(111,155,98,.3)}
-.wilds-page .pr-note svg,.wilds-page .gentle-note svg{color:#9dbb8e}
+.wilds-page .wilds-hero{
+  background:linear-gradient(145deg,#202920,#1a211b);
+  border-color:rgba(111,155,98,.3);
+}
+.wilds-page .wilds-orb{
+  background:radial-gradient(circle,rgba(111,155,98,.34),rgba(54,83,49,.08) 60%,transparent 72%);
+  border-color:rgba(132,166,108,.45);
+  color:#c6dcb9;
+}
+.wilds-page .wilds-hero h2{color:#e8f0e1}
+.wilds-page .wilds-hero p{max-width:680px}
 
 @media(max-width:700px){
- .hall-page .module-header{padding:15px}
- .hall-page .study-grid{grid-template-columns:1fr}
- .hall-page .study-reward-grid{grid-template-columns:1fr 1fr}
- .wilds-page .body-grid{grid-template-columns:1fr}
+  .archive-page .radiance-hero,
+  .wilds-page .radiance-hero{align-items:flex-start}
+  .archive-page .radiance-orb,
+  .wilds-page .radiance-orb{width:64px;height:64px;flex:0 0 64px}
 }
