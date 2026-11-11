@@ -301,6 +301,8 @@ const STORY_STAT_ROUTES={
   'world-after':{requirement:{RAD:25},label:'Choose to bring the restored world into your ordinary life',flags:['world-after-stat-radiance'],relationship:6,reputation:7,reward:{xp:190,gold:115,item:'🌟 Living-Day Star'},chapter:8,epilogue:'The Atlas records your ordinary day in gold. Becoming is not separate from living; it is what living looks like when you pay attention.'}
 }
 
+function formatStoryStatRequirement(requirements){return Object.entries(requirements||{}).map(([key,min])=>key+' '+min).join(' + ')}
+
 function getStoryChoices(encounter,stats){
   if(!encounter)return []
   const base=[...(encounter.choices||[])]
@@ -836,7 +838,7 @@ export default function App() {
   }
   function resolveStoryChoice(choice){
     if(!storyEncounter||storyEncounter.resolved)return
-    if(choice.statRequirement){const statReady=Object.entries(choice.statRequirement).every(([key,min])=>statValue(key)>=min);if(!statReady){notify('This path requires '+formatStatRequirement(choice.statRequirement)+'.');return}}
+    if(choice.statRequirement){const statReady=Object.entries(choice.statRequirement).every(([key,min])=>statValue(key)>=min);if(!statReady){notify('This path requires '+formatStoryStatRequirement(choice.statRequirement)+'.');return}}
     const earned=campaign.productivity||{xp:0,quests:0}
     if((earned.xp||0)<100||(earned.quests||0)<3){notify('The Atlas is sealed. Earn 100 productivity XP and complete 3 quests to choose your path.');return}
     const reward=choice.reward||{}
