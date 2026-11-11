@@ -478,5 +478,18 @@ nav button:hover{background:#292b31;color:#f1ead7}
 @media(max-width:900px){.stat-purpose-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.radiance-task-grid,.radiance-milestones{grid-template-columns:1fr}}
 @media(max-width:560px){.stat-purpose-grid{grid-template-columns:1fr}.radiance-hero{align-items:flex-start}.radiance-orb{width:64px;height:64px;flex:0 0 64px}.stat-purpose-card{min-height:0}}
 
-/* Astral Sanctum */
-.astral-page{max-width:1100px}.astral-hero{display:flex;align-items:center;justify-content:space-between;padding:1.5rem;margin-bottom:1.25rem}.astral-hero h2{margin:.25rem 0}.astral-hero p{max-width:650px;color:var(--muted,#aaa)}.astral-orb{width:82px;height:82px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgba(150,120,210,.3),rgba(70,50,100,.08) 60%,transparent 72%);font-size:2rem;border:1px solid rgba(170,140,220,.35);text-align:center}.astral-orb small{display:block;font-size:.55rem;letter-spacing:.14em}.astral-section{margin:1.5rem 0}.astral-ritual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}.astral-ritual{padding:1rem;display:flex;gap:.8rem;align-items:flex-start}.astral-ritual.done{opacity:.6}.astral-icon{font-size:1.7rem}.astral-ritual>div{flex:1}.astral-ritual b,.astral-sign b{font-size:.9rem}.astral-ritual p,.astral-sign p{font-size:.78rem;line-height:1.45;color:var(--muted,#aaa);margin:.35rem 0}.astral-ritual small,.astral-sign small{font-size:.68rem;color:var(--muted,#aaa)}.astral-sign-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}.astral-sign{padding:1rem;display:flex;gap:.8rem;align-items:flex-start}.astral-sign>div{flex:1}.astral-sign-icon{font-size:1.5rem}.astral-sign.ready{border-color:rgba(169,139,196,.45)}.astral-sign.found{border-color:rgba(217,180,91,.45);box-shadow:0 0 0 1px rgba(217,180,91,.1) inset}.astral-gate{padding:1.25rem;display:flex;align-items:center;gap:1rem;margin-top:1.5rem}.astral-gate>div:first-child{flex:1}.astral-gate h2{margin:.3rem 0}.astral-gate p{color:var(--muted,#aaa);font-size:.8rem;line-height:1.45}.astral-gate.open{border-color:rgba(169,139,196,.6);box-shadow:0 0 20px rgba(120,90,170,.1)}.gate-progress{display:flex;flex-direction:column;gap:.25rem;min-width:95px;text-align:center}.gate-progress b{font-size:.85rem}.gate-progress small{color:var(--muted,#aaa);font-size:.68rem}@media(max-width:700px){.astral-ritual-grid,.astral-sign-grid{grid-template-columns:1fr}.astral-hero{align-items:flex-start}.astral-orb{width:64px;height:64px;flex:0 0 64px}.astral-gate{align-items:flex-start;flex-wrap:wrap}.gate-progress{min-width:0;flex:1}}
+/* Astral Sanctum · Hall-style presentation */
+.astral-page .astral-hero{background:linear-gradient(145deg,#241e2b,#1d1822)}
+.astral-page .astral-orb{background:radial-gradient(circle,rgba(150,120,210,.34),rgba(70,50,100,.08) 60%,transparent 72%);border-color:rgba(170,140,220,.4)}
+.astral-page .astral-ritual,.astral-page .astral-sign{min-height:0}
+.astral-page .astral-ritual.ready,.astral-page .astral-sign.ready{border-color:rgba(169,139,196,.42)}
+.astral-page .astral-ritual.found,.astral-page .astral-sign.found{border-color:rgba(217,180,91,.45);box-shadow:0 0 0 1px rgba(217,180,91,.1) inset}
+.astral-page .astral-milestone.reached{border-color:rgba(169,139,196,.55)}
+.astral-page .astral-gate{margin-top:1.5rem}
+@media(max-width:900px){.astral-page .astral-ritual-grid,.astral-page .astral-sign-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.astral-page .astral-hero{align-items:flex-start}.astral-page .astral-orb{width:64px;height:64px;flex:0 0 64px}}
+
+.story-stat-route{border-color:rgba(142,121,169,.5);background:linear-gradient(145deg,rgba(66,52,82,.28),rgba(29,24,34,.95))}
+.story-stat-route h3{color:#dfc9f0}
+.story-stat-badge{display:inline-block;margin:2px 0 7px;padding:4px 7px;border:1px solid rgba(142,121,169,.45);color:#bca5ca;font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+.story-stat-route button:disabled{opacity:.42;cursor:not-allowed}
