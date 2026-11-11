@@ -768,17 +768,16 @@ export default function App() {
   function grantStat(key,amount=1){
     if(!STAT_META[key]||amount<=0)return 0
     const today=getESTDateKey()
-    let granted=0
     setStatGrowth(current=>{
       const base=current.date===today?current:{date:today,earned:{}}
       const already=Number(base.earned?.[key]||0)
       const room=Math.max(0,STAT_DAILY_CAP-already)
-      granted=Math.min(room,Math.max(0,Math.round(amount)))
+      const granted=Math.min(room,Math.max(0,Math.round(amount)))
       if(!granted)return base
+      setStatBonus(s=>({...s,[key]:(s[key]||0)+granted}))
       return {...base,earned:{...base.earned,[key]:already+granted}}
     })
-    if(granted)setStatBonus(s=>({...s,[key]:(s[key]||0)+granted}))
-    return granted
+    return Math.min(STAT_DAILY_CAP,Math.max(0,Math.round(amount)))
   }
   function rewardXp(amount,key){
     const bonus=key?statPassive(key):0
