@@ -20,6 +20,20 @@ const STUDY_REWARD_TIERS=[
   {hours:30,gold:200,label:'Grand Archivist'},
   {hours:40,gold:325,label:'Master of the Archive'}
 ]
+const STAT_META={
+  VIT:{name:'Vitality',icon:'♥',colorClass:'vit',effect:'Improves physical challenges and Verdant Wilds boss damage.'},
+  INT:{name:'Intelligence',icon:'📖',colorClass:'int',effect:'Strengthens Archive battles and study rewards.'},
+  SPI:{name:'Spirit',icon:'✦',colorClass:'spi',effect:'Improves recovery rewards and companion bonds.'},
+  DIS:{name:'Discipline',icon:'🛡',colorClass:'dis',effect:'Improves routine rewards and daily momentum.'},
+  RAD:{name:'Radiance',icon:'✧',colorClass:'rad',effect:'Unlocks the Hall of Radiance and its special rewards.'}
+}
+const STAT_MILESTONES=[
+  {value:10,label:'Awakened',bonus:'5% passive bonus'},
+  {value:20,label:'Mastered',bonus:'10% passive bonus'},
+  {value:30,label:'Exalted',bonus:'15% passive bonus'}
+]
+const STAT_DAILY_CAP=2
+
 function getWeekStartKey(date=new Date()){
   const parts=new Intl.DateTimeFormat('en-US',{timeZone:EST_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}).formatToParts(date)
   const map=Object.fromEntries(parts.map(p=>[p.type,p.value]))
@@ -419,6 +433,8 @@ export default function App() {
   const [characterEditor,setCharacterEditor] = useState(false)
   const [characterDraft,setCharacterDraft] = useState({name:'Shruti',race:'Human',className:'Wandering Mage',avatar:'🧙‍♀️'})
   const [statBonus,setStatBonus] = useState(() => load('stat-bonus', {VIT:0,INT:0,SPI:0,RAD:0,DIS:0}))
+  const [statGrowth,setStatGrowth] = useState(() => load('stat-growth', {date:'',earned:{}}))
+  const [radianceState,setRadianceState] = useState(() => load('radiance-state', {date:'',completed:[]}))
   const [workouts,setWorkouts] = useState(() => load('workouts', [
     {id:'back-bi',name:'Back + Biceps',icon:'⚔️',exercises:[{id:101,name:'Lat Pulldown',sets:3,reps:10,weight:50,best:50},{id:102,name:'Seated Cable Row',sets:3,reps:10,weight:50,best:50},{id:103,name:'Dumbbell Row',sets:3,reps:10,weight:20,best:20},{id:104,name:'Dumbbell Bicep Curl',sets:3,reps:10,weight:15,best:15}]},
     {id:'glutes',name:'Glutes',icon:'🍑',exercises:[{id:201,name:'Hip Thrust',sets:3,reps:10,weight:70,best:70},{id:202,name:'Romanian Deadlift',sets:3,reps:10,weight:50,best:50},{id:203,name:'Cable Kickback',sets:3,reps:12,weight:15,best:15},{id:204,name:'Hip Abduction',sets:3,reps:12,weight:70,best:70}]},
@@ -476,6 +492,8 @@ export default function App() {
     if(data.boss)setBoss(data.boss)
     if(data.character)setCharacter(data.character)
     if(data.statBonus)setStatBonus(data.statBonus)
+    if(data.statGrowth)setStatGrowth(data.statGrowth)
+    if(data.radianceState)setRadianceState(data.radianceState)
     if(data.workouts)setWorkouts(data.workouts)
     if(data.daily)setDaily(data.daily)
     if(data.achievements)setAchievements(data.achievements)
@@ -517,7 +535,7 @@ export default function App() {
   },[session?.user?.id])
 
   const xp=heroProgress.xp, level=heroProgress.level
-  const cloudData={version:3,quests,journalDate,xp:heroProgress.xp,heroXp:heroProgress.xp,heroLevel:heroProgress.level,gold,routine,routineDate,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,explorationResetVersion:EXPLORATION_RESET_VERSION,campaign,storyEncounter,weightJourney}
+  const cloudData={version:4,quests,journalDate,xp:heroProgress.xp,heroXp:heroProgress.xp,heroLevel:heroProgress.level,gold,routine,routineDate,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,statGrowth,radianceState,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,explorationResetVersion:EXPLORATION_RESET_VERSION,campaign,storyEncounter,weightJourney}
 
   useEffect(()=>{
     if(!session||!cloudHydrated)return
@@ -551,6 +569,8 @@ export default function App() {
   useEffect(()=>localStorage.setItem('life-rpg-boss',JSON.stringify(boss)),[boss])
   useEffect(()=>localStorage.setItem('life-rpg-character',JSON.stringify(character)),[character])
   useEffect(()=>localStorage.setItem('life-rpg-stat-bonus',JSON.stringify(statBonus)),[statBonus])
+  useEffect(()=>localStorage.setItem('life-rpg-stat-growth',JSON.stringify(statGrowth)),[statGrowth])
+  useEffect(()=>localStorage.setItem('life-rpg-radiance-state',JSON.stringify(radianceState)),[radianceState])
   useEffect(()=>localStorage.setItem('life-rpg-workouts',JSON.stringify(workouts)),[workouts])
   useEffect(()=>localStorage.setItem('life-rpg-weight-journey',JSON.stringify(weightJourney)),[weightJourney])
   useEffect(()=>localStorage.setItem('life-rpg-daily',JSON.stringify(daily)),[daily])
@@ -593,11 +613,13 @@ export default function App() {
       if(journalDate!==today){setJournalDate(today)}
       if(daily.date!==today)setDaily(x=>({...x,date:today,completed:[],bonusClaimed:false}))
       if(villagerQuests.date!==today)setVillagerQuests({date:today,active:[],completed:[]})
+      if(statGrowth.date!==today)setStatGrowth({date:today,earned:{}})
+      if(radianceState.date!==today)setRadianceState({date:today,completed:[]})
     }
     resetDailyAtEST()
     const timer=setInterval(resetDailyAtEST,30000)
     return()=>clearInterval(timer)
-  },[journalDate,daily.date,villagerQuests.date])
+  },[journalDate,daily.date,villagerQuests.date,statGrowth.date,radianceState.date])
   useEffect(()=>{
     const d=new Date()
     const currentDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -735,6 +757,33 @@ export default function App() {
   function recordProductivityProgress(xp,completedQuests=0){
     setCampaign(c=>({...c,productivity:{xp:(c.productivity?.xp||0)+Math.max(0,xp||0),quests:(c.productivity?.quests||0)+Math.max(0,completedQuests)}}))
   }
+  function statValue(key){return stats.find(s=>s[0]===key)?.[1]||0}
+  function statPassive(key){
+    const value=statValue(key)
+    if(value>=30)return 0.15
+    if(value>=20)return 0.10
+    if(value>=10)return 0.05
+    return 0
+  }
+  function grantStat(key,amount=1){
+    if(!STAT_META[key]||amount<=0)return 0
+    const today=getESTDateKey()
+    let granted=0
+    setStatGrowth(current=>{
+      const base=current.date===today?current:{date:today,earned:{}}
+      const already=Number(base.earned?.[key]||0)
+      const room=Math.max(0,STAT_DAILY_CAP-already)
+      granted=Math.min(room,Math.max(0,Math.round(amount)))
+      if(!granted)return base
+      return {...base,earned:{...base.earned,[key]:already+granted}}
+    })
+    if(granted)setStatBonus(s=>({...s,[key]:(s[key]||0)+granted}))
+    return granted
+  }
+  function rewardXp(amount,key){
+    const bonus=key?statPassive(key):0
+    addXp(Math.round(Math.max(0,Number(amount)||0)*(1+bonus)))
+  }
   function completeDaily(id){
     if(daily.completed.includes(id))return
     const q=dailyQuests.find(x=>x.id===id);if(!q)return
@@ -744,7 +793,7 @@ export default function App() {
     setDaily(d=>({...d,completed:next,streak,lastCompletedDate:todayKey}))
     if(streak>=3)unlockAchievement('three-day-flame')
     if(streak>=7)unlockAchievement('week-warrior')
-    addXp(q.xp);recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus)
+    rewardXp(q.xp,q.stat);recordProductivityProgress(q.xp,1);grantStat(q.stat);setGold(g=>g+Math.round(q.gold*(1+statPassive(q.stat)))+companionGoldBonus)
     if(next.length===dailyQuests.length&&!daily.bonusClaimed){setDaily(d=>({...d,bonusClaimed:true}));addXp(100);recordProductivityProgress(100);setGold(g=>g+50);unlockAchievement('main-character');notify('DAILY ADVENTURE COMPLETE! +100 bonus XP · +50 gold')}
     else notify(`${q.title} complete! +${q.xp} XP · +${q.gold} gold · ${streak}-day streak`)
   }
@@ -793,7 +842,7 @@ export default function App() {
     if(!villagerQuests.active.includes(id)||villagerQuests.completed.includes(id))return
     const q=VILLAGER_QUESTS.find(x=>x.id===id);if(!q)return
     setVillagerQuests(v=>({...v,active:v.active.filter(x=>x!==id),completed:[...v.completed,id]}))
-    addXp(q.xp);setGold(g=>g+q.gold);notify(`${q.villager}: ${VILLAGER_COMPLETE_DIALOGUE[q.villager]||'Well done, adventurer.'} · +${q.xp} XP · +${q.gold} gold`)
+    const villagerStat=({mind:'INT',spirit:'SPI',body:'VIT',life:'DIS'}[q.type]||'DIS');rewardXp(q.xp,villagerStat);grantStat(villagerStat);setGold(g=>g+Math.round(q.gold*(1+statPassive(villagerStat))));notify(`${q.villager}: ${VILLAGER_COMPLETE_DIALOGUE[q.villager]||'Well done, adventurer.'} · +${q.xp} XP · +${q.gold} gold`)
   }
 
   function completeChainStep(chainId){
@@ -817,7 +866,7 @@ export default function App() {
     const boss=realmBosses.find(b=>b.id===id); if(!boss||boss.defeated)return
     if(level<boss.unlock){notify('This boss awakens at level '+boss.unlock+'.');return}
     const statValue=stats.find(s=>s[0]===boss.stat)?.[1]||1
-    const damage=Math.max(25,Math.round(statValue*8))
+    const damage=Math.max(25,Math.round(statValue*8*(1+statPassive(boss.stat))))
     const hp=Math.max(0,boss.hp-damage); const defeated=hp===0
     setRealmBosses(xs=>xs.map(b=>b.id===id?{...b,hp,defeated}:b))
     if(defeated){const reward=REALM_BOSSES.find(b=>b.id===id);addXp(120+(boss.unlock*20));setGold(g=>g+60+(boss.unlock*10)+companionGoldBonus);unlockAchievement('realm-slayer');notify(boss.name+' defeated! '+reward.reward)}
@@ -872,7 +921,8 @@ export default function App() {
     if(!area||!exploredAreas.includes(areaId)||progress.questDone)return
     const next={...progress,questDone:true}
     setLocationProgress(p=>({...p,[areaId]:next}))
-    addXp(area.quest.xp);setGold(g=>g+area.quest.gold+companionGoldBonus+companionQuestGoldBonus('location'));bondCompanions()
+    const locationStat=areaId==='whispering-ruins'?'INT':areaId==='moonlit-observatory'?'SPI':'VIT'
+    rewardXp(area.quest.xp,locationStat);grantStat(locationStat);setGold(g=>g+Math.round(area.quest.gold*(1+statPassive(locationStat)))+companionGoldBonus+companionQuestGoldBonus('location'));bondCompanions()
     recordProductivityProgress(area.quest.xp,1)
     notify('Location quest complete! +'+area.quest.xp+' XP · +'+area.quest.gold+' gold')
     finishExplorationArea(areaId,next)
@@ -897,7 +947,7 @@ export default function App() {
   function finishQuest(id){
     const q=quests.find(x=>x.id===id); if(!q||q.done)return
     setQuests(xs=>xs.filter(x=>x.id!==id))
-    addXp(q.xp+(companions.includes('🐦 Edda’s Raven')?5:0));recordProductivityProgress(q.xp,1);setGold(g=>g+q.gold+companionGoldBonus);bondCompanions()
+    rewardXp(q.xp+(companions.includes('🐦 Edda’s Raven')?5:0),q.stat);recordProductivityProgress(q.xp,1);grantStat(q.stat||'DIS');setGold(g=>g+Math.round(q.gold*(1+statPassive(q.stat||'DIS')))+companionGoldBonus);bondCompanions()
     notify(`Journal quest complete! +${q.xp} XP · +${q.gold} gold`)
   }
   function addQuest(e){
@@ -905,7 +955,7 @@ export default function App() {
     setQuests(xs=>[...xs,{id:Date.now(),title:newQuest.trim(),subtitle:'Custom quest from your adventurer’s journal',xp:25,gold:5,type:'custom',stat:'DIS',done:false}])
     setNewQuest('');setShowQuest(false);notify('New quest added to your journal.')
   }
-  function toggleRoutine(id){const item=routine.find(x=>x.id===id);if(!item||item.active===false)return;const next=!item.done;setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:next,xpAwarded:x.xpAwarded||next}:x));if(next&&!item.xpAwarded){addXp((item.xp||20));recordProductivityProgress(item.xp||20);setGold(g=>g+companionGoldBonus);notify(`Ritual complete! +${item.xp||20} XP · ${item.stat||'DIS'} strengthened`)}}
+  function toggleRoutine(id){const item=routine.find(x=>x.id===id);if(!item||item.active===false)return;const next=!item.done;setRoutine(xs=>xs.map(x=>x.id===id?{...x,done:next,xpAwarded:x.xpAwarded||next}:x));if(next&&!item.xpAwarded){rewardXp((item.xp||20),item.stat||'DIS');recordProductivityProgress(item.xp||20);grantStat(item.stat||'DIS');setGold(g=>g+Math.round(5*(1+statPassive(item.stat||'DIS')))+companionGoldBonus);notify(`Ritual complete! +${item.xp||20} XP · ${item.stat||'DIS'} strengthened`)}}
   function openRoutineEditor(item){setRoutineEditorMode('edit');setEditingRoutine(item.id);setRoutineDraft({time:item.time,title:item.title,xp:item.xp||20,stat:item.stat||'DIS',repeat:item.repeat||'daily',active:item.active!==false})}
   function openRoutineCreator(){setRoutineEditorMode('add');setEditingRoutine(null);setRoutineDraft({time:'',title:'',xp:20,stat:'DIS',repeat:'daily',active:true})}
   function saveRoutine(e){e.preventDefault();if(!routineDraft.time.trim()||!routineDraft.title.trim())return;const clean={time:routineDraft.time.trim(),title:routineDraft.title.trim(),xp:Number(routineDraft.xp)||20,stat:routineDraft.stat,repeat:routineDraft.repeat,active:routineDraft.active};if(routineEditorMode==='add'){setRoutine(xs=>[...xs,{id:Date.now(),...clean,done:false}]);notify('New routine quest added.')}else{setRoutine(xs=>xs.map(x=>x.id===editingRoutine?{...x,...clean}:x));notify('Routine quest updated.')}setEditingRoutine(null)}
@@ -963,7 +1013,7 @@ export default function App() {
     const relevantGrades=grades.filter(g=>g.module===module.name||g.module==='Current Module')
     const sourceGrades=relevantGrades.length?relevantGrades:grades
     const avg=sourceGrades.length?sourceGrades.reduce((a,g)=>a+Number(g.score||0),0)/sourceGrades.length:0
-    const damage=Math.max(10,Math.round(avg>=85?160:avg>=70?100:35))
+    const damage=Math.max(10,Math.round((avg>=85?160:avg>=70?100:35)*(1+statPassive('INT'))))
     const hp=Math.max(0,Number(boss.hp??1000)-damage);const ready=hp===0
     setBoss(b=>({...b,attempts:b.attempts+1,hp,defeated:ready}))
     if(ready){addXp(250);setGold(g=>g+100);unlockAchievement('boss-slayer');notify('KNOWLEDGE WARDEN DEFEATED! +250 XP · +100 gold')}
@@ -979,12 +1029,25 @@ export default function App() {
     if(weight>Number(ex.best||0)){
       const gain=Math.max(1,Math.round((weight-Number(ex.best||0))/5))
       setWorkouts(xs=>xs.map(w=>w.id===workoutId?{...w,exercises:w.exercises.map(e=>e.id===exerciseId?{...e,best:weight}:e)}:w))
-      addXp(50);setGold(g=>g+15);setStatBonus(s=>({...s,VIT:(s.VIT||0)+gain}));unlockAchievement('pr-hunter')
+      rewardXp(50,'VIT');setGold(g=>g+Math.round(15*(1+statPassive('VIT'))));grantStat('VIT',gain);unlockAchievement('pr-hunter')
       notify('NEW PR! '+ex.name+' at '+weight+' lb · +50 XP · +15 gold · VIT +'+gain)
     }else notify(ex.name+' logged at '+weight+' lb. Keep building.')
   }
   function addExercise(e){e.preventDefault();if(!workoutDraft.name.trim())return;setWorkouts(xs=>xs.map(w=>w.id===activeWorkout?{...w,exercises:[...w.exercises,{id:Date.now(),name:workoutDraft.name.trim(),sets:Number(workoutDraft.sets)||3,reps:Number(workoutDraft.reps)||10,weight:Number(workoutDraft.weight)||0,best:Number(workoutDraft.weight)||0}]}:w));setWorkoutDraft({name:'',sets:3,reps:10,weight:0});setShowWorkoutForm(false);notify('Exercise added to the split.')}
   function deleteExercise(workoutId,exerciseId){setWorkouts(xs=>xs.map(w=>w.id===workoutId?{...w,exercises:w.exercises.filter(e=>e.id!==exerciseId)}:w));notify('Exercise removed from the split.')}
+  function completeRadianceTask(id){
+    const tasks=[
+      {id:'morning-glow',title:'Prepare the Hero'},
+      {id:'space-glow',title:'Restore the Keep'},
+      {id:'joy-glow',title:'Choose Something Beautiful'}
+    ]
+    const task=tasks.find(x=>x.id===id)
+    if(!task||radianceState.completed.includes(id))return
+    setRadianceState(s=>({...s,completed:[...s.completed,id]}))
+    grantStat('RAD')
+    setGold(g=>g+Math.round(10*(1+statPassive('RAD'))))
+    notify(task.title+' complete · RAD strengthened · +10 gold')
+  }
   function buyReward(r){
     if(gold<r.cost){notify('Not enough gold yet — keep adventuring!');return}
     setGold(g=>g-r.cost);notify(`${r.name} added to your real-life reward log.`)
@@ -1028,6 +1091,7 @@ export default function App() {
       {active==='story'&&<StoryPage campaign={campaign} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice} setActive={setActive}/>}
       {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss} studySessions={studySessions} studyDraft={studyDraft} setStudyDraft={setStudyDraft} addStudySession={addStudySession} deleteStudySession={deleteStudySession}/>}
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney}/>} 
+      {active==='radiance'&&<RadiancePage radianceState={radianceState} stats={stats} completeRadianceTask={completeRadianceTask} setActive={setActive}/>}
       {active==='map'&&<RealmPage level={level} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea} activeLocation={activeLocation} setActiveLocation={setActiveLocation} locationProgress={locationProgress} completeLocationQuest={completeLocationQuest} resolveLocationEncounter={resolveLocationEncounter}/>} 
       {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} companionBonds={companionBonds} companionUses={companionUses} callCompanion={callCompanion}/>} />
       
@@ -1145,7 +1209,7 @@ function BodyPage({workouts,activeWorkout,setActiveWorkout,updateExercise,logWor
 function BodyCard({icon:Icon,title,value,text,onClick}){return <button className="body-card panel" onClick={onClick}><Icon size={24}/><span className="eyebrow">{title}</span><strong>{value}</strong><small>{text}</small><ChevronRight size={15}/></button>}
 
 function MapPage({worlds,setActive,level,inventory,exploredAreas,exploreArea,activeLocation,setActiveLocation,locationProgress,completeLocationQuest,resolveLocationEncounter}){
- const destinations={body:'body',study:'study',life:'planner',glow:'dashboard',spirit:'dashboard',explore:'dashboard'}
+ const destinations={body:'body',study:'study',life:'planner',glow:'radiance',spirit:'dashboard',explore:'dashboard'}
  const currentArea=EXPLORATION_AREAS.find(a=>a.id===activeLocation)
  if(currentArea&&exploredAreas.includes(currentArea.id))return <LocationPage area={currentArea} progress={locationProgress[currentArea.id]||{}} onBack={()=>setActiveLocation(null)} onQuest={()=>completeLocationQuest(currentArea.id)} onEncounter={i=>resolveLocationEncounter(currentArea.id,i)}/>
  return <div className="content">
@@ -1218,6 +1282,24 @@ function LocationPage({area,progress,onBack,onQuest,onEncounter}){
 function WorldCard({world,onClick,large=false,locked=false}){const Icon=world.icon;return <button className={'world-card panel '+(large?'large ':'')+(locked?'locked':'')} onClick={onClick} disabled={locked}><div className="world-art"><Icon size={large?38:28}/><span>{world.stat}</span></div><div><h3>{locked?'🔒 ':''}{world.name}</h3><p>{locked?'Unlock at level '+world.unlockLevel:world.desc}</p></div><span className="circle-btn">{locked?'🔒':<ChevronRight size={17}/>}</span></button>}
 
 function CharacterPage({character,level,xp,gold,stats,openCharacterEditor}){const levelNeeded=getLevelRequirement(level);const progress=Math.min(100,(Math.max(0,xp)/levelNeeded)*100);return <div className="hero-character-section"><div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:progress+'%'}}/></div><span>{xp} / {levelNeeded} XP</span><strong className="sheet-gold">◈ {gold} gold</strong></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div><div className="stat-cards">{stats.map(([label,value,name,Icon])=><div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name}</small></div>)}</div><div className="panel character-rules"><span className="eyebrow">HOW YOUR HERO GROWS</span><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> glow-up quests</div></div></div>}
+function RadiancePage({radianceState,stats,completeRadianceTask,setActive}){
+ const rad=stats.find(s=>s[0]==='RAD')?.[1]||0
+ const tasks=[
+  {id:'morning-glow',icon:'🪞',title:'Prepare the Hero',detail:'Do one small grooming or getting-ready ritual that makes you feel put together.'},
+  {id:'space-glow',icon:'🕯️',title:'Restore the Keep',detail:'Reset one small personal space so Future You inherits a calmer room or desk.'},
+  {id:'joy-glow',icon:'🌷',title:'Choose Something Beautiful',detail:'Spend 10 intentional minutes on something that makes you feel like yourself—music, art, outfit planning, a walk, or connection.'}
+ ]
+ const milestones=[{value:10,title:'The First Light',reward:'Unlock the Hall’s daily Radiance offerings.'},{value:20,title:'Radiant Adventurer',reward:'Future cosmetic and social rewards begin to appear.'},{value:30,title:'Luminary',reward:'Unlocks a special Radiance route in the world.'}]
+ return <div className="content radiance-page">
+  <button className="ghost location-back" onClick={()=>setActive('map')}><ChevronLeft size={16}/> Back to World Map</button>
+  <PageIntro eyebrow="HALL OF RADIANCE" title="A place to become visible to yourself" text="Radiance is not perfection. It is the practice of caring for yourself, your surroundings, and the parts of life that make you feel like you."/>
+  <section className="radiance-hero panel"><div><span className="eyebrow">RADIANCE</span><h2>Current Radiance · {rad}</h2><p>The Hall records small acts of self-respect. They do not need to be productive to count.</p></div><div className="radiance-orb">✦<small>RAD</small></div></section>
+  <section className="radiance-section"><div className="section-head"><div><span className="eyebrow">TODAY'S OFFERINGS</span><h2>Three ways to tend your light</h2><p className="muted">Each offering can be completed once per day. No XP grind—just a small stat reward and a little gold.</p></div></div><div className="radiance-task-grid">{tasks.map(task=>{const done=radianceState.completed.includes(task.id);return <article className={'panel radiance-task '+(done?'done':'')} key={task.id}><span className="radiance-task-icon">{task.icon}</span><div><b>{task.title}</b><p>{task.detail}</p><small>{done?'Completed today':'Reward · +1 RAD if the daily cap allows · +10 gold'}</small></div><button className="primary" disabled={done} onClick={()=>completeRadianceTask(task.id)}>{done?'Tended':'Tend'}</button></article>})}</div></section>
+  <section className="radiance-section"><div className="section-head"><div><span className="eyebrow">HALL MILESTONES</span><h2>What your Radiance builds toward</h2></div></div><div className="radiance-milestones">{milestones.map(m=><div className={'panel radiance-milestone '+(rad>=m.value?'reached':'')} key={m.value}><span>{rad>=m.value?'✦':'◇'}</span><div><b>RAD {m.value} · {m.title}</b><small>{m.reward}</small></div></div>)}</div></section>
+  <div className="map-tip panel"><Crown size={17}/><span><b>The Hall's future:</b> later phases can turn Radiance into cosmetics, social encounters, special titles, and story choices without making appearance or self-care a requirement for the main Atlas.</span></div>
+ </div>
+}
+
 function HeroPage({character,level,xp,gold,stats,openCharacterEditor,rewards,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic,companionBonds,companionUses,callCompanion}){
  return <div className="content hero-page"><PageIntro eyebrow="YOUR ADVENTURER" title="The Hero's Hall" text="Your character, growing strengths, treasures, companions, and real-life rewards—all in one place."/><CharacterPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor}/><InventoryPage gold={gold} rewards={rewards} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} companionBonds={companionBonds} companionUses={companionUses} callCompanion={callCompanion}/></div>
 }
