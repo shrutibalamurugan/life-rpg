@@ -493,3 +493,10 @@ nav button:hover{background:#292b31;color:#f1ead7}
 .story-stat-route h3{color:#dfc9f0}
 .story-stat-badge{display:inline-block;margin:2px 0 7px;padding:4px 7px;border:1px solid rgba(142,121,169,.45);color:#bca5ca;font-size:8px;letter-spacing:.08em;text-transform:uppercase}
 .story-stat-route button:disabled{opacity:.42;cursor:not-allowed}
+
+
+/* Phase 4 · Character identity */
+.hero-identity{margin:12px 0 14px;padding:10px 12px;border:1px solid rgba(184,151,85,.35);background:rgba(30,24,18,.5)}
+.identity-badge{display:inline-block;padding:5px 9px;border:1px solid rgba(214,177,94,.55);color:#e5c77f;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:800}
+.hero-identity p{margin:7px 0 0!important;color:#b9aa9a;font-size:12px!important}
+.character-rules small{display:block;margin-top:10px;color:#8e8277;font-size:11px;line-height:1.5}
