@@ -758,7 +758,7 @@ export default function App() {
     setCampaign(c=>({...c,productivity:{xp:(c.productivity?.xp||0)+Math.max(0,xp||0),quests:(c.productivity?.quests||0)+Math.max(0,completedQuests)}}))
   }
   function statValue(key){return stats.find(s=>s[0]===key)?.[1]||0}
-  function meetsStatRequirement(requirements){return Object.entries(requirements||{}).every(([key,min])=>statValue(key)>=min)}
+  function meetsStatRequirement(requirements){const entries=Object.entries(requirements||{});return entries.length>0&&entries.every(([key,min])=>statValue(key)>=min)}
   function formatStatRequirement(requirements){return Object.entries(requirements||{}).map(([key,min])=>key+' '+min).join(' + ')}
   function statPassive(key){
     const value=statValue(key)
