@@ -162,14 +162,14 @@ const NPC_UNLOCKS = {
 const DISCOVERY_INFO = {
   'moonwell': {level:3,icon:'💧',name:'Moonwell',desc:'A quiet place to reset.',reward:'Unlocks the Moonwell recovery stop.'},
   'old-bridge': {level:5,icon:'🌉',name:'Old Bridge',desc:'A forgotten crossing beyond the familiar road.',reward:'Unlocks a new route on the realm map.'},
-  'starlit-grove': {level:7,icon:'🌌',name:'Starlit Grove',desc:'A hidden reflection spot beneath an open sky.',reward:'Introduces Lyra, the Stargazer.'},
+  'starlit-grove': {level:7,atlas:true,icon:'🌌',name:'Starlit Grove',desc:'A hidden reflection spot beneath an open sky.',reward:'Introduces Lyra, the Stargazer.'},
   'market-square': {level:10,icon:'🏮',name:'Market Square',desc:'A bustling market beyond the Keep.',reward:'Unlocks the traveling market and new equipment.'},
-  'ember-library': {level:11,icon:'🔥',name:'Ember Library',desc:'A sealed library whose books glow only for persistent scholars.',reward:'Unlocks an Archive side quest and a forgotten study chamber.',statRequirement:{INT:20}},
+  'ember-library': {level:11,atlas:true,icon:'🔥',name:'Ember Library',desc:'A sealed library whose books glow only for persistent scholars.',reward:'Unlocks an Archive side quest and a forgotten study chamber.',statRequirement:{INT:20}},
   'glass-garden': {level:13,icon:'🌿',name:'Glass Garden',desc:'A greenhouse of impossible plants growing beneath crystal panes.',reward:'Unlocks a restorative garden route.',statRequirement:{RAD:16,SPI:12}},
-  'hollow-bell-tower': {level:15,icon:'🔔',name:'Hollow Bell Tower',desc:'A tower whose bell rings only when a new road is near.',reward:'Unlocks a new clue about the Atlas.',statRequirement:{DIS:18}},
+  'hollow-bell-tower': {level:15,atlas:true,icon:'🔔',name:'Hollow Bell Tower',desc:'A tower whose bell rings only when a new road is near.',reward:'Unlocks a new clue about the Atlas.',statRequirement:{DIS:18}},
   'sunforge-terrace': {level:17,icon:'☀️',name:'Sunforge Terrace',desc:'An abandoned terrace where daylight seems to linger after sunset.',reward:'Unlocks a rare crafting and reward route.',statRequirement:{VIT:18,RAD:15}},
   'silver-marsh': {level:19,icon:'🪷',name:'Silver Marsh',desc:'A quiet wetland that appears only after the realm has changed.',reward:'Unlocks a deeper route toward the outer map.',statRequirement:{VIT:18,SPI:15}},
-  'horizon-shrine': {level:22,icon:'🗿',name:'Horizon Shrine',desc:'A shrine at the edge of every known road.',reward:'A major late-Atlas discovery waits beyond it.',statRequirement:{INT:22,SPI:20}}
+  'horizon-shrine': {level:22,atlas:true,icon:'🗿',name:'Horizon Shrine',desc:'A shrine at the edge of every known road.',reward:'A major late-Atlas discovery waits beyond it.',statRequirement:{INT:22,SPI:20}}
 }
 
 const ATLAS_CLUE_INFO = {
@@ -928,9 +928,16 @@ export default function App() {
     const place=DISCOVERY_INFO[id]
     if(!place)return
     const statReady=meetsStatRequirement(place.statRequirement)
-    if(level<place.level&&!statReady){notify(place.name+' requires Hero Level '+place.level+' or '+formatStatRequirement(place.statRequirement)+'.');return}
+    const atlasGate=!!place.atlas
+    const unlocked=atlasGate ? level>=place.level : level>=place.level&&statReady
+    if(!unlocked){
+      notify(atlasGate
+        ? place.name+' requires Hero Level '+place.level+'.'
+        : place.name+' requires Hero Level '+place.level+' and '+formatStatRequirement(place.statRequirement)+'.')
+      return
+    }
     const bonus=statReady?10:0
-    setDiscoveries(d=>[...d,id]);addXp(35+bonus);setGold(g=>g+15+bonus+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! '+place.name+' · +'+(35+bonus)+' XP · +'+(15+bonus)+' gold'+(statReady?' · stat route':'') )
+    setDiscoveries(d=>[...d,id]);addXp(35+bonus);setGold(g=>g+15+bonus+companionGoldBonus);unlockAchievement('pathfinder');notify('NEW DISCOVERY! '+place.name+' · +'+(35+bonus)+' XP · +'+(15+bonus)+' gold'+(statReady?' · stat mastery bonus':'') )
   }
   function finishExplorationArea(areaId,progress){
     const area=EXPLORATION_AREAS.find(x=>x.id===areaId)
@@ -951,7 +958,7 @@ export default function App() {
     if(exploredAreas.includes(id))return
     const area=EXPLORATION_AREAS.find(x=>x.id===id)
     if(!area)return
-    if(level<(area.requiredLevel||1)&&!meetsStatRequirement(area.statRequirement)){notify(area.name+' is sealed until Hero Level '+area.requiredLevel+' or '+formatStatRequirement(area.statRequirement)+'.');return}
+    if(level<(area.requiredLevel||1)){notify(area.name+' is sealed until Hero Level '+area.requiredLevel+'.');return}
     const key=area.requiredItems.find(item=>inventory.includes(item))
     if(!key){notify('You need a map clue to explore '+area.name+'. Check your Hero inventory.');return}
     setExploredAreas(xs=>[...xs,id])
@@ -1456,8 +1463,8 @@ function RealmPage({level,stats,timeLabel,isNight,town,upgradeTown,questChains,c
     <div className="pixel-mountains mountain-one"><i/><i/><i/></div><div className="pixel-mountains mountain-two"><i/><i/><i/><i/></div>
     <div className="pixel-village"><span className="village-banner">ADVENTURER'S KEEP</span><i/><i/><i/><i/><i/><i/><i/><i/></div><div className="pixel-market"><i/><span>MARKET</span></div><div className="pixel-ruins"><i/><i/><span>OLD RUINS</span></div><div className="pixel-camp"><i/><span>YOUR CAMP</span></div>
     {WORLDS.map(w=>{const unlocked=level>=(w.unlockLevel||1);const destinations={body:'body',study:'study',life:'planner',glow:'radiance',spirit:'astral',explore:'map'};return <button key={w.id} className={'map-zone map-zone-'+w.id+(unlocked?'':' locked')} disabled={!unlocked} onClick={()=>unlocked&&setActive(destinations[w.id]||'dashboard')} title={unlocked?w.desc:'Unlock at level '+w.unlockLevel}><span className="map-zone-icon">{w.id==='body'?'🌲':w.id==='study'?'📚':w.id==='spirit'?'🔮':w.id==='glow'?'✨':w.id==='life'?'🏰':'🧭'}</span><strong>{unlocked?'':'🔒 '}{w.name}</strong><small>{unlocked?w.desc:'Level '+w.unlockLevel}</small></button>})}
-    {places.map(([id,place],index)=>{const found=discoveries.includes(id);const statReady=meetsStatRequirement(place.statRequirement);const locked=level<place.level&&!statReady&&!found;const positions=[{left:'13%',top:'59%'},{left:'86%',top:'25%'},{left:'72%',top:'67%'},{left:'30%',top:'77%'},{left:'48%',top:'18%'},{left:'18%',top:'37%'},{left:'79%',top:'43%'},{left:'54%',top:'78%'},{left:'36%',top:'55%'},{left:'88%',top:'55%'}];const pos=positions[index]||{left:(20+((index*17)%65))+'%',top:(20+((index*23)%58))+'%'};return <button key={id} className={'map-discovery-marker '+(found?'found':'')+(locked?' locked':'')} style={pos} disabled={locked||found} onClick={()=>discoverRealm(id)} title={found?place.name:statReady?'Discover '+place.name+' via '+formatStatRequirement(place.statRequirement):'Discover '+place.name}><span>{locked?'🔒':place.icon}</span><b>{place.name}</b><small>{found?'Discovered':'Lv '+place.level}</small></button>})}
-    {EXPLORATION_AREAS.map((area,index)=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));const statReady=meetsStatRequirement(area.statRequirement);const sealed=level<(area.requiredLevel||1)&&!statReady;const positions=[{left:'23%',top:'30%'},{left:'61%',top:'36%'},{left:'86%',top:'70%'},{left:'16%',top:'78%'},{left:'73%',top:'16%'},{left:'43%',top:'88%'}];const pos=positions[index]||{left:(15+((index*19)%70))+'%',top:(20+((index*29)%62))+'%'};return <button key={area.id} className={'map-exploration-marker '+(explored&&!sealed?'found':'')+((sealed||(!explored&&!key))?'locked':'')} style={pos} disabled={sealed||(!explored&&!key)} onClick={()=>explored?setActiveLocation(area.id):exploreArea(area.id)} title={sealed?area.name+' · unlocks at level '+area.requiredLevel+' or '+formatStatRequirement(area.statRequirement):explored?'Enter '+area.name:key?'Explore '+area.name:'Find clue for '+area.name}><span>{sealed?'🔒':explored?'✓':key?'❔':'🔒'}</span><b>{area.name}</b><small>{sealed?'Lv '+area.requiredLevel+' / '+formatStatRequirement(area.statRequirement):explored?'Enter':key?'Clue found':'Hidden'}</small></button>})}
+    {places.map(([id,place],index)=>{const found=discoveries.includes(id);const statReady=meetsStatRequirement(place.statRequirement);const locked=place.atlas?level<place.level&&!found:level<place.level||!statReady&&!found;const positions=[{left:'13%',top:'59%'},{left:'86%',top:'25%'},{left:'72%',top:'67%'},{left:'30%',top:'77%'},{left:'48%',top:'18%'},{left:'18%',top:'37%'},{left:'79%',top:'43%'},{left:'54%',top:'78%'},{left:'36%',top:'55%'},{left:'88%',top:'55%'}];const pos=positions[index]||{left:(20+((index*17)%65))+'%',top:(20+((index*23)%58))+'%'};return <button key={id} className={'map-discovery-marker '+(found?'found':'')+(locked?' locked':'')} style={pos} disabled={locked||found} onClick={()=>discoverRealm(id)} title={found?place.name:place.atlas?'Discover '+place.name+' at Hero Level '+place.level:locked?'Requires Hero Level '+place.level+' + '+formatStatRequirement(place.statRequirement):'Discover '+place.name}><span>{locked?'🔒':place.icon}</span><b>{place.name}</b><small>{found?'Discovered':'Lv '+place.level}</small></button>})}
+    {EXPLORATION_AREAS.map((area,index)=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));const statReady=meetsStatRequirement(area.statRequirement);const sealed=level<(area.requiredLevel||1);const positions=[{left:'23%',top:'30%'},{left:'61%',top:'36%'},{left:'86%',top:'70%'},{left:'16%',top:'78%'},{left:'73%',top:'16%'},{left:'43%',top:'88%'}];const pos=positions[index]||{left:(15+((index*19)%70))+'%',top:(20+((index*29)%62))+'%'};return <button key={area.id} className={'map-exploration-marker '+(explored&&!sealed?'found':'')+((sealed||(!explored&&!key))?'locked':'')} style={pos} disabled={sealed||(!explored&&!key)} onClick={()=>explored?setActiveLocation(area.id):exploreArea(area.id)} title={sealed?area.name+' · unlocks at level '+area.requiredLevel:explored?'Enter '+area.name:key?'Explore '+area.name:'Find clue for '+area.name}><span>{sealed?'🔒':explored?'✓':key?'❔':'🔒'}</span><b>{area.name}</b><small>{sealed?'Lv '+area.requiredLevel:explored?'Enter':key?'Clue found':'Hidden'}</small></button>})}
     <div className="map-legend"><span><i className="legend-dot unlocked-dot"/>Known</span><span><i className="legend-dot locked-dot"/>Locked</span><span>New discoveries appear here permanently</span></div>
    </div>
    <div className="map-tip panel"><Compass size={17}/><span><b>The Atlas grows with you:</b> discoveries are permanent, hidden locations appear when you find their clues, and future map entries can be added without changing the map system.</span></div>
