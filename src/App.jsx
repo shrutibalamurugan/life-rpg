@@ -575,7 +575,7 @@ export default function App() {
       if(error)console.error('Cloud save failed',error)
     },400)
     return ()=>clearTimeout(saveTimerRef.current)
-  },[session?.user?.id,cloudHydrated,quests,journalDate,xp,level,gold,routine,routineDate,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
+  },[session?.user?.id,cloudHydrated,quests,journalDate,xp,level,gold,routine,routineDate,grades,studySessions,studyWeekClaims,module,boss,character,statBonus,statGrowth,radianceState,astralState,workouts,daily,achievements,companions,companionBonds,companionUses,inventory,event,villagerQuests,town,questChains,realmBosses,equipment,discoveries,exploredAreas,locationProgress,campaign,storyEncounter,weightJourney])
 
   useEffect(()=>{
     if(!session)return
@@ -915,8 +915,9 @@ export default function App() {
   function equipItem(item){
     if(!equipment.owned.includes(item.id))return
     if(!meetsStatRequirement(item.requirements)){notify(item.name+' requires '+formatStatRequirement(item.requirements)+'.');return}
-    setEquipment(e=>({...e,equipped:{...e.equipped,[item.slot]:e.equipped[item.slot]===item.id?null:item.id}}))
-    notify(item.name+(equipment.equipped[item.slot]===item.id?' unequipped.':' equipped!'))
+    const wasEquipped=equipment.equipped[item.slot]===item.id
+    setEquipment(e=>({...e,equipped:{...e.equipped,[item.slot]:wasEquipped?null:item.id}}))
+    notify(item.name+(wasEquipped?' unequipped.':' equipped!'))
   }
   function discoverRealm(id){
     if(discoveries.includes(id))return
@@ -1132,7 +1133,7 @@ export default function App() {
       {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} boss={boss} prepareBoss={prepareBoss} attemptBoss={attemptBoss} studySessions={studySessions} studyDraft={studyDraft} setStudyDraft={setStudyDraft} addStudySession={addStudySession} deleteStudySession={deleteStudySession}/>}
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney}/>} 
       {active==='radiance'&&<RadiancePage radianceState={radianceState} stats={stats} completeRadianceTask={completeRadianceTask} setActive={setActive}/>}
-      {active==='astral'&&<AstralPage astralState={astralState} stats={stats} completeAstralRitual={completeAstralRitual} setActive={setActive}/>}
+      {active==='astral'&&<AstralPage astralState={astralState} stats={stats} completeAstralRitual={completeAstralRitual} setActive={setActive} setAstralState={setAstralState}/>}
       {active==='map'&&<RealmPage level={level} stats={stats} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea} activeLocation={activeLocation} setActiveLocation={setActiveLocation} locationProgress={locationProgress} completeLocationQuest={completeLocationQuest} resolveLocationEncounter={resolveLocationEncounter}/>} 
       {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} companionBonds={companionBonds} companionUses={companionUses} callCompanion={callCompanion}/>} />
       
