@@ -699,12 +699,12 @@ export default function App() {
   const completed=quests.filter(q=>q.done).length
   const todayKey=getESTDateKey()
   const dailyQuests=[
-    {id:'study',title:'Enter the Grand Archive',subtitle:'Complete a focused study block',xp:35,gold:10,icon:'📜'},
-    {id:'body',title:'Train in the Verdant Wilds',subtitle:'Move for 20+ minutes or complete a workout',xp:35,gold:10,icon:'⚔️'},
-    {id:'ritual',title:'Tend the Adventurer',subtitle:'Complete one routine ritual',xp:25,gold:8,icon:'🕯️'},
-    {id:'nourish',title:'Nourish the Hero',subtitle:'Have a balanced meal with protein',xp:25,gold:8,icon:'🥗'},
-    {id:'explore',title:'Step Beyond the Keep',subtitle:'Visit somewhere new or take a new route',xp:40,gold:12,icon:'🗺️'},
-    {id:'rest',title:'Rest at Camp',subtitle:'Protect a real bedtime / wind-down',xp:25,gold:8,icon:'🌙'},
+    {id:'study',title:'Enter the Grand Archive',subtitle:'Complete a focused study block',xp:35,gold:10,icon:'📜',stat:'INT'},
+    {id:'body',title:'Train in the Verdant Wilds',subtitle:'Move for 20+ minutes or complete a workout',xp:35,gold:10,icon:'⚔️',stat:'VIT'},
+    {id:'ritual',title:'Tend the Adventurer',subtitle:'Complete one routine ritual',xp:25,gold:8,icon:'🕯️',stat:'DIS'},
+    {id:'nourish',title:'Nourish the Hero',subtitle:'Have a balanced meal with protein',xp:25,gold:8,icon:'🥗',stat:'VIT'},
+    {id:'explore',title:'Step Beyond the Keep',subtitle:'Visit somewhere new or take a new route',xp:40,gold:12,icon:'🗺️',stat:'SPI'},
+    {id:'rest',title:'Rest at Camp',subtitle:'Protect a real bedtime / wind-down',xp:25,gold:8,icon:'🌙',stat:'SPI'},
   ]
   const dailyDone=dailyQuests.filter(q=>daily.completed.includes(q.id)).length
   const VILLAGER_QUEST_POOLS=[
@@ -1080,7 +1080,7 @@ export default function App() {
 
     <main className="main">
       <header className="topbar">
-        <div><span className="eyebrow">{dayLabel} · {timeLabel} · THE ADVENTURE CONTINUES</span><h1>{nav.find(n=>n[0]===active)?.[1]||'Camp'}</h1></div>
+        <div><span className="eyebrow">{dayLabel} · {timeLabel} · THE ADVENTURE CONTINUES</span><h1>{nav.find(n=>n[0]===active)?.[1]||(active==='radiance'?'Hall of Radiance':'Camp')}</h1></div>
         <div className="top-actions"><div className="cloud-status"><Cloud size={13}/> <span>Cloud save</span></div><div className="currency">◈ <b>{gold}</b></div><div className="level-pill"><span>LVL</span><b>{level}</b></div><button className="signout-button" onClick={()=>supabase.auth.signOut()} title="Sign out"><LogOut size={14}/></button></div>
       </header>
 
