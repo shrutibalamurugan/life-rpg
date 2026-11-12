@@ -160,7 +160,11 @@ const NPC_DIALOGUE = {
   'Elara the Tailor': ['Prepare Future You a little gift tonight: make tomorrow easier.','Your outfit is equipment too. Wear something that makes you feel like the main character.'],
   'Rowan the Gardener': ['Feed the hero, do not negotiate with hunger all day.','A colorful plate is a small garden on the road.'],
   'Nessa the Innkeeper': ['Every adventurer needs a tavern where they can pause.','Water first, then back to the road when you are ready.'],
-  'Lyra the Stargazer': ['The stars are not a map until you learn how to read them.','The Grove only reveals itself to travelers who have earned their way beyond the familiar roads.']
+  'Lyra the Stargazer': ['The stars are not a map until you learn how to read them.','The Grove only reveals itself to travelers who have earned their way beyond the familiar roads.'],
+  'Juniper the Apothecary': ['The Keep has grown enough to need someone who understands small remedies.','A well-tended adventurer can go farther than a hurried one.'],
+  'Arden the Cartwright': ['Every road is easier when the wagon is prepared before departure.','I can repair almost anything except a journey you refuse to begin.'],
+  'Selene the Chronicler': ['A town becomes a history when someone remembers what happened here.','Bring me your questions. The margins often know more than the page.'],
+  'Rook the Bellkeeper': ['The old bell has been silent for years. I do not think that was an accident.','Some roads announce themselves before they appear. Listen carefully.']
 }
 const VILLAGER_COMPLETE_DIALOGUE = {
   'Mira the Healer':'Excellent, adventurer. You remembered that the hero carrying all these quests deserves care too.',
@@ -168,7 +172,11 @@ const VILLAGER_COMPLETE_DIALOGUE = {
   'Pip the Trainer':'That is how strength is built: one honest effort, then another. I am proud of you.',
   'Elara the Tailor':'Perfect. Future You just received a very useful gift.',
   'Rowan the Gardener':'Well tended, adventurer. A nourished hero can travel much farther.',
-  'Nessa the Innkeeper':'There we are. Hydrated, rested, and ready for whatever road comes next.'
+  'Nessa the Innkeeper':'There we are. Hydrated, rested, and ready for whatever road comes next.',
+  'Juniper the Apothecary':'The Keep is healthier because you chose to care for it and for yourself.',
+  'Arden the Cartwright':'Good work. A prepared road is a road worth traveling.',
+  'Selene the Chronicler':'Another page recovered. Keep going—the Keep is becoming a story worth preserving.',
+  'Rook the Bellkeeper':'The bell remembers your footsteps. I suspect it will ring again when the right road is near.'
 }
 const NPC_UNLOCKS = {
   'Mira the Healer': {level:1,role:'Healer',icon:'🧝‍♀️'},
@@ -176,8 +184,20 @@ const NPC_UNLOCKS = {
   'Pip the Trainer': {level:3,role:'Trainer',icon:'🏃'},
   'Elara the Tailor': {level:4,role:'Tailor',icon:'🧵'},
   'Rowan the Gardener': {level:5,role:'Gardener',icon:'🌿'},
-  'Nessa the Innkeeper': {level:6,role:'Innkeeper',icon:'🍵'}
+  'Nessa the Innkeeper': {level:6,role:'Innkeeper',icon:'🍵'},
+  'Juniper the Apothecary': {level:8,role:'Apothecary',icon:'🧪',requirements:{garden:2,VIT:12}},
+  'Arden the Cartwright': {level:11,role:'Cartwright',icon:'🛞',requirements:{guild:2,DIS:14}},
+  'Selene the Chronicler': {level:14,role:'Chronicler',icon:'🪶',requirements:{library:2,INT:16}},
+  'Rook the Bellkeeper': {level:18,role:'Bellkeeper',icon:'🔔',requirements:{tavern:3,SPI:15}}
 }
+const KEEP_MILESTONES = [
+  {level:7,title:'Council Chamber',icon:'🏛️',desc:'The Keep gains a place where its most trusted residents can shape its future.',bonus:'Permanent +1 Discipline'},
+  {level:10,title:'Town Square',icon:'🏮',desc:'The settlement becomes a true crossroads. Travelers begin treating the Keep as a destination.',bonus:'Permanent +1 Radiance'},
+  {level:15,title:'Outer Ward',icon:'🛡️',desc:'The Keep expands beyond its old walls and makes room for bigger ambitions.',bonus:'Permanent +1 Vitality'},
+  {level:20,title:'Grand Library Wing',icon:'📚',desc:'A new archive rises above the old one, preserving knowledge for the years ahead.',bonus:'Permanent +1 Intelligence'},
+  {level:25,title:'Stargazer’s Court',icon:'🌌',desc:'The Keep builds a quiet observatory for watching roads that do not appear on ordinary maps.',bonus:'Permanent +1 Spirit'},
+  {level:30,title:'Capital of the Realm',icon:'👑',desc:'The Keep is no longer merely a home base. It has become a power in the wider world.',bonus:'Permanent +1 to every stat'}
+]
 
 
 
@@ -741,13 +761,27 @@ export default function App() {
     garden:Number.isFinite(Number(townBuildings.garden))?Math.max(0,Math.floor(Number(townBuildings.garden))):0,
     library:Number.isFinite(Number(townBuildings.library))?Math.max(0,Math.floor(Number(townBuildings.library))):0
   }
+  const townMilestoneBonus=useMemo(()=>{
+    const out={VIT:0,INT:0,SPI:0,RAD:0,DIS:0}
+    KEEP_MILESTONES.forEach(m=>{
+      if(safeTownLevel>=m.level){
+        if(m.level===30){Object.keys(out).forEach(k=>out[k]+=1)}
+        else if(m.level===7)out.DIS+=1
+        else if(m.level===10)out.RAD+=1
+        else if(m.level===15)out.VIT+=1
+        else if(m.level===20)out.INT+=1
+        else if(m.level===25)out.SPI+=1
+      }
+    })
+    return out
+  },[safeTownLevel])
   const townBonus=useMemo(()=>({
-    VIT:safeTownBuildings.garden,
-    INT:safeTownBuildings.library,
-    SPI:Math.max(0,safeTownBuildings.tavern-1),
-    RAD:0,
-    DIS:Math.max(0,safeTownBuildings.guild-1)
-  }),[safeTownBuildings.guild,safeTownBuildings.tavern,safeTownBuildings.garden,safeTownBuildings.library])
+    VIT:safeTownBuildings.garden+townMilestoneBonus.VIT,
+    INT:safeTownBuildings.library+townMilestoneBonus.INT,
+    SPI:Math.max(0,safeTownBuildings.tavern-1)+townMilestoneBonus.SPI,
+    RAD:townMilestoneBonus.RAD,
+    DIS:Math.max(0,safeTownBuildings.guild-1)+townMilestoneBonus.DIS
+  }),[safeTownBuildings.guild,safeTownBuildings.tavern,safeTownBuildings.garden,safeTownBuildings.library,townMilestoneBonus])
   const stats=useMemo(()=>[
     ['VIT',7+(statBonus.VIT||0)+(gearBonus.VIT||0)+(townBonus.VIT||0),'Vitality',Heart],['INT',12+(statBonus.INT||0)+(gearBonus.INT||0)+(townBonus.INT||0),'Intelligence',BookOpen],['SPI',9+(statBonus.SPI||0)+(gearBonus.SPI||0)+(townBonus.SPI||0),'Spirit',Sparkles],
     ['RAD',6+(statBonus.RAD||0)+(gearBonus.RAD||0)+(townBonus.RAD||0),'Radiance',Crown],['DIS',8+(statBonus.DIS||0)+(gearBonus.DIS||0)+(townBonus.DIS||0),'Discipline',Shield]
@@ -815,6 +849,26 @@ export default function App() {
       {request:'Take a 5-minute hydration pause',detail:'Fill your bottle, drink slowly, and give yourself a moment to reset.',xp:15,gold:20},
       {request:'Refill your water bottle',detail:'A tiny tavern chore that makes the rest of the day easier.',xp:15,gold:20},
       {request:'Drink a full glass of water now',detail:'No grand quest required. Just hydrate your adventurer in this moment.',xp:15,gold:20}
+    ]},
+    {villager:'Juniper the Apothecary',avatar:'🧪',offset:6,type:'spirit',variants:[
+      {request:'Prepare one small thing that will make tomorrow easier',detail:'A little prevention is an adventurer’s best medicine.',xp:25,gold:35},
+      {request:'Take a proper 10-minute recovery break',detail:'No multitasking. Give your body and mind a genuine reset.',xp:25,gold:35},
+      {request:'Make a simple recovery plan for tonight',detail:'Choose when you will stop working, eat, and wind down.',xp:25,gold:35}
+    ]},
+    {villager:'Arden the Cartwright',avatar:'🛞',offset:7,type:'life',variants:[
+      {request:'Prepare one thing for your next departure',detail:'Pack, organize, or set out something that removes tomorrow’s friction.',xp:25,gold:35},
+      {request:'Repair one tiny piece of your routine',detail:'Fix a recurring inconvenience instead of working around it again.',xp:30,gold:40},
+      {request:'Clear a path through one cluttered area',detail:'Make one physical route easier to use tomorrow.',xp:25,gold:35}
+    ]},
+    {villager:'Selene the Chronicler',avatar:'🪶',offset:8,type:'mind',variants:[
+      {request:'Write a five-sentence summary from memory',detail:'Close your notes and reconstruct something you studied today.',xp:30,gold:40},
+      {request:'Review one old mistake and explain it',detail:'Return to a missed question and identify the exact reasoning gap.',xp:30,gold:40},
+      {request:'Teach one concept aloud for five minutes',detail:'Explain it as if Selene were checking whether the chapter truly stuck.',xp:35,gold:45}
+    ]},
+    {villager:'Rook the Bellkeeper',avatar:'🔔',offset:9,type:'spirit',variants:[
+      {request:'Spend 10 quiet minutes without your phone',detail:'Listen to the world around you and notice what you normally miss.',xp:25,gold:35},
+      {request:'Take a slow evening walk',detail:'Walk without turning it into a workout. Just listen and look.',xp:25,gold:35},
+      {request:'Write down one strange or beautiful thing you noticed',detail:'The Bellkeeper believes attention is how hidden roads reveal themselves.',xp:25,gold:35}
     ]}
   ]
   const daySeed=Number(todayKey.replaceAll('-',''))
@@ -1268,7 +1322,7 @@ export default function App() {
       </header>
 
       {active==='dashboard'&&<Dashboard quests={quests} stats={stats} xp={xp} gold={gold} progress={progress} completed={completed} finishQuest={finishQuest} setShowQuest={setShowQuest} worlds={WORLDS} setActive={setActive} dailyQuests={dailyQuests} daily={daily} dailyDone={dailyDone} completeDaily={completeDaily}/>}
-      {active==='quests'&&<QuestPage quests={quests} finishQuest={finishQuest} setShowQuest={setShowQuest} villagerQuests={villagerQuests} villagerQuestList={VILLAGER_QUESTS} acceptVillagerQuest={acceptVillagerQuest} completeVillagerQuest={completeVillagerQuest} townLevel={town.level} talkToNpc={talkToNpc} selectedNpc={selectedNpc} setSelectedNpc={setSelectedNpc} gold={gold} questChains={questChains} completeChainStep={completeChainStep}/>}
+      {active==='quests'&&<QuestPage quests={quests} finishQuest={finishQuest} setShowQuest={setShowQuest} villagerQuests={villagerQuests} villagerQuestList={VILLAGER_QUESTS} acceptVillagerQuest={acceptVillagerQuest} completeVillagerQuest={completeVillagerQuest} townLevel={safeTownLevel} townBuildings={safeTownBuildings} stats={stats} talkToNpc={talkToNpc} selectedNpc={selectedNpc} setSelectedNpc={setSelectedNpc} gold={gold} questChains={questChains} completeChainStep={completeChainStep}/>}
       {active==='planner'&&<RoutinePage routine={routine} toggleRoutine={toggleRoutine} openRoutineEditor={openRoutineEditor} openRoutineCreator={openRoutineCreator}/>}
       {active==='story'&&<StoryPage campaign={campaign} storyEncounter={storyEncounter} resolveStoryChoice={resolveStoryChoice} setActive={setActive}/>}
       {active==='study'&&<StudyPage grades={grades} newGrade={newGrade} setNewGrade={setNewGrade} addGrade={addGrade} openGradeEditor={openGradeEditor} module={module} setModule={setModule} boss={boss} prepareBoss={prepareBoss} playBossTurn={playBossTurn} studySessions={studySessions} studyDraft={studyDraft} setStudyDraft={setStudyDraft} addStudySession={addStudySession} deleteStudySession={deleteStudySession} stats={stats} setActive={setActive}/>}
@@ -1316,17 +1370,28 @@ function Quick({icon:Icon,title,value,onClick}){return <button className="quick-
 
 function Quest({q,finishQuest}){const Icon=q.type==='body'?Heart:q.type==='mind'?BookOpen:q.type==='spirit'?Sparkles:ScrollText;return <div className={'quest-row '+(q.done?'done':'')}><button className="check" onClick={()=>finishQuest(q.id)}>{q.done?<Check size={17}/>:''}</button><div className="quest-icon"><Icon size={18}/></div><div className="quest-info"><b>{q.title}</b><span>{q.subtitle}</span></div><div className="quest-reward"><b>+{q.xp} XP</b><span>◈ {q.gold}</span></div><span className="quest-type">{q.type}</span></div>}
 
-function QuestPage({quests,finishQuest,setShowQuest,villagerQuests,villagerQuestList,acceptVillagerQuest,completeVillagerQuest,townLevel,talkToNpc,selectedNpc,setSelectedNpc,gold,questChains,completeChainStep}){
- const unlockedNames=Object.entries(NPC_UNLOCKS).filter(([,cfg])=>townLevel>=cfg.level).map(([name])=>name)
+function QuestPage({quests,finishQuest,setShowQuest,villagerQuests,villagerQuestList,acceptVillagerQuest,completeVillagerQuest,townLevel,townBuildings,stats,talkToNpc,selectedNpc,setSelectedNpc,gold,questChains,completeChainStep}){
+ const statValue=key=>stats?.find(s=>s[0]===key)?.[1]||0
+ const npcReady=cfg=>townLevel>=cfg.level&&Object.entries(cfg.requirements||{}).every(([key,min])=>{
+   const buildingKeys=['guild','tavern','garden','library']
+   return buildingKeys.includes(key)?(townBuildings?.[key]||0)>=min:statValue(key)>=min
+ })
+ const npcRequirementText=cfg=>{
+   const parts=['Keep Level '+cfg.level]
+   Object.entries(cfg.requirements||{}).forEach(([key,min])=>parts.push(buildingKeysForNPC.includes(key)?key.charAt(0).toUpperCase()+key.slice(1)+' '+min:' '+key+' '+min))
+   return parts.join(' · ')
+ }
+ const buildingKeysForNPC=['guild','tavern','garden','library']
+ const unlockedNames=Object.entries(NPC_UNLOCKS).filter(([,cfg])=>npcReady(cfg)).map(([name])=>name)
  const unlocked=villagerQuestList.filter(q=>unlockedNames.includes(q.villager))
  const active=unlocked.filter(q=>villagerQuests.active.includes(q.id))
- const locked=Object.entries(NPC_UNLOCKS).filter(([,cfg])=>townLevel<cfg.level)
+ const locked=Object.entries(NPC_UNLOCKS).filter(([,cfg])=>!npcReady(cfg))
  return <div className="content"><PageIntro eyebrow="ADVENTURER'S JOURNAL" title="All quests" text="Turn the things you already want to do into tiny victories." action="+ New Quest" onAction={()=>setShowQuest(true)}/>
   <div className="quest-resource-strip panel"><span>YOUR PURSE</span><strong>◈ {gold}</strong><small>Earn gold by helping villagers, completing quests, exploring, and leveling up.</small></div>
   <section className="villager-section"><div className="section-head"><div><span className="eyebrow">QUESTS FROM THE REALM</span><h2>Help the villagers</h2></div><span className="muted">Choose up to 3 at once</span></div>
    {active.length>0&&<div className="villager-active"><div className="villager-active-title">🛡️ ACTIVE VILLAGER QUESTS</div>{active.map(q=><VillagerQuestCard key={q.id} q={q} state="active" onClick={()=>completeVillagerQuest(q.id)}/>)}</div>}
    <div className="villager-grid">{unlocked.map(q=><VillagerQuestCard key={q.id} q={q} state={villagerQuests.completed.includes(q.id)?'completed':villagerQuests.active.includes(q.id)?'active':'available'} onClick={()=>q&&acceptVillagerQuest(q.id)} onTalk={()=>talkToNpc(q.villager)} />)}</div>
-   {locked.length>0&&<div className="locked-villagers"><div className="section-head"><div><span className="eyebrow">PEOPLE YOU HAVE YET TO MEET</span><h3>Expand the Keep to find them</h3></div></div><div className="locked-villager-grid">{locked.map(([name,cfg])=><div className="locked-villager panel" key={name}><span>?</span><div><b>Unknown Villager</b><small>{cfg.role} · Unlocks at Keep Level {cfg.level}</small></div><em>🔒</em></div>)}</div></div>}
+   {locked.length>0&&<div className="locked-villagers"><div className="section-head"><div><span className="eyebrow">PEOPLE YOU HAVE YET TO MEET</span><h3>Expand the Keep to find them</h3></div></div><div className="locked-villager-grid">{locked.map(([name,cfg])=><div className="locked-villager panel" key={name}><span>{cfg.icon||'?'}</span><div><b>Unknown Villager</b><small>{cfg.role} · {npcRequirementText(cfg)}</small></div><em>🔒</em></div>)}</div></div>}
   </section>
   <section className="quest-chains-section"><div className="section-head"><div><span className="eyebrow">STORYLINES</span><h2>Quest Chains</h2><p className="muted">Help recurring characters through multi-step stories. Complete every chapter to earn a special title, bonus rewards, and a permanent place in the realm’s history.</p></div></div><div className="quest-chain-grid">{questChains.map(chain=>{const step=chain.steps[chain.progress];const done=chain.completed;return <div className={'quest-chain-card panel '+(done?'completed':'')} key={chain.id}><div className="quest-chain-head"><span className="chain-icon">{chain.icon}</span><div><b>{chain.title}</b><small>{chain.villager}</small></div><strong>{done?'✓':(chain.progress+1)+'/'+chain.steps.length}</strong></div><p>{chain.desc}</p>{done?<div className="chain-complete-line">🏆 {chain.completion}<small>{chain.completeLine}</small></div>:<div className="chain-step"><span className="eyebrow">CURRENT CHAPTER</span><h3>{step.title}</h3><p>{step.task}</p><div className="npc-reward-line">Reward: <b>+{step.xp} XP</b> · <b>+{step.gold} ◈</b></div><button className="primary" onClick={()=>completeChainStep(chain.id)}>Complete Chapter</button></div>}</div>})}</div></section>
   <div className="section-head"><div><span className="eyebrow">ADVENTURER'S JOURNAL</span><h2>My quests</h2><p className="muted">Your daily personal quest list. Add anything you need to get done; unfinished journal quests reset at midnight Eastern.</p></div></div><div className="quest-list full">{quests.length?quests.map(q=><Quest key={q.id} q={q} finishQuest={finishQuest}/>):<div className="empty-quest panel"><ScrollText size={20}/><span><b>Your journal is empty.</b><small>Add your first personal quest above.</small></span></div>}</div>
@@ -1598,7 +1663,8 @@ function RealmPage({level,stats,gold,timeLabel,isNight,town,upgradeTown,questCha
    </div>
    <div className="map-tip panel"><Compass size={17}/><span><b>The Atlas grows with you:</b> discoveries are permanent, hidden locations appear when you find their clues, and future map entries can be added without changing the map system.</span></div>
   </section>
-  <section><div className="section-head"><div><span className="eyebrow">YOUR TOWN</span><h2>Build the Keep</h2></div><span className="muted">Upgrades permanently improve your hero</span></div><div className="town-grid">{buildings.map(([id,icon,name,desc])=>{const lvl=safeTownBuildings[id]||0;const cost=100+lvl*75;return <div className="town-building panel" key={id}><div className="town-icon">{icon}</div><div><b>{name}</b><small>{desc}</small><span>Level {lvl}</span></div><button className="primary" onClick={()=>upgradeTown(id)}>Upgrade · {cost} ◈</button></div>})}</div></section>
+  <section><div className="section-head"><div><span className="eyebrow">YOUR TOWN</span><h2>Build the Keep</h2></div><span className="muted">Keep milestones now unlock permanent town-wide bonuses</span></div><div className="town-grid">{buildings.map(([id,icon,name,desc])=>{const lvl=safeTownBuildings[id]||0;const cost=100+lvl*75;return <div className="town-building panel" key={id}><div className="town-icon">{icon}</div><div><b>{name}</b><small>{desc}</small><span>Level {lvl}</span></div><button className="primary" onClick={()=>upgradeTown(id)}>Upgrade · {cost} ◈</button></div>})}</div>
+   <div className="keep-milestone-grid">{KEEP_MILESTONES.map(m=>{const reached=safeTownLevel>=m.level;return <article className={'keep-milestone panel '+(reached?'reached':'locked')} key={m.level}><span className="keep-milestone-icon">{reached?m.icon:'🔒'}</span><div><span className="eyebrow">KEEP LEVEL {m.level}</span><b>{m.title}</b><small>{m.desc}</small><em>{reached?'✓ '+m.bonus:'Locked · '+m.bonus}</em></div></article>})}</div></section>
   <section className="realm-section"><div className="section-head"><div><span className="eyebrow">DISCOVERIES</span><h2>Places you have found</h2><p className="muted">These landmarks are part of the world now. Future discoveries will automatically join this list.</p></div></div><div className="discovery-grid">{places.map(([id,place])=>{const found=discoveries.includes(id);const statReady=meetsStatRequirement(place.statRequirement);const locked=level<place.level&&!statReady&&!found;return <button className={'discovery-card panel '+(found?'found ':'')+(locked?'locked':'')} key={id} disabled={locked||found} onClick={()=>discoverRealm(id)}><span>{locked?'🔒':place.icon}</span><div><b>{place.name}</b><small>{found?place.reward:locked?(place.atlas?'Requires Hero Level '+place.level:'Requires Hero Level '+place.level+' + '+formatStatRequirement(place.statRequirement)):!place.atlas&&place.statRequirement?'Ready · Level '+place.level+' + '+formatStatRequirement(place.statRequirement):place.desc}</small></div><strong>{found?'✓':locked?'LVL '+place.level:'+ Discover'}</strong></button>})}</div></section>
   <section className="exploration-section"><div className="section-head"><div><span className="eyebrow">BEYOND THE KNOWN ROADS</span><h2>Hidden places</h2><p className="muted">Clues are held while you explore. A place becomes permanently marked when you finish both its real-life quest and its story encounter.</p></div></div><div className="exploration-grid">{EXPLORATION_AREAS.map(area=>{const explored=exploredAreas.includes(area.id);const key=area.requiredItems.find(item=>inventory.includes(item));const statReady=meetsStatRequirement(area.statRequirement);const sealed=level<(area.requiredLevel||1)&&!statReady;return <article className={'exploration-card panel '+(explored&&!sealed?'explored':'')} key={area.id}><div className="exploration-icon">{sealed?'🔒':explored?'✓':area.icon}</div><div className="exploration-copy"><b>{area.name}</b><p>{sealed?'The Atlas has sealed this road again. It will return when you reach Hero Level '+area.requiredLevel+' + '+formatStatRequirement(area.statRequirement)+'.':explored?area.discovery:area.description}</p><small>{sealed?'SEALED · LV '+area.requiredLevel+' + '+formatStatRequirement(area.statRequirement):explored?'DISCOVERED · '+area.rewardItem:key?'CLUE FOUND · '+key:'NEEDS '+area.requiredItems.map(x=>x.replace(/^\S+\s/,'')).join(' OR ')}</small></div><button className={explored?'ghost':'primary'} disabled={sealed||(explored?!!locationProgress[area.id]?.discoveryClaimed:!key)} onClick={()=>explored?setActiveLocation(area.id):exploreArea(area.id)}>{sealed?'Sealed':explored?(locationProgress[area.id]?.discoveryClaimed?'Complete':'Continue'):key?'Explore':'Find clue'}</button></article>})}</div></section>
   {discoveries.includes('starlit-grove')&&<section className="realm-section discovered-npc panel"><div className="section-head"><div><span className="eyebrow">NEW ARRIVAL</span><h2>Lyra the Stargazer</h2><p>Finding the Starlit Grove brought a new face to the realm.</p></div><span className="npc-avatar">🌌</span></div><div className="npc-speech">“{NPC_DIALOGUE['Lyra the Stargazer'][0]}”</div></section>}
