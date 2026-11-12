@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Component, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Backpack, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Compass, Crown, Flame,
   Heart, Map, Plus, ScrollText, Settings, Shield, Sparkles, Sword, Trophy,
@@ -7,6 +7,16 @@ import {
 import { supabase } from './lib/supabase'
 
 const EST_TIME_ZONE='America/New_York'
+class WorldErrorBoundary extends Component {
+  constructor(props){super(props);this.state={error:null}}
+  static getDerivedStateFromError(error){return {error}}
+  render(){
+    if(this.state.error){
+      return <div className="content realm-page"><section className="panel quest-chain-card"><span className="eyebrow">WORLD ERROR</span><h2>The Atlas stumbled</h2><p>The World screen hit a rendering error instead of going blank. Your save is still intact.</p><pre style={{whiteSpace:'pre-wrap',fontSize:12,opacity:.8}}>{String(this.state.error?.message||this.state.error)}</pre><button className="primary" onClick={()=>this.setState({error:null})}>Try World Again</button></section></div>
+    }
+    return this.props.children
+  }
+}
 function getESTDateKey(date=new Date()){
   const parts=new Intl.DateTimeFormat('en-US',{timeZone:EST_TIME_ZONE,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date)
   const map=Object.fromEntries(parts.map(p=>[p.type,p.value]))
@@ -1265,7 +1275,7 @@ export default function App() {
       {active==='body'&&<BodyPage workouts={workouts} activeWorkout={activeWorkout} setActiveWorkout={setActiveWorkout} updateExercise={updateExercise} logWorkout={logWorkout} showWorkoutForm={showWorkoutForm} setShowWorkoutForm={setShowWorkoutForm} workoutDraft={workoutDraft} setWorkoutDraft={setWorkoutDraft} addExercise={addExercise} deleteExercise={deleteExercise} setActive={setActive} weightJourney={weightJourney} setWeightJourney={setWeightJourney} stats={stats}/>} 
       {active==='radiance'&&<RadiancePage radianceState={radianceState} stats={stats} completeRadianceTask={completeRadianceTask} setActive={setActive}/>}
       {active==='astral'&&<AstralPage astralState={astralState} stats={stats} completeAstralRitual={completeAstralRitual} setActive={setActive} setAstralState={setAstralState}/>}
-      {active==='map'&&<RealmPage level={level} stats={stats} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea} activeLocation={activeLocation} setActiveLocation={setActiveLocation} locationProgress={locationProgress} completeLocationQuest={completeLocationQuest} resolveLocationEncounter={resolveLocationEncounter}/>} 
+      {active==='map'&&<WorldErrorBoundary><RealmPage level={level} stats={stats} timeLabel={timeLabel} isNight={isNight} town={town} upgradeTown={upgradeTown} questChains={questChains} completeChainStep={completeChainStep} realmBosses={realmBosses} strikeRealmBoss={strikeRealmBoss} equipment={equipment} equipmentCatalog={EQUIPMENT_CATALOG} buyEquipment={buyEquipment} equipItem={equipItem} companions={companions} discoveries={discoveries} discoverRealm={discoverRealm} setActive={setActive} inventory={inventory} exploredAreas={exploredAreas} exploreArea={exploreArea} activeLocation={activeLocation} setActiveLocation={setActiveLocation} locationProgress={locationProgress} completeLocationQuest={completeLocationQuest} resolveLocationEncounter={resolveLocationEncounter}/></WorldErrorBoundary>} 
       {active==='hero'&&<HeroPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor} rewards={REWARDS} customRewards={customRewards} customRewardDraft={customRewardDraft} setCustomRewardDraft={setCustomRewardDraft} addCustomReward={addCustomReward} deleteCustomReward={deleteCustomReward} claimCustomReward={claimCustomReward} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} companionBonds={companionBonds} companionUses={companionUses} callCompanion={callCompanion}/>} />
       
       {showQuest&&<div className="modal-backdrop" onClick={()=>setShowQuest(false)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="close" onClick={()=>setShowQuest(false)}><X/></button><span className="eyebrow">NEW QUEST</span><h2>Add a quest to your journal</h2><form onSubmit={addQuest}><input autoFocus value={newQuest} onChange={e=>setNewQuest(e.target.value)} placeholder="e.g. Walk to class instead of taking the bus"/><button className="primary" type="submit">Accept Quest <Sword size={16}/></button></form></div></div>}
