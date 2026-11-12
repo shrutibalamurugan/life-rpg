@@ -548,7 +548,7 @@ export default function App() {
     if(data.inventory)setInventory(data.inventory)
     if(data.event)setEvent(data.event)
     if(data.villagerQuests)setVillagerQuests(data.villagerQuests)
-    if(data.town)setTown(data.town)
+    if(data.town)setTown({level:Number(data.town.level)||1,xp:Number(data.town.xp)||0,buildings:{guild:1,tavern:1,garden:0,library:0,...(data.town.buildings||{})}})
     if(data.questChains)setQuestChains(data.questChains)
     if(data.realmBosses)setRealmBosses(data.realmBosses)
     if(data.equipment)setEquipment({owned:Array.isArray(data.equipment.owned)?data.equipment.owned:[],equipped:{weapon:null,armor:null,accessory:null,...(data.equipment.equipped||{})}})
@@ -723,7 +723,8 @@ export default function App() {
     })
   }
   const gearBonus=useMemo(()=>Object.values(equipment.equipped||{}).reduce((out,id)=>{const item=EQUIPMENT_CATALOG.find(x=>x.id===id);if(item)Object.entries(item.bonus).forEach(([k,v])=>out[k]=(out[k]||0)+v);return out},{}) ,[equipment.equipped])
-  const townBonus=useMemo(()=>({VIT:(town.buildings.garden||0),INT:(town.buildings.library||0),SPI:(town.buildings.tavern||0)-1,RAD:0,DIS:(town.buildings.guild||0)-1}),[town.buildings])
+  const townBuildings=town?.buildings||{}
+  const townBonus=useMemo(()=>({VIT:(townBuildings.garden||0),INT:(townBuildings.library||0),SPI:Math.max(0,(townBuildings.tavern||1)-1),RAD:0,DIS:Math.max(0,(townBuildings.guild||1)-1)}),[townBuildings])
   const stats=useMemo(()=>[
     ['VIT',7+(statBonus.VIT||0)+(gearBonus.VIT||0)+(townBonus.VIT||0),'Vitality',Heart],['INT',12+(statBonus.INT||0)+(gearBonus.INT||0)+(townBonus.INT||0),'Intelligence',BookOpen],['SPI',9+(statBonus.SPI||0)+(gearBonus.SPI||0)+(townBonus.SPI||0),'Spirit',Sparkles],
     ['RAD',6+(statBonus.RAD||0)+(gearBonus.RAD||0)+(townBonus.RAD||0),'Radiance',Crown],['DIS',8+(statBonus.DIS||0)+(gearBonus.DIS||0)+(townBonus.DIS||0),'Discipline',Shield]
@@ -906,9 +907,9 @@ export default function App() {
   }
   function upgradeTown(building){
     const names={guild:'Adventurer Guild',tavern:'Moonlit Tavern',garden:'Healing Garden',library:'Grand Library'}
-    const current=town.buildings[building]||0; const cost=100+(current*75)
+    const current=Number(town?.buildings?.[building]||0); const cost=100+(current*75)
     if(gold<cost){notify('You need '+cost+' gold to upgrade the '+names[building]+'.');return}
-    setGold(g=>g-cost); setTown(t=>({...t,level:Math.max(t.level, current+2),xp:t.xp+cost,buildings:{...t.buildings,[building]:current+1}}))
+    setGold(g=>g-cost); setTown(t=>{const buildings={guild:1,tavern:1,garden:0,library:0,...(t?.buildings||{})};return {...t,level:Math.max(Number(t?.level)||1,current+2),xp:(Number(t?.xp)||0)+cost,buildings:{...buildings,[building]:current+1}}})
     if(building==='guild'&&current===0)unlockAchievement('town-builder')
     notify(names[building]+' upgraded! The town grows around you.')
   }
