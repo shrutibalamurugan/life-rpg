@@ -1553,6 +1553,14 @@ function InventoryPage({gold,rewards,customRewards,customRewardDraft,setCustomRe
 
 
 function RealmPage({level,stats,timeLabel,isNight,town,upgradeTown,questChains,completeChainStep,realmBosses,strikeRealmBoss,equipment,equipmentCatalog,buyEquipment,equipItem,companions,discoveries,discoverRealm,setActive,inventory,exploredAreas,exploreArea,activeLocation,setActiveLocation,locationProgress,completeLocationQuest,resolveLocationEncounter}){
+ const safeTownLevel=Number.isFinite(Number(town?.level))?Math.max(1,Math.floor(Number(town.level))):1
+ const townBuildings=town?.buildings&&typeof town.buildings==='object'?town.buildings:{}
+ const safeTownBuildings={
+  guild:Number.isFinite(Number(townBuildings.guild))?Math.max(0,Math.floor(Number(townBuildings.guild))):1,
+  tavern:Number.isFinite(Number(townBuildings.tavern))?Math.max(0,Math.floor(Number(townBuildings.tavern))):1,
+  garden:Number.isFinite(Number(townBuildings.garden))?Math.max(0,Math.floor(Number(townBuildings.garden))):0,
+  library:Number.isFinite(Number(townBuildings.library))?Math.max(0,Math.floor(Number(townBuildings.library))):0
+ }
  const statValue=key=>stats.find(s=>s[0]===key)?.[1]||0
  const meetsStatRequirement=requirements=>{const entries=Object.entries(requirements||{});return entries.length>0&&entries.every(([key,min])=>statValue(key)>=min)}
  const formatStatRequirement=requirements=>Object.entries(requirements||{}).map(([key,min])=>key+' '+min).join(' + ')
