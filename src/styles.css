@@ -92,6 +92,18 @@
 .keep-milestone em{font-style:normal;font-size:8px;color:var(--gold);margin-top:3px}
 .keep-milestone.locked{opacity:.55}
 .keep-milestone.reached{border-color:#75613a}
+.keep-council{margin-top:14px;padding:15px}
+.council-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.council-choice{padding:12px;text-align:left;color:var(--cream);cursor:pointer;display:flex;flex-direction:column;gap:8px}
+.council-choice>span{font-size:24px}
+.council-choice>div{display:flex;flex-direction:column;gap:3px}
+.council-choice b{font-size:9px}
+.council-choice small{font-size:7px;line-height:1.4;color:var(--muted)}
+.council-choice em{font-style:normal;font-size:7px;color:var(--gold);margin-top:2px}
+.council-choice:disabled{cursor:default;opacity:.45}
+.council-choice.chosen{border-color:#75613a}
+.council-progress{display:block;margin-top:10px;color:var(--muted);font-size:8px}
+
 .town-icon{font-size:28px;text-align:center}.town-building b,.town-building small,.town-building span{display:block}.town-building b{font-size:10px}.town-building small{font-size:8px;color:var(--muted);margin:4px 0}.town-building span{font-size:8px;color:var(--gold)}.town-building button{font-size:8px}.npc-card,.discovery-card{color:var(--cream);text-align:left;padding:13px;display:flex;align-items:center;gap:10px;cursor:pointer}.npc-card>span,.discovery-card>span{font-size:27px}.npc-card div,.discovery-card div{flex:1}.npc-card b,.npc-card small,.discovery-card b,.discovery-card small{display:block}.npc-card b,.discovery-card b{font-size:10px}.npc-card small,.discovery-card small{font-size:8px;color:var(--muted);margin-top:4px}.chain-card,.realm-boss,.gear-card{padding:16px}.chain-head,.boss-title,.gear-card{display:flex;gap:11px;align-items:center}.chain-head>span,.boss-title>span,.gear-icon{font-size:28px}.chain-head div,.boss-title div,.gear-card>div{flex:1}.chain-head b,.chain-head small,.boss-title b,.boss-title small,.gear-card b,.gear-card small,.gear-card span{display:block}.chain-head b,.boss-title b,.gear-card b{font-size:10px}.chain-head small,.boss-title small,.gear-card small{font-size:8px;color:var(--muted);margin-top:4px;line-height:1.4}.chain-head strong{color:var(--gold);font-family:'Press Start 2P';font-size:9px}.chain-card p{font-size:9px;color:var(--muted);line-height:1.5}.chain-step{padding:10px;background:#18141c;border:1px solid #332b39;margin:10px 0}.chain-step b,.chain-step small{display:block}.chain-step b{font-size:9px}.chain-step small{font-size:8px;color:var(--muted);margin-top:4px}.chain-complete{color:#8eb18e;font-size:9px;padding-top:8px}.realm-boss .boss-hp{margin:14px 0}.realm-boss.defeated{border-color:#8eb18e}.gear-card{align-items:center}.gear-card>span:first-child{flex:none}.gear-card>div span{font-size:8px;color:var(--gold);margin-top:5px}.gear-card.equipped{border-color:#8b734d;background:#2b2230}.party-card{padding:18px;display:flex;align-items:center;gap:15px}.party-avatar{width:52px;height:52px;background:#302638;border:1px solid #55465e;display:grid;place-items:center;font-size:29px}.party-card b{font-size:11px}.party-card p{font-size:9px;color:var(--muted);line-height:1.5;margin:5px 0 0}.discovery-card.found{border-color:#8b734d}.discovery-card strong{font-size:8px;color:var(--gold)}.realm-map-button{margin-top:10px}.npc-dialog p{font-size:13px;line-height:1.7;color:var(--muted);padding:12px 0 20px}
 @media(max-width:800px){.town-grid,.npc-grid,.chain-grid,.boss-grid,.equipment-grid,.discovery-grid{grid-template-columns:1fr}.realm-banner{display:block}.realm-level{margin-top:14px}.town-building{grid-template-columns:42px 1fr}.town-building button{grid-column:2;width:100%;margin-top:5px}.gear-card{align-items:flex-start}.gear-card button{font-size:8px;white-space:nowrap}}
 
