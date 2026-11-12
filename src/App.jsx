@@ -925,9 +925,9 @@ export default function App() {
     const decision=KEEP_COUNCIL_DECISIONS.find(x=>x.id===id)
     if(!decision)return
     setTown(t=>({...t,councilDate:todayKey,councilDecree:id}))
-    grantStat(decision.stat,1)
+    const granted=grantStat(decision.stat,1)
     setGold(g=>g+15)
-    notify('Council decree enacted: '+decision.title+' · +1 '+decision.stat+' · +15 gold')
+    notify('Council decree enacted: '+decision.title+' · '+(granted?'+1 '+decision.stat+' · ':'Stat cap reached · ')+'+15 gold')
   }
   function completeDaily(id){
     if(daily.completed.includes(id))return
