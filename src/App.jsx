@@ -20,6 +20,18 @@ const STUDY_REWARD_TIERS=[
   {hours:30,gold:200,label:'Grand Archivist'},
   {hours:40,gold:325,label:'Master of the Archive'}
 ]
+const WARDEN_TRIALS=[
+  {id:'endurance',name:'Trial of Endurance',desc:'The Warden has reinforced its core.',hp:1.25,attack:1,reward:60},
+  {id:'precision',name:'Trial of Precision',desc:'Careless strikes lose power, but critical knowledge cuts deeper.',hp:1,attack:1,reward:75},
+  {id:'scarcity',name:'Trial of Scarcity',desc:'Only your four strongest recorded quizzes may enter the spellbook.',hp:1,attack:1,reward:90,maxCards:4},
+  {id:'fury',name:'Trial of Fury',desc:'The Warden strikes harder, but the Archive pays generously for victory.',hp:1,attack:1.3,reward:110},
+  {id:'marathon',name:'Trial of the Long Road',desc:'The battle is longer and Focus Wards are stronger.',hp:1.4,attack:1,reward:125,guard:45}
+]
+function getWardenTrial(){
+  const key=getWeekStartKey()
+  const n=Number(key.replaceAll('-',''))
+  return WARDEN_TRIALS[n%WARDEN_TRIALS.length]
+}
 const STAT_META={
   VIT:{name:'Vitality',icon:'♥',colorClass:'vit',effect:'Improves physical challenges and Verdant Wilds boss damage.'},
   INT:{name:'Intelligence',icon:'📖',colorClass:'int',effect:'Strengthens Archive battles and study rewards.'},
@@ -458,7 +470,7 @@ export default function App() {
   }))
   const [topicDraft,setTopicDraft] = useState({name:'',score:''})
   const [editingTopic,setEditingTopic] = useState(null)
-  const [boss,setBoss] = useState(() => load('boss', {active:false,defeated:false,attempts:0,hp:300,maxHp:300,round:1,playerHp:100,shield:0,usedCards:[],log:[],phase:1,deck:[]}))
+  const [boss,setBoss] = useState(() => load('boss', {active:false,defeated:false,attempts:0,wins:0,depth:1,hp:450,maxHp:450,round:1,playerHp:100,shield:0,usedCards:[],log:[],phase:1,deck:[],analysisUsed:false,recallUsed:false,weeklyTrialKey:'',weeklyTrialClaims:{}}))
   const [character,setCharacter] = useState(() => load('character', {name:'Shruti',race:'Human',className:'Wandering Mage',avatar:'🧙‍♀️',created:true}))
   const [characterEditor,setCharacterEditor] = useState(false)
   const [characterDraft,setCharacterDraft] = useState({name:'Shruti',race:'Human',className:'Wandering Mage',avatar:'🧙‍♀️'})
@@ -1063,40 +1075,68 @@ export default function App() {
     const relevantGrades=grades.filter(g=>g.module===module.name||g.module==='Current Module')
     const sourceGrades=relevantGrades.length?relevantGrades:grades
     if(!sourceGrades.length){notify('Record at least one quiz before facing the boss.');return}
-    const deck=sourceGrades.map((g,index)=>({id:String(g.id??index),quiz:g.quiz||('Quiz '+(index+1)),score:Math.max(0,Math.min(100,Number(g.score)||0)),used:false}))
-    setBoss({active:true,defeated:false,attempts:(boss.attempts||0)+1,hp:300,maxHp:300,round:1,playerHp:100,shield:0,usedCards:[],deck,phase:1,log:['The Knowledge Warden seals the Archive. Your recorded quizzes become spell cards.']})
-    notify('The Knowledge Warden awakens. Choose your cards carefully.')
+    const depth=Math.max(1,Number(boss.depth||1))
+    const trial=getWardenTrial()
+    let cards=sourceGrades.map((g,index)=>({id:String(g.id??index),label:'Quiz '+(index+1),score:Math.max(0,Math.min(100,Number(g.score)||0)),charges:2}))
+    if(trial.maxCards)cards=[...cards].sort((a,b)=>b.score-a.score).slice(0,trial.maxCards)
+    const baseHp=450+(depth-1)*125
+    const maxHp=Math.round(baseHp*trial.hp)
+    setBoss(b=>({...b,active:true,defeated:false,attempts:(b.attempts||0)+1,hp:maxHp,maxHp,round:1,playerHp:100,shield:0,usedCards:[],deck:cards,phase:1,analysisUsed:false,recallUsed:false,weeklyTrialKey:getWeekStartKey(),log:['The Knowledge Warden seals the Archive. Your recorded quiz scores become a spellbook.',trial.name+': '+trial.desc]}))
+    notify('The Knowledge Warden awakens · Depth '+depth+' · '+trial.name)
   }
   function playBossTurn(action,cardId){
     if(!boss.active||boss.defeated)return
-    const deck=boss.deck||[], used=new Set(boss.usedCards||[])
-    let nextHp=Math.max(0,Number(boss.hp??300)), nextPlayerHp=Math.max(0,Number(boss.playerHp??100)), nextShield=Math.max(0,Number(boss.shield??0)), nextRound=Math.max(1,Number(boss.round??1)), nextPhase=Math.max(1,Number(boss.phase??1))
-    let message=''
+    const deck=(boss.deck||[]).map(c=>({...c}))
+    const depth=Math.max(1,Number(boss.depth||1))
+    const trial=getWardenTrial()
+    let nextHp=Math.max(0,Number(boss.hp??boss.maxHp??450)), nextPlayerHp=Math.max(0,Number(boss.playerHp??100)), nextShield=Math.max(0,Number(boss.shield??0)), nextRound=Math.max(1,Number(boss.round??1)), nextPhase=Math.max(1,Number(boss.phase??1))
+    let analysisUsed=!!boss.analysisUsed, recallUsed=!!boss.recallUsed, message=''
     if(action==='attack'){
       const card=deck.find(c=>c.id===String(cardId))
-      if(!card||used.has(card.id)){notify('That knowledge card has already been used.');return}
+      if(!card||Number(card.charges||0)<=0){notify('That knowledge card is exhausted.');return}
       const tier=card.score>=85?'critical':card.score>=70?'strong':'glancing'
-      const base=tier==='critical'?Math.round(card.score*1.9):tier==='strong'?Math.round(card.score*1.65):Math.round(card.score*1.4)
-      const phaseMultiplier=nextPhase===1?1:nextPhase===2?0.92:1.05
-      const damage=Math.max(1,Math.round(base*phaseMultiplier*(1+statPassive('INT'))))
-      nextHp=Math.max(0,nextHp-damage);used.add(card.id);nextRound+=1
-      message=card.quiz+' strikes for '+damage+' damage · '+tier.toUpperCase()
+      let multiplier=tier==='critical'?1.1:tier==='strong'?0.95:0.75
+      if(trial.id==='precision'){if(tier==='critical')multiplier+=0.15;if(tier==='glancing')multiplier-=0.2}
+      const damage=Math.max(12,Math.round(card.score*multiplier*(1+statPassive('INT'))*(nextPhase===3?1.08:nextPhase===2?0.95:1)))
+      card.charges-=1;nextHp=Math.max(0,nextHp-damage);nextRound+=1
+      message='Quiz spell strikes for '+damage+' damage · '+tier.toUpperCase()+' · '+card.charges+' charge'+(card.charges===1?'':'s')+' left'
     }else if(action==='guard'){
-      nextShield=Math.min(45,nextShield+30);nextRound+=1
-      message='You raise a Focus Ward. The next Warden attack is partially absorbed.'
+      const guard=trial.guard||35
+      nextShield=Math.min(60,nextShield+guard);nextRound+=1
+      message='You raise a Focus Ward for '+guard+' protection. The next Warden attack is partially absorbed.'
+    }else if(action==='analyze'){
+      if(analysisUsed){notify('You have already studied the Warden this battle.');return}
+      analysisUsed=true;nextShield=Math.min(60,nextShield+20);nextRound+=1
+      message='You study the Warden’s pattern. Its next attack is weakened, and your ward gains +20 protection.'
+    }else if(action==='recall'){
+      if(recallUsed||deck.every(c=>Number(c.charges||0)>=2)){notify('Your spellbook has no recall available right now.');return}
+      recallUsed=true;deck.forEach(c=>{c.charges=Math.min(2,Number(c.charges||0)+1)});nextRound+=1
+      message='You recall forgotten knowledge. Every quiz spell regains one charge.'
     }else{return}
     if(nextHp<=0){
-      setBoss(b=>({...b,active:false,hp:0,playerHp:nextPlayerHp,shield:nextShield,usedCards:[...used],round:nextRound,phase:3,defeated:true,log:[...(b.log||[]),message,'The Warden shatters. Knowledge becomes yours.']}))
-      addXp(250);setGold(g=>g+100);unlockAchievement('boss-slayer');notify('KNOWLEDGE WARDEN DEFEATED! +250 XP · +100 gold');return
+      const nextDepth=depth+1
+      const nextWins=(boss.wins||0)+1
+      const trialKey=getWeekStartKey()
+      const alreadyClaimed=!!(boss.weeklyTrialClaims||{})[trialKey]
+      const trialGold=alreadyClaimed?0:trial.reward
+      const goldReward=100+depth*25+trialGold
+      const xpReward=175+depth*35
+      const claims=alreadyClaimed?(boss.weeklyTrialClaims||{}):{...(boss.weeklyTrialClaims||{}),[trialKey]:true}
+      setBoss(b=>({...b,active:false,hp:0,playerHp:nextPlayerHp,shield:nextShield,usedCards:[],round:nextRound,phase:3,defeated:true,wins:nextWins,depth:nextDepth,weeklyTrialClaims:claims,analysisUsed,recallUsed,log:[...(b.log||[]),message,'The Warden shatters. A deeper seal appears in the Archive.']}))
+      addXp(xpReward);setGold(g=>g+goldReward);unlockAchievement('boss-slayer')
+      notify('WARDEN DEFEATED · Depth '+depth+' cleared · +'+xpReward+' XP · +'+goldReward+' gold')
+      return
     }
-    nextPhase=nextHp<=100?3:nextHp<=200?2:1
-    const incoming=nextPhase===1?18:nextPhase===2?24:30
-    const intent=nextPhase===1?'The Warden lunges with Doubt.':nextPhase===2?'The Warden casts Confusion.':'The Warden unleashes Overload.'
+    nextPhase=nextHp<=Math.round((boss.maxHp||450)*0.33)?3:nextHp<=Math.round((boss.maxHp||450)*0.66)?2:1
+    const baseIncoming=nextPhase===1?15:nextPhase===2?21:28
+    const incoming=Math.round((baseIncoming+Math.min(12,depth*2))*trial.attack*(analysisUsed&&action==='analyze'?0.7:1))
+    const intent=nextPhase===1?'The Warden lunges with Doubt.':nextPhase===2?'The Warden fractures your certainty with Confusion.':'The Warden unleashes Overload.'
     const blocked=Math.min(nextShield,incoming);nextShield=Math.max(0,nextShield-blocked);const taken=incoming-blocked;nextPlayerHp=Math.max(0,nextPlayerHp-taken)
-    const log=[...(boss.log||[]),message,intent+(blocked?' Your ward absorbs '+blocked+'.':' You take '+taken+' damage.') ]
-    if(nextPlayerHp<=0){setBoss(b=>({...b,active:false,defeated:false,hp:nextHp,playerHp:0,shield:0,usedCards:[...used],round:nextRound,phase:nextPhase,log:[...log,'You are driven from the Archive. The Warden remains.']}));notify('The Warden defeats you. Prepare a stronger quiz deck and try again.');return}
-    if(used.size>=deck.length){setBoss(b=>({...b,active:false,defeated:false,hp:nextHp,playerHp:nextPlayerHp,shield:nextShield,usedCards:[...used],round:nextRound,phase:nextPhase,log:[...log,'Your spellbook is empty. The Warden survives.']}));notify('Your knowledge cards are exhausted. Record more quizzes before trying again.');return}
-    setBoss(b=>({...b,hp:nextHp,playerHp:nextPlayerHp,shield:nextShield,usedCards:[...used],round:nextRound,phase:nextPhase,log}))
+    const log=[...(boss.log||[]),message,intent+(blocked?' Your ward absorbs '+blocked+'.':' You take '+taken+' damage.')]
+    if(nextPlayerHp<=0){setBoss(b=>({...b,active:false,defeated:false,hp:nextHp,playerHp:0,shield:0,usedCards:[],round:nextRound,phase:nextPhase,deck,analysisUsed,recallUsed,log:[...log,'You are driven from the Archive. The Warden remains.']}));notify('The Warden defeats you. Your spellbook remains intact; prepare another attempt.');return}
+    const remaining=deck.filter(c=>Number(c.charges||0)>0)
+    if(!remaining.length){setBoss(b=>({...b,active:false,defeated:false,hp:nextHp,playerHp:nextPlayerHp,shield:nextShield,usedCards:[],round:nextRound,phase:nextPhase,deck,analysisUsed,recallUsed,log:[...log,'Your spellbook is exhausted. The Warden survives.']}));notify('Your spellbook is exhausted. Record more quizzes or try a different strategy.');return}
+    setBoss(b=>({...b,hp:nextHp,playerHp:nextPlayerHp,shield:nextShield,round:nextRound,phase:nextPhase,deck,analysisUsed,recallUsed,log}))
   }
   function saveCharacter(e){e.preventDefault();if(!characterDraft.name.trim())return;setCharacter({...characterDraft,name:characterDraft.name.trim(),created:true});setCharacterEditor(false);notify('Character sheet updated.')}
   function openCharacterEditor(){setCharacterDraft({name:character.name,race:character.race,className:character.className,avatar:character.avatar});setCharacterEditor(true)}
@@ -1271,18 +1311,18 @@ function StudyPage({grades,newGrade,setNewGrade,addGrade,openGradeEditor,module,
   <PageIntro eyebrow="GRAND ARCHIVE" title="Medical school command center" text="Quizzes become evidence, focused study becomes a real record, and exams become boss battles."/>
   <section className="radiance-hero archive-hero panel"><div><span className="eyebrow">INTELLIGENCE</span><h2>Current Intelligence · {stats?.find(s=>s[0]==='INT')?.[1]||0}</h2><p>The Archive records focused learning, recall, and the steady work of turning information into knowledge.</p></div><div className="radiance-orb archive-orb"><BookOpen size={30} strokeWidth={1.4}/><small>INT</small></div></section>
   <div className="module-header panel"><div><span className="eyebrow">CURRENT MODULE</span><input className="module-name" value={module.name} onChange={e=>setModule({...module,name:e.target.value})}/></div><label>Exam date<input type="date" value={module.examDate} onChange={e=>setModule({...module,examDate:e.target.value})}/></label></div>
-  <div className="study-grid"><div className="panel grade-form"><span className="eyebrow">RECORD A QUIZ</span><form onSubmit={addGrade}><input placeholder="Quiz name" value={newGrade.quiz} onChange={e=>setNewGrade({...newGrade,quiz:e.target.value})}/><input type="number" min="0" max="100" placeholder="Score %" value={newGrade.score} onChange={e=>setNewGrade({...newGrade,score:e.target.value})}/><button className="primary">Record Score <Plus size={15}/></button></form></div><div className="panel mastery"><span className="eyebrow">QUIZ TARGET</span><strong>{quizAvg}%</strong><div className="xp-bar"><i style={{width:quizAvg+'%'}}/></div><p>{latestQuiz?latestQuiz.quiz+' · '+latestQuiz.score+'%':'Record a quiz to charge the Warden.'}</p><button className="primary" onClick={prepareBoss} disabled={!quizScores.length}>{boss.active&&!boss.defeated?'Boss Battle Ready':'Prepare for Boss Battle'} <Sword size={15}/></button></div></div>
+  <div className="study-grid"><div className="panel grade-form"><span className="eyebrow">RECORD A QUIZ</span><form onSubmit={addGrade}><input placeholder="Quiz name" value={newGrade.quiz} onChange={e=>setNewGrade({...newGrade,quiz:e.target.value})}/><input type="number" min="0" max="100" placeholder="Score %" value={newGrade.score} onChange={e=>setNewGrade({...newGrade,score:e.target.value})}/><button className="primary">Record Score <Plus size={15}/></button></form></div><div className="panel mastery"><span className="eyebrow">WARDEN READINESS</span><strong>{quizAvg}%</strong><div className="xp-bar"><i style={{width:quizAvg+'%'}}/></div><p>{quizScores.length?quizScores.length+' recorded quiz'+(quizScores.length===1?'':'zes')+' · higher scores strengthen your spellbook':'Record a quiz to charge the Warden.'}</p><button className="primary" onClick={prepareBoss} disabled={!quizScores.length||boss.active}>{boss.defeated?'Challenge the Warden Again':'Prepare for the Warden'} <Sword size={15}/></button></div></div>
   {boss.active&&<section className="warden-battle panel">
-    <div className="warden-header"><div><span className="eyebrow">KNOWLEDGE DUEL · ROUND {boss.round||1}</span><h3>👹 THE KNOWLEDGE WARDEN</h3><p>Your recorded quizzes are finite spell cards. Each can be played once, and the Warden attacks after every turn.</p></div><div className="warden-phase"><span>PHASE {boss.phase||1}</span><small>{(boss.phase||1)===1?'DOUBT':(boss.phase||1)===2?'CONFUSION':'OVERLOAD'}</small></div></div>
+    <div className="warden-header"><div><span className="eyebrow">KNOWLEDGE DUEL · DEPTH {boss.depth||1} · ROUND {boss.round||1}</span><h3>👹 THE KNOWLEDGE WARDEN</h3><p>Your quiz scores become a persistent spellbook. Cards have limited charges each battle, and the Warden attacks after every decision.</p></div><div className="warden-phase"><span>PHASE {boss.phase||1}</span><small>{(boss.phase||1)===1?'DOUBT':(boss.phase||1)===2?'CONFUSION':'OVERLOAD'}</small></div></div>
     <div className="warden-bars"><div><span>WARDEN · {boss.hp||0}/{boss.maxHp||300}</span><div className="boss-hp"><i style={{width:Math.max(0,((boss.hp||0)/(boss.maxHp||300))*100)+'%'}}/></div></div><div><span>YOU · {boss.playerHp||0}/100</span><div className="boss-hp player"><i style={{width:Math.max(0,boss.playerHp||0)+'%'}}/></div></div></div>
-    <div className="warden-rule panel"><b>How to play</b><span>Use each quiz card once. Higher scores hit harder. You can also raise a Focus Ward to block the Warden's next attack—but you lose a round.</span></div>
+    <div className="warden-rule panel"><b>How to play</b><span>Higher scores hit harder. Each quiz has 2 charges per battle. Cast, defend, analyze the Warden once, or recall one charge from every spell. The Warden grows stronger at each depth.</span></div><div className="warden-trial panel"><span className="eyebrow">THIS WEEK'S ARCHIVE TRIAL</span><b>{getWardenTrial().name}</b><small>{getWardenTrial().desc}</small></div>
     <div className="warden-deck"><div className="section-head"><div><span className="eyebrow">YOUR SPELLBOOK</span><h4>Choose a quiz card</h4></div><span className="muted">{(boss.deck||[]).filter(c=>!(boss.usedCards||[]).includes(c.id)).length} cards remaining</span></div>
-      <div className="warden-cards">{(boss.deck||[]).map(card=>{const used=(boss.usedCards||[]).includes(card.id);const tier=card.score>=85?'CRITICAL':card.score>=70?'STRONG':'GLANCING';return <button key={card.id} className={'warden-card '+(used?'used':'')} disabled={used} onClick={()=>playBossTurn('attack',card.id)}><span className="eyebrow">{tier}</span><strong>{card.score}%</strong><b>{card.quiz}</b><small>{used?'Already cast':'Cast this spell once'}</small></button>})}</div>
+      <div className="warden-cards">{(boss.deck||[]).map(card=>{const charges=Number(card.charges||0);const tier=card.score>=85?'CRITICAL':card.score>=70?'STRONG':'GLANCING';return <button key={card.id} className={'warden-card '+(charges===0?'used':'')} disabled={charges===0} onClick={()=>playBossTurn('attack',card.id)}><span className="eyebrow">{tier}</span><strong>{card.score}%</strong><b>{card.label||'Quiz'}</b><small>{charges?charges+' charge'+(charges===1?'':'s')+' remaining':'Exhausted'}</small></button>})}</div>
     </div>
-    <div className="warden-actions"><button className="ghost" onClick={()=>playBossTurn('guard')}><Shield size={15}/> Raise Focus Ward</button><span>{boss.shield?'Ward '+boss.shield+' damage':'No active ward'}</span></div>
+    <div className="warden-actions"><button className="ghost" onClick={()=>playBossTurn('guard')}><Shield size={15}/> Raise Focus Ward</button><button className="ghost" disabled={boss.analysisUsed} onClick={()=>playBossTurn('analyze')}><BookOpen size={15}/> Analyze Warden</button><button className="ghost" disabled={boss.recallUsed} onClick={()=>playBossTurn('recall')}><Sparkles size={15}/> Recall Knowledge</button><span>{boss.shield?'Ward '+boss.shield+' damage':'No active ward'}</span></div>
     {(boss.log||[]).length>0&&<div className="warden-log"><span className="eyebrow">BATTLE LOG</span>{(boss.log||[]).slice(-4).map((line,i)=><p key={i}>{line}</p>)}</div>}
   </section>}
-  {boss.defeated&&<div className="boss-panel panel defeated"><div><span className="eyebrow">ARCHIVE CLEARED · ATTEMPT {boss.attempts}</span><h3>✦ KNOWLEDGE WARDEN DEFEATED</h3><p>Your quiz deck broke the Warden. The Grand Archive is cleared until the next module.</p></div></div>}
+  {boss.defeated&&<div className="boss-panel panel defeated"><div><span className="eyebrow">DEPTH {Math.max(1,(boss.depth||1)-1)} CLEARED · {boss.wins||0} VICTORY{(boss.wins||0)===1?'':'IES'}</span><h3>✦ THE WARDEN HAS DEEPER SEALS</h3><p>You broke this layer of the Archive. The next depth is waiting whenever you return, even before the next module.</p></div><button className="primary" onClick={prepareBoss}>Enter Depth {boss.depth||1} <Sword size={15}/></button></div>}
   <div className="archive-section study-tracker"><div className="section-head"><div><span className="eyebrow">WEEKLY STUDY LOG</span><h2>Study sessions</h2><p className="muted">Track the real time you spend studying. The week resets every Monday.</p></div><div className="study-week-total"><b>{totalHours.toFixed(1)}h</b><small>this week</small></div></div>
    <form className="study-session-form panel" onSubmit={addStudySession}><label>Date<input type="date" value={studyDraft.date} onChange={e=>setStudyDraft({...studyDraft,date:e.target.value})}/></label><label>Minutes<input type="number" min="10" max="1440" step="5" placeholder="60" value={studyDraft.minutes} onChange={e=>setStudyDraft({...studyDraft,minutes:e.target.value})}/></label><label>What did you study?<input placeholder="Anatomy · bugs · practice questions..." value={studyDraft.subject} onChange={e=>setStudyDraft({...studyDraft,subject:e.target.value})}/></label><label>Note <span className="muted">(optional)</span><input placeholder="Optional note" value={studyDraft.note} onChange={e=>setStudyDraft({...studyDraft,note:e.target.value})}/></label><button className="primary">Log Session <Plus size={15}/></button></form>
    <div className="study-week-grid">{weekKeys.map(key=>{const mins=weekSessions.filter(x=>x.date===key).reduce((sum,x)=>sum+Number(x.minutes||0),0);return <div className="study-day" key={key}><b>{formatStudyDay(key)}</b><div className="study-day-bar"><i style={{height:Math.max(4,Math.round((mins/maxDay)*100))+'%'}}/></div><strong>{fmtHours(mins)}</strong></div>})}</div>
