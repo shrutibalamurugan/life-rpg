@@ -458,7 +458,7 @@ export default function App() {
   }))
   const [topicDraft,setTopicDraft] = useState({name:'',score:''})
   const [editingTopic,setEditingTopic] = useState(null)
-  const [boss,setBoss] = useState(() => load('boss', {active:false,defeated:false,attempts:0}))
+  const [boss,setBoss] = useState(() => load('boss', {active:false,defeated:false,attempts:0,hp:300,maxHp:300,round:1,playerHp:100,shield:0,usedCards:[],log:[],phase:1,deck:[]}))
   const [character,setCharacter] = useState(() => load('character', {name:'Shruti',race:'Human',className:'Wandering Mage',avatar:'🧙‍♀️',created:true}))
   const [characterEditor,setCharacterEditor] = useState(false)
   const [characterDraft,setCharacterDraft] = useState({name:'Shruti',race:'Human',className:'Wandering Mage',avatar:'🧙‍♀️'})
@@ -1059,16 +1059,44 @@ export default function App() {
   function addTopic(e){e.preventDefault();if(!topicDraft.name.trim())return;setModule(m=>({...m,topics:[...m.topics,{id:Date.now(),name:topicDraft.name.trim(),score:Number(topicDraft.score)||0}]}));setTopicDraft({name:'',score:''});notify('Topic added to the Archive.')}
   function saveTopic(e){e.preventDefault();const score=Number(topicDraft.score);if(!topicDraft.name.trim()||!Number.isFinite(score)||score<0||score>100)return;setModule(m=>({...m,topics:m.topics.map(t=>t.id===editingTopic?{...t,name:topicDraft.name.trim(),score}:t)}));setEditingTopic(null);setTopicDraft({name:'',score:''});notify('Topic updated.')}
   function deleteTopic(id){setModule(m=>({...m,topics:m.topics.filter(t=>t.id!==id)}));setEditingTopic(null);setTopicDraft({name:'',score:''});notify('Topic removed.')}
-  function prepareBoss(){if(!grades.length){notify('Record at least one quiz before facing the boss.');return}setBoss(b=>({...b,active:true,defeated:false,hp:1000}));notify('The Knowledge Warden has awakened. Your quiz scores are attacks!')}
-  function attemptBoss(){
+  function prepareBoss(){
     const relevantGrades=grades.filter(g=>g.module===module.name||g.module==='Current Module')
     const sourceGrades=relevantGrades.length?relevantGrades:grades
-    const avg=sourceGrades.length?sourceGrades.reduce((a,g)=>a+Number(g.score||0),0)/sourceGrades.length:0
-    const damage=Math.max(10,Math.round((avg>=85?160:avg>=70?100:35)*(1+statPassive('INT'))))
-    const hp=Math.max(0,Number(boss.hp??1000)-damage);const ready=hp===0
-    setBoss(b=>({...b,attempts:b.attempts+1,hp,defeated:ready}))
-    if(ready){addXp(250);setGold(g=>g+100);unlockAchievement('boss-slayer');notify('KNOWLEDGE WARDEN DEFEATED! +250 XP · +100 gold')}
-    else notify(`The Warden takes ${damage} damage. Keep studying your weakest topics.`)
+    if(!sourceGrades.length){notify('Record at least one quiz before facing the boss.');return}
+    const deck=sourceGrades.map((g,index)=>({id:String(g.id??index),quiz:g.quiz||('Quiz '+(index+1)),score:Math.max(0,Math.min(100,Number(g.score)||0)),used:false}))
+    setBoss({active:true,defeated:false,attempts:(boss.attempts||0)+1,hp:300,maxHp:300,round:1,playerHp:100,shield:0,usedCards:[],deck,phase:1,log:['The Knowledge Warden seals the Archive. Your recorded quizzes become spell cards.']})
+    notify('The Knowledge Warden awakens. Choose your cards carefully.')
+  }
+  function playBossTurn(action,cardId){
+    if(!boss.active||boss.defeated)return
+    const deck=boss.deck||[], used=new Set(boss.usedCards||[])
+    let nextHp=Math.max(0,Number(boss.hp??300)), nextPlayerHp=Math.max(0,Number(boss.playerHp??100)), nextShield=Math.max(0,Number(boss.shield??0)), nextRound=Math.max(1,Number(boss.round??1)), nextPhase=Math.max(1,Number(boss.phase??1))
+    let message=''
+    if(action==='attack'){
+      const card=deck.find(c=>c.id===String(cardId))
+      if(!card||used.has(card.id)){notify('That knowledge card has already been used.');return}
+      const tier=card.score>=85?'critical':card.score>=70?'strong':'glancing'
+      const base=tier==='critical'?Math.round(card.score*1.9):tier==='strong'?Math.round(card.score*1.65):Math.round(card.score*1.4)
+      const phaseMultiplier=nextPhase===1?1:nextPhase===2?0.92:1.05
+      const damage=Math.max(1,Math.round(base*phaseMultiplier*(1+statPassive('INT'))))
+      nextHp=Math.max(0,nextHp-damage);used.add(card.id);nextRound+=1
+      message=card.quiz+' strikes for '+damage+' damage · '+tier.toUpperCase()
+    }else if(action==='guard'){
+      nextShield=Math.min(45,nextShield+30);nextRound+=1
+      message='You raise a Focus Ward. The next Warden attack is partially absorbed.'
+    }else{return}
+    if(nextHp<=0){
+      setBoss(b=>({...b,hp:0,playerHp:nextPlayerHp,shield:nextShield,usedCards:[...used],round:nextRound,phase:3,defeated:true,log:[...(b.log||[]),message,'The Warden shatters. Knowledge becomes yours.']}))
+      addXp(250);setGold(g=>g+100);unlockAchievement('boss-slayer');notify('KNOWLEDGE WARDEN DEFEATED! +250 XP · +100 gold');return
+    }
+    nextPhase=nextHp<=100?3:nextHp<=200?2:1
+    const incoming=nextPhase===1?18:nextPhase===2?24:30
+    const intent=nextPhase===1?'The Warden lunges with Doubt.':nextPhase===2?'The Warden casts Confusion.':'The Warden unleashes Overload.'
+    const blocked=Math.min(nextShield,incoming);nextShield=Math.max(0,nextShield-blocked);const taken=incoming-blocked;nextPlayerHp=Math.max(0,nextPlayerHp-taken)
+    const log=[...(boss.log||[]),message,intent+(blocked?' Your ward absorbs '+blocked+'.':' You take '+taken+' damage.') ]
+    if(nextPlayerHp<=0){setBoss(b=>({...b,active:false,defeated:false,hp:nextHp,playerHp:0,shield:0,usedCards:[...used],round:nextRound,phase:nextPhase,log:[...log,'You are driven from the Archive. The Warden remains.']}));notify('The Warden defeats you. Prepare a stronger quiz deck and try again.');return}
+    if(used.size>=deck.length){setBoss(b=>({...b,active:false,defeated:false,hp:nextHp,playerHp:nextPlayerHp,shield:nextShield,usedCards:[...used],round:nextRound,phase:nextPhase,log:[...log,'Your spellbook is empty. The Warden survives.']}));notify('Your knowledge cards are exhausted. Record more quizzes before trying again.');return}
+    setBoss(b=>({...b,hp:nextHp,playerHp:nextPlayerHp,shield:nextShield,usedCards:[...used],round:nextRound,phase:nextPhase,log}))
   }
   function saveCharacter(e){e.preventDefault();if(!characterDraft.name.trim())return;setCharacter({...characterDraft,name:characterDraft.name.trim(),created:true});setCharacterEditor(false);notify('Character sheet updated.')}
   function openCharacterEditor(){setCharacterDraft({name:character.name,race:character.race,className:character.className,avatar:character.avatar});setCharacterEditor(true)}
