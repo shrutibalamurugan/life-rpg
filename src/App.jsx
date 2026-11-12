@@ -1086,7 +1086,7 @@ export default function App() {
       message='You raise a Focus Ward. The next Warden attack is partially absorbed.'
     }else{return}
     if(nextHp<=0){
-      setBoss(b=>({...b,hp:0,playerHp:nextPlayerHp,shield:nextShield,usedCards:[...used],round:nextRound,phase:3,defeated:true,log:[...(b.log||[]),message,'The Warden shatters. Knowledge becomes yours.']}))
+      setBoss(b=>({...b,active:false,hp:0,playerHp:nextPlayerHp,shield:nextShield,usedCards:[...used],round:nextRound,phase:3,defeated:true,log:[...(b.log||[]),message,'The Warden shatters. Knowledge becomes yours.']}))
       addXp(250);setGold(g=>g+100);unlockAchievement('boss-slayer');notify('KNOWLEDGE WARDEN DEFEATED! +250 XP · +100 gold');return
     }
     nextPhase=nextHp<=100?3:nextHp<=200?2:1
@@ -1282,6 +1282,7 @@ function StudyPage({grades,newGrade,setNewGrade,addGrade,openGradeEditor,module,
     <div className="warden-actions"><button className="ghost" onClick={()=>playBossTurn('guard')}><Shield size={15}/> Raise Focus Ward</button><span>{boss.shield?'Ward '+boss.shield+' damage':'No active ward'}</span></div>
     {(boss.log||[]).length>0&&<div className="warden-log"><span className="eyebrow">BATTLE LOG</span>{(boss.log||[]).slice(-4).map((line,i)=><p key={i}>{line}</p>)}</div>}
   </section>
+  {boss.defeated&&<div className="boss-panel panel defeated"><div><span className="eyebrow">ARCHIVE CLEARED · ATTEMPT {boss.attempts}</span><h3>✦ KNOWLEDGE WARDEN DEFEATED</h3><p>Your quiz deck broke the Warden. The Grand Archive is cleared until the next module.</p></div></div>}
   <div className="archive-section study-tracker"><div className="section-head"><div><span className="eyebrow">WEEKLY STUDY LOG</span><h2>Study sessions</h2><p className="muted">Track the real time you spend studying. The week resets every Monday.</p></div><div className="study-week-total"><b>{totalHours.toFixed(1)}h</b><small>this week</small></div></div>
    <form className="study-session-form panel" onSubmit={addStudySession}><label>Date<input type="date" value={studyDraft.date} onChange={e=>setStudyDraft({...studyDraft,date:e.target.value})}/></label><label>Minutes<input type="number" min="10" max="1440" step="5" placeholder="60" value={studyDraft.minutes} onChange={e=>setStudyDraft({...studyDraft,minutes:e.target.value})}/></label><label>What did you study?<input placeholder="Anatomy · bugs · practice questions..." value={studyDraft.subject} onChange={e=>setStudyDraft({...studyDraft,subject:e.target.value})}/></label><label>Note <span className="muted">(optional)</span><input placeholder="Optional note" value={studyDraft.note} onChange={e=>setStudyDraft({...studyDraft,note:e.target.value})}/></label><button className="primary">Log Session <Plus size={15}/></button></form>
    <div className="study-week-grid">{weekKeys.map(key=>{const mins=weekSessions.filter(x=>x.date===key).reduce((sum,x)=>sum+Number(x.minutes||0),0);return <div className="study-day" key={key}><b>{formatStudyDay(key)}</b><div className="study-day-bar"><i style={{height:Math.max(4,Math.round((mins/maxDay)*100))+'%'}}/></div><strong>{fmtHours(mins)}</strong></div>})}</div>
