@@ -907,9 +907,28 @@ export default function App() {
   }
   function upgradeTown(building){
     const names={guild:'Adventurer Guild',tavern:'Moonlit Tavern',garden:'Healing Garden',library:'Grand Library'}
-    const current=Number(town?.buildings?.[building]||0); const cost=100+(current*75)
+    if(!names[building])return
+    const currentRaw=town?.buildings?.[building]
+    const current=Number.isFinite(Number(currentRaw))?Math.max(0,Math.floor(Number(currentRaw))):0
+    const cost=100+(current*75)
     if(gold<cost){notify('You need '+cost+' gold to upgrade the '+names[building]+'.');return}
-    setGold(g=>g-cost); setTown(t=>{const buildings={guild:1,tavern:1,garden:0,library:0,...(t?.buildings||{})};return {...t,level:Math.max(Number(t?.level)||1,current+2),xp:(Number(t?.xp)||0)+cost,buildings:{...buildings,[building]:current+1}}})
+    setGold(g=>Math.max(0,g-cost))
+    setTown(t=>{
+      const previousLevel=Number.isFinite(Number(t?.level))?Math.max(1,Math.floor(Number(t.level))):1
+      const previousXp=Number.isFinite(Number(t?.xp))?Math.max(0,Number(t.xp)):0
+      const rawBuildings=t?.buildings||{}
+      const buildings={
+        guild:1,tavern:1,garden:0,library:0,
+        ...Object.fromEntries(Object.keys(names).map(id=>[id,Number.isFinite(Number(rawBuildings[id]))?Math.max(0,Math.floor(Number(rawBuildings[id]))):0]))
+      }
+      const nextBuildingLevel=current+1
+      return {
+        ...(t||{}),
+        level:previousLevel+1,
+        xp:previousXp+cost,
+        buildings:{...buildings,[building]:nextBuildingLevel}
+      }
+    })
     if(building==='guild'&&current===0)unlockAchievement('town-builder')
     notify(names[building]+' upgraded! The town grows around you.')
   }
