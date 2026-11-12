@@ -224,13 +224,13 @@ const DISCOVERY_INFO = {
 const ATLAS_CLUE_INFO = {
   '🗺️ Map Fragment': {source:'Mystery Chest',target:'Whispering Ruins',description:'A torn piece of the Atlas. It seems to point toward a buried archive.'},
   '🔑 Observatory Key': {source:'Mystery Chest',target:'Moonlit Observatory',description:'An old brass key marked with a constellation that no longer appears in the sky.'},
-  '🌊 Lakeway Map': {source:'Chronicle / Observatory',target:'Sunken Causeway',description:'A silver-blue map showing a road beneath the lake.'},
+  '🌊 Lakeway Map': {source:'Observatory encounter',target:'Sunken Causeway',description:'A silver-blue map showing a road beneath the lake.'},
   '📚 Ember Archive Seal': {source:'Quest Chain',target:'Ember Library',description:'A seal once used to open the Ember Library’s scholar gate.'},
   '🌱 Glass Garden Seed': {source:'Quest Chain',target:'Glass Garden',description:'A seed that should not be able to grow—but seems to remember a garden.'},
   '🔔 Bellkeeper’s Chime': {source:'Quest Chain',target:'Hollow Bell Tower',description:'A tiny bell whose sound is said to call hidden roads closer.'},
-  '☀️ Sunforge Sigil': {source:'Quest Chain',target:'Sunforge Terrace',description:'A sun-shaped sigil from an abandoned forge route.'},
-  '🪷 Silver Marsh Map': {source:'Quest Chain / Mystery Chest',target:'Silver Marsh',description:'A marsh chart whose waterways shift whenever the Atlas changes.'},
-  '🗿 Horizon Seal': {source:'Chronicle',target:'Horizon Shrine',description:'A stone seal bearing the symbol of a road that ends at the horizon.'}
+  '☀️ Sunforge Sigil': {source:'Mystery Chest',target:'Sunforge Terrace',description:'A sun-shaped sigil that opens an abandoned forge route.'},
+  '🪷 Silver Marsh Map': {source:'Mystery Chest',target:'Silver Marsh',description:'A marsh chart whose waterways shift whenever the Atlas changes.'},
+  '🗿 Horizon Seal': {source:'Mystery Chest',target:'Horizon Shrine',description:'A stone seal bearing the symbol of a road that ends at the horizon.'}
 }
 
 const EXPLORATION_AREAS = [
@@ -974,9 +974,24 @@ export default function App() {
   function rollMysteryChest(){
     if(gold<100){notify('The Mystery Chest costs 100 gold.');return}
     setGold(g=>g-100)
-    const drops=[{text:'+75 XP',reward:{xp:75}},{text:'+150 gold',reward:{gold:150}},{text:'A fox companion!',reward:{pet:'🦊 Moss the Fox'}},{text:'A rare map fragment',reward:{item:'🗺️ Map Fragment'}},{text:'An old brass key',reward:{item:'🔑 Observatory Key'}}]
-    const d=drops[Math.floor(Math.random()*drops.length)],r=d.reward
-    if(r.xp)addXp(r.xp);if(r.gold)setGold(g=>g+r.gold);if(r.pet)setCompanions(p=>p.includes(r.pet)?p:[...p,r.pet]);if(r.item)setInventory(i=>[...i,r.item])
+    const chestItems=[
+      {item:'🗺️ Map Fragment',text:'A Map Fragment — the clue needed to reach the Whispering Ruins.'},
+      {item:'🔑 Observatory Key',text:'An Observatory Key — it opens a road to the Moonlit Observatory.'},
+      {item:'☀️ Sunforge Sigil',text:'A Sunforge Sigil — it unlocks the sealed route to Sunforge Terrace.'},
+      {item:'🪷 Silver Marsh Map',text:'A Silver Marsh Map — it reveals the shifting wetlands.'},
+      {item:'🗿 Horizon Seal',text:'A Horizon Seal — it opens the road to the Horizon Shrine.'},
+      {item:'✨ Keeper’s Star',text:'A Keeper’s Star — attune it in your inventory for +1 Spirit.'},
+      {item:'🪶 Echo Quill',text:'An Echo Quill — attune it in your inventory for +1 Intelligence.'},
+      {item:'🧭 Wayfinder’s Compass',text:'A Wayfinder’s Compass — attune it in your inventory for +1 Discipline.'}
+    ]
+    const available=chestItems.filter(x=>!inventory.includes(x.item))
+    if(!available.length){
+      setGold(g=>g+100)
+      notify('MYSTERY CHEST: Every unique treasure is already yours. Your gold was returned.')
+      return
+    }
+    const d=available[Math.floor(Math.random()*available.length)]
+    setInventory(items=>items.includes(d.item)?items:[...items,d.item])
     notify('MYSTERY CHEST: '+d.text)
   }
   function acceptVillagerQuest(id){
