@@ -580,3 +580,14 @@ nav button:hover{background:#292b31;color:#f1ead7}
  .warden-actions{align-items:flex-start;flex-direction:column}
  .warden-card{min-height:120px}
 }
+
+/* Knowledge Warden · repeatable Archive dungeon */
+.warden-trial{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:12px 0;background:rgba(92,73,45,.12);border-color:rgba(184,151,85,.3)}
+.warden-trial>b{font-size:10px;color:#e2c77f}
+.warden-trial small{font-size:9px;color:var(--muted);line-height:1.4}
+.warden-actions{flex-wrap:wrap}
+.warden-actions .ghost:disabled{opacity:.4;cursor:not-allowed}
+.boss-panel.defeated{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;margin:15px 0;border-color:rgba(214,177,94,.45)}
+.boss-panel.defeated h3{margin:6px 0;font-size:12px}
+.boss-panel.defeated p{margin:0;color:var(--muted);font-size:10px;line-height:1.45}
+@media(max-width:600px){.warden-trial{align-items:flex-start;flex-direction:column;gap:4px}.boss-panel.defeated{align-items:flex-start;flex-direction:column}.boss-panel.defeated .primary{width:100%}}
