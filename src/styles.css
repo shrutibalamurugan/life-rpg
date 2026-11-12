@@ -613,3 +613,6 @@ nav button:hover{background:#292b31;color:#f1ead7}
 .boss-panel.defeated h3{margin:6px 0;font-size:12px}
 .boss-panel.defeated p{margin:0;color:var(--muted);font-size:10px;line-height:1.45}
 @media(max-width:600px){.warden-trial{align-items:flex-start;flex-direction:column;gap:4px}.boss-panel.defeated{align-items:flex-start;flex-direction:column}.boss-panel.defeated .primary{width:100%}}
+
+@media(max-width:900px){.council-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.keep-milestone-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.keep-milestone-grid{grid-template-columns:1fr}.council-grid{grid-template-columns:1fr}.keep-council{padding:12px}.town-building{grid-template-columns:42px 1fr}.town-building button{grid-column:1 / -1;width:100%}}
