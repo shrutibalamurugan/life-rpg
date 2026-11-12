@@ -544,3 +544,39 @@ nav button:hover{background:#292b31;color:#f1ead7}
   .archive-page .radiance-orb,
   .wilds-page .radiance-orb{width:64px;height:64px;flex:0 0 64px}
 }
+
+.warden-battle{padding:18px;margin:15px 0;border-color:rgba(184,151,85,.4)}
+.warden-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.warden-header h3{font-family:'Press Start 2P';font-size:13px;margin:8px 0}
+.warden-header p{color:var(--muted);font-size:11px;line-height:1.5;max-width:650px}
+.warden-phase{min-width:88px;text-align:center;border:1px solid rgba(184,151,85,.35);padding:10px;background:rgba(30,24,18,.45)}
+.warden-phase span,.warden-phase small{display:block}
+.warden-phase span{font-size:9px;font-weight:800}
+.warden-phase small{font-size:8px;color:var(--muted);margin-top:4px}
+.warden-bars{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.warden-bars>div>span{display:block;font-size:9px;color:var(--muted);margin-bottom:5px}
+.warden-bars .boss-hp{margin:0}
+.warden-bars .boss-hp.player i{background:#6b8f78}
+.warden-rule{display:flex;gap:10px;align-items:center;padding:10px 12px;margin:12px 0;background:rgba(20,18,24,.5)}
+.warden-rule b{font-size:10px;white-space:nowrap}
+.warden-rule span{font-size:10px;color:var(--muted);line-height:1.4}
+.warden-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+.warden-card{display:flex;flex-direction:column;text-align:left;gap:5px;padding:12px;border:1px solid rgba(184,151,85,.3);background:rgba(27,24,30,.7);color:var(--text);cursor:pointer}
+.warden-card:hover:not(:disabled){transform:translateY(-2px);border-color:rgba(214,177,94,.7)}
+.warden-card strong{font-size:24px;color:#e5c77f}
+.warden-card b{font-size:10px}
+.warden-card small{font-size:9px;color:var(--muted)}
+.warden-card.used{opacity:.35;cursor:not-allowed}
+.warden-actions{display:flex;align-items:center;gap:12px;margin-top:12px}
+.warden-actions .ghost{display:flex;align-items:center;gap:7px}
+.warden-actions span{font-size:9px;color:var(--muted)}
+.warden-log{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}
+.warden-log p{font-size:9px;color:var(--muted);margin:5px 0;line-height:1.4}
+@media(max-width:600px){
+ .warden-header{display:block}
+ .warden-phase{margin-top:10px;width:max-content}
+ .warden-bars{grid-template-columns:1fr}
+ .warden-rule{align-items:flex-start;flex-direction:column;gap:4px}
+ .warden-actions{align-items:flex-start;flex-direction:column}
+ .warden-card{min-height:120px}
+}
