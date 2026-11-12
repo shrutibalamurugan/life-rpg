@@ -975,23 +975,37 @@ export default function App() {
     if(gold<100){notify('The Mystery Chest costs 100 gold.');return}
     setGold(g=>g-100)
     const chestItems=[
-      {item:'🗺️ Map Fragment',text:'A Map Fragment — the clue needed to reach the Whispering Ruins.'},
-      {item:'🔑 Observatory Key',text:'An Observatory Key — it opens a road to the Moonlit Observatory.'},
-      {item:'☀️ Sunforge Sigil',text:'A Sunforge Sigil — it unlocks the sealed route to Sunforge Terrace.'},
-      {item:'🪷 Silver Marsh Map',text:'A Silver Marsh Map — it reveals the shifting wetlands.'},
-      {item:'🗿 Horizon Seal',text:'A Horizon Seal — it opens the road to the Horizon Shrine.'},
-      {item:'✨ Keeper’s Star',text:'A Keeper’s Star — attune it in your inventory for +1 Spirit.'},
-      {item:'🪶 Echo Quill',text:'An Echo Quill — attune it in your inventory for +1 Intelligence.'},
-      {item:'🧭 Wayfinder’s Compass',text:'A Wayfinder’s Compass — attune it in your inventory for +1 Discipline.'}
+      {item:'🗺️ Map Fragment',text:'A Map Fragment — the clue needed to reach the Whispering Ruins.',unique:true},
+      {item:'🔑 Observatory Key',text:'An Observatory Key — it opens a road to the Moonlit Observatory.',unique:true},
+      {item:'☀️ Sunforge Sigil',text:'A Sunforge Sigil — it unlocks the sealed route to Sunforge Terrace.',unique:true},
+      {item:'🪷 Silver Marsh Map',text:'A Silver Marsh Map — it reveals the shifting wetlands.',unique:true},
+      {item:'🗿 Horizon Seal',text:'A Horizon Seal — it opens the road to the Horizon Shrine.',unique:true},
+      {item:'✨ Keeper’s Star',text:'A Keeper’s Star — collect 5, then attune them for +1 Spirit.',unique:false},
+      {item:'🪶 Echo Quill',text:'An Echo Quill — collect 5, then attune them for +1 Intelligence.',unique:false},
+      {item:'🧭 Wayfinder’s Compass',text:'A Wayfinder’s Compass — collect 5, then attune them for +1 Discipline.',unique:false}
     ]
-    const available=chestItems.filter(x=>!inventory.includes(x.item))
+    const available=chestItems.filter(x=>!x.unique||!inventory.includes(x.item))
+    const roll=Math.random()
+    if(roll<0.4){
+      const xp=75+Math.floor(Math.random()*51)
+      addXp(xp)
+      notify('MYSTERY CHEST: A surge of experience! +'+xp+' XP')
+      return
+    }
+    if(roll<0.7){
+      const reward=100+Math.floor(Math.random()*101)
+      setGold(g=>g+reward)
+      notify('MYSTERY CHEST: A hidden purse! +'+reward+' gold')
+      return
+    }
     if(!available.length){
-      setGold(g=>g+100)
-      notify('MYSTERY CHEST: Every unique treasure is already yours. Your gold was returned.')
+      const xp=100+Math.floor(Math.random()*51)
+      addXp(xp)
+      notify('MYSTERY CHEST: The treasure chamber is empty, but the chest still holds old wisdom. +'+xp+' XP')
       return
     }
     const d=available[Math.floor(Math.random()*available.length)]
-    setInventory(items=>items.includes(d.item)?items:[...items,d.item])
+    setInventory(items=>[...items,d.item])
     notify('MYSTERY CHEST: '+d.text)
   }
   function acceptVillagerQuest(id){
@@ -1325,13 +1339,22 @@ export default function App() {
   }
   function attuneRelic(item){
     const relic=RELIC_INFO[item]
-    if(!relic||!inventory.includes(item))return
+    if(!relic)return
+    const count=inventory.filter(x=>x===item).length
+    const required=5
+    if(count<required){
+      notify(relic.name+': '+count+'/'+required+' collected. Find '+(required-count)+' more in Mystery Chests.')
+      return
+    }
     setInventory(items=>{
-      const index=items.indexOf(item)
-      return index<0?items:items.filter((_,i)=>i!==index)
+      let remaining=required
+      return items.filter(x=>{
+        if(x===item&&remaining>0){remaining--;return false}
+        return true
+      })
     })
     setStatBonus(b=>({...b,[relic.stat]:(b[relic.stat]||0)+relic.amount}))
-    notify(relic.name+' attuned! +'+relic.amount+' '+relic.statName+' permanently.')
+    notify(relic.name+' attuned! 5 collected → +'+relic.amount+' '+relic.statName+' permanently.')
   }
 
 
@@ -1659,7 +1682,7 @@ function HeroPage({character,level,xp,gold,stats,openCharacterEditor,rewards,cus
  return <div className="content hero-page"><PageIntro eyebrow="YOUR ADVENTURER" title="The Hero's Hall" text="Your character, growing strengths, treasures, companions, and real-life rewards—all in one place."/><CharacterPage character={character} level={level} xp={xp} gold={gold} stats={stats} openCharacterEditor={openCharacterEditor}/><InventoryPage gold={gold} rewards={rewards} customRewards={customRewards} customRewardDraft={customRewardDraft} setCustomRewardDraft={setCustomRewardDraft} addCustomReward={addCustomReward} deleteCustomReward={deleteCustomReward} claimCustomReward={claimCustomReward} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} companionBonds={companionBonds} companionUses={companionUses} callCompanion={callCompanion}/></div>
 }
 
-function InventoryPage({gold,rewards,customRewards,customRewardDraft,setCustomRewardDraft,addCustomReward,deleteCustomReward,claimCustomReward,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic,companionBonds,companionUses,callCompanion}){const relics=[...new Set(inventory.filter(item=>RELIC_INFO[item]))];const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]||EXTRA_ACHIEVEMENTS[id]).filter(Boolean);return <div className="hero-inventory-section"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid"><section className="custom-reward-builder panel"><div className="section-head"><div><span className="eyebrow">ONE-TIME TREATS</span><h2>Save for something big</h2><p className="muted">Create a personal reward with a gold goal. Once you claim it, it leaves your list.</p></div></div><form className="custom-reward-form" onSubmit={addCustomReward}><input aria-label="Reward name" placeholder="What are you saving for?" value={customRewardDraft.name} onChange={e=>setCustomRewardDraft(d=>({...d,name:e.target.value}))}/><input aria-label="Reward cost" type="number" min="1" placeholder="Gold goal" value={customRewardDraft.cost} onChange={e=>setCustomRewardDraft(d=>({...d,cost:e.target.value}))}/><input aria-label="Reward icon" maxLength="2" placeholder="✨" value={customRewardDraft.icon} onChange={e=>setCustomRewardDraft(d=>({...d,icon:e.target.value}))}/><button className="primary" type="submit">Add reward</button></form></section>{customRewards.map(r=><div className="panel reward-card custom-reward-card" key={r.id}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><small>{gold>=r.cost?'Ready to claim':'Saving · '+gold+' / '+r.cost}</small><button className="primary" disabled={gold<r.cost} onClick={()=>claimCustomReward(r)}>{gold<r.cost?'Keep saving':'Claim one-time treat'}</button><button className="ghost" onClick={()=>deleteCustomReward(r.id)}>Remove</button></div>)}{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card companion-collection"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?'Your companions are growing alongside you.':'No companion yet.'}</small>{companions.map(id=>{const info=COMPANION_INFO[id];if(!info)return null;const used=companionUses[id]===getESTDateKey();return <div className="companion-mini" key={id}><span>{info.icon}</span><div><b>{info.name}</b><small>{info.title} · Bond {companionBonds[id]||0}</small><p>{info.personality}</p><em>{info.passive}</em><button className="secondary" disabled={used} onClick={()=>callCompanion(id)}>{used?'Used today':'Call companion'}</button></div></div>})}</div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section><section className="relic-section"><div className="section-head"><div><span className="eyebrow">ATTUNEMENT</span><h2>Relics with a purpose</h2><p className="muted">Some story treasures can be attuned instead of merely collected. Each one becomes a permanent part of your hero.</p></div></div><div className="relic-grid">{relics.length?relics.map(item=>{const relic=RELIC_INFO[item];return <article className="panel relic-card" key={item}><div className="relic-icon">{relic.icon}</div><div><b>{relic.name}</b><p>{relic.desc}</p><small>+{relic.amount} {relic.statName}</small></div><button className="primary" onClick={()=>attuneRelic(item)}>Attune</button></article>}):<div className="panel relic-empty">Story relics will appear here as the Atlas entrusts them to you.</div>}</div></section></div>}
+function InventoryPage({gold,rewards,customRewards,customRewardDraft,setCustomRewardDraft,addCustomReward,deleteCustomReward,claimCustomReward,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic,companionBonds,companionUses,callCompanion}){const relics=[...new Set(inventory.filter(item=>RELIC_INFO[item]))];const earned=achievements.map(id=>ACHIEVEMENT_INFO[id]||EXTRA_ACHIEVEMENTS[id]).filter(Boolean);return <div className="hero-inventory-section"><PageIntro eyebrow="ADVENTURER'S GUILD" title="Rewards & treasures" text="Gold buys real-life rewards. Mystery treasures, companions, and achievements make the journey fun."/><div className="reward-grid"><section className="custom-reward-builder panel"><div className="section-head"><div><span className="eyebrow">ONE-TIME TREATS</span><h2>Save for something big</h2><p className="muted">Create a personal reward with a gold goal. Once you claim it, it leaves your list.</p></div></div><form className="custom-reward-form" onSubmit={addCustomReward}><input aria-label="Reward name" placeholder="What are you saving for?" value={customRewardDraft.name} onChange={e=>setCustomRewardDraft(d=>({...d,name:e.target.value}))}/><input aria-label="Reward cost" type="number" min="1" placeholder="Gold goal" value={customRewardDraft.cost} onChange={e=>setCustomRewardDraft(d=>({...d,cost:e.target.value}))}/><input aria-label="Reward icon" maxLength="2" placeholder="✨" value={customRewardDraft.icon} onChange={e=>setCustomRewardDraft(d=>({...d,icon:e.target.value}))}/><button className="primary" type="submit">Add reward</button></form></section>{customRewards.map(r=><div className="panel reward-card custom-reward-card" key={r.id}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><small>{gold>=r.cost?'Ready to claim':'Saving · '+gold+' / '+r.cost}</small><button className="primary" disabled={gold<r.cost} onClick={()=>claimCustomReward(r)}>{gold<r.cost?'Keep saving':'Claim one-time treat'}</button><button className="ghost" onClick={()=>deleteCustomReward(r.id)}>Remove</button></div>)}{rewards.map(r=><div className="panel reward-card" key={r.name}><span className="reward-icon">{r.icon}</span><h3>{r.name}</h3><span>◈ {r.cost} gold</span><button className="primary" disabled={gold<r.cost} onClick={()=>buyReward(r)}>{gold<r.cost?'Need more gold':'Claim reward'}</button></div>)}<div className="panel reward-card mystery-card"><span className="reward-icon">🎁</span><h3>Mystery Chest</h3><span>◈ 100 gold</span><button className="primary" disabled={gold<100} onClick={rollMysteryChest}>Open Chest</button></div></div><section className="treasure-section"><div className="section-head"><div><span className="eyebrow">COLLECTION</span><h2>Your treasures</h2></div></div><div className="collection-grid"><div className="panel collection-card companion-collection"><b>🐾 Companions</b><strong>{companions.length}</strong><small>{companions.length?'Your companions are growing alongside you.':'No companion yet.'}</small>{companions.map(id=>{const info=COMPANION_INFO[id];if(!info)return null;const used=companionUses[id]===getESTDateKey();return <div className="companion-mini" key={id}><span>{info.icon}</span><div><b>{info.name}</b><small>{info.title} · Bond {companionBonds[id]||0}</small><p>{info.personality}</p><em>{info.passive}</em><button className="secondary" disabled={used} onClick={()=>callCompanion(id)}>{used?'Used today':'Call companion'}</button></div></div>})}</div><div className="panel collection-card"><b>🎒 Items</b><strong>{inventory.length}</strong><small>{inventory.length?inventory.join(' · '):'Your inventory is waiting.'}</small></div><div className="panel collection-card achievements-card"><b>🏆 Achievements</b><strong>{earned.length}/{Object.keys({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).length}</strong><div className="achievement-list">{Object.entries({...ACHIEVEMENT_INFO,...EXTRA_ACHIEVEMENTS}).map(([id,a])=><span key={id} className={achievements.includes(id)?'earned':'locked'}>{a.icon} <b>{a.name}</b><small>{achievements.includes(id)?a.desc:'Locked achievement'}</small></span>)}</div></div></div></section><section className="relic-section"><div className="section-head"><div><span className="eyebrow">ATTUNEMENT</span><h2>Relics with a purpose</h2><p className="muted">Some story treasures can be attuned instead of merely collected. Each one becomes a permanent part of your hero.</p></div></div><div className="relic-grid">{relics.length?Object.entries(RELIC_INFO).filter(([item])=>relics.includes(item)).map(([item,relic])=>{const count=relics.filter(x=>x===item).length;const ready=count>=5;return <article className="panel relic-card" key={item}><div className="relic-icon">{relic.icon}</div><div><b>{relic.name}</b><p>{relic.desc}</p><small>{count}/5 collected · {ready?'Ready to attune for +'+relic.amount+' '+relic.statName:'Need '+(5-count)+' more'}</small></div><button className="primary" disabled={!ready} onClick={()=>attuneRelic(item)}>{ready?'Attune':'Collecting'}</button></article>}):<div className="panel relic-empty">Story relics will appear here as the Atlas entrusts them to you.</div>}</div></section></div>}
 
 
 function RealmPage({level,stats,gold,dailyDone,chooseCouncilDecision,timeLabel,isNight,town,upgradeTown,questChains,completeChainStep,realmBosses,strikeRealmBoss,equipment,equipmentCatalog,buyEquipment,equipItem,companions,discoveries,discoverRealm,setActive,inventory,exploredAreas,exploreArea,activeLocation,setActiveLocation,locationProgress,completeLocationQuest,resolveLocationEncounter}){
