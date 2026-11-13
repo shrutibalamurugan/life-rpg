@@ -55,7 +55,7 @@ const STAT_MILESTONES=[
   {value:30,label:'Exalted',bonus:'15% passive bonus'}
 ]
 const STAT_DAILY_CAP=2
-const STAT_PROGRESS_PER_POINT=5
+const STAT_BASE_MASTERY=5
 const ASTRAL_RITUALS=[{id:'star-sit',icon:'🌙',title:'Sit Beneath the Stars',detail:'Spend 10 quiet minutes without a screen and let your mind settle.'},{id:'unsaid',icon:'🕯️',title:'Write What You Cannot Say',detail:'Write a few honest lines about something on your mind.'},{id:'return',icon:'🔮',title:'Return to Yourself',detail:'Take an intentional rest or recovery break without turning it into another task.'},{id:'notice',icon:'✨',title:'Notice One Thing',detail:'Pause for five minutes and deliberately notice one detail you normally rush past.'}]
 const ASTRAL_SIGNS=[{id:'unknown-constellation',icon:'✦',title:'The Unknown Constellation',requirement:10,text:'A constellation appears where no star chart says it should. Its shape resembles a road bending toward the horizon.'},{id:'second-reflection',icon:'🌊',title:'The Second Reflection',requirement:15,text:'The Star Pool reflects you twice. The second figure is holding a fragment of the Shattered Atlas.'},{id:'name-in-dreams',icon:'📜',title:'Your Name in the Dream Archive',requirement:20,text:'A page appears bearing your name and tomorrow’s date. Beneath it is a sentence you have not written yet.'},{id:'celestial-gate',icon:'🚪',title:'The Celestial Gate',requirement:30,text:'Three stars align above the Sanctum. A door appears in the night sky, opening onto a road that does not belong to this world.'}]
 
@@ -515,6 +515,7 @@ export default function App() {
   const [statBonus,setStatBonus] = useState(() => load('stat-bonus', {VIT:0,INT:0,SPI:0,RAD:0,DIS:0}))
   const [statGrowth,setStatGrowth] = useState(() => load('stat-growth', {date:'',earned:{}}))
   const [statProgress,setStatProgress] = useState(() => load('stat-progress', {VIT:0,INT:0,SPI:0,RAD:0,DIS:0}))
+  const statMasteryNeeded=(key,currentBonus=0)=>STAT_BASE_MASTERY+Number(currentBonus||0)
   const [radianceState,setRadianceState] = useState(() => load('radiance-state', {date:'',completed:[]}))
   const [astralState,setAstralState] = useState(() => load('astral-state', {date:'',completed:[],signs:[],visits:0}))
   const [workouts,setWorkouts] = useState(() => load('workouts', [
@@ -916,8 +917,8 @@ export default function App() {
       setStatProgress(currentProgress=>{
         const before=Number(currentProgress?.[key]||0)
         const total=before+granted
-        const gained=Math.floor(total/STAT_PROGRESS_PER_POINT)
-        const remainder=total%STAT_PROGRESS_PER_POINT
+        let gained=0; let remainder=total; let bonus=Number(statBonus?.[key]||0)
+        while(remainder>=statMasteryNeeded(key,bonus)){remainder-=statMasteryNeeded(key,bonus);gained+=1;bonus+=1}
         if(gained)setStatBonus(s=>({...s,[key]:(s[key]||0)+gained}))
         return {...currentProgress,[key]:remainder}
       })
@@ -1647,11 +1648,11 @@ function getStatTitle(stat,value){
 function CharacterPage({character,level,xp,gold,stats,statProgress,openCharacterEditor}){
  const identity=getHeroIdentity(stats)
  const strongest=stats.map(s=>({stat:s[0],value:s[1]})).sort((a,b)=>b.value-a.value)[0]
- const progressFor=key=>Math.max(0,Math.min(STAT_PROGRESS_PER_POINT,Number(statProgress?.[key]||0)))
+ const progressFor=key=>Math.max(0,Number(statProgress?.[key]||0))
  return <div className="hero-character-section">
   <div className="character-sheet panel"><div className="sheet-avatar">{character.avatar}</div><div className="sheet-main"><span className="eyebrow">CHARACTER SHEET</span><h2>{character.name}</h2><span className="class-name">{character.className.toUpperCase()} · {character.race.toUpperCase()}</span><div className="hero-identity"><span className="identity-badge">✦ {identity.title}</span><p>{identity.desc}</p></div><p>Your real-life actions shape your adventurer. PRs, quests, study wins, and routines build the stats behind the avatar.</p><div className="sheet-level"><b>Level {level}</b><div className="xp-bar"><i style={{width:Math.min(100,(Math.max(0,xp)/getLevelRequirement(level))*100)+'%'}}/></div><span>{xp} / {getLevelRequirement(level)} XP</span><strong className="sheet-gold">◈ {gold} gold</strong></div><button className="ghost character-edit" onClick={openCharacterEditor}>Edit Character</button></div></div>
-  <div className="stat-cards">{stats.map(([label,value,name,Icon])=>{const p=progressFor(label);return <div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name} · {getStatTitle(label,value)}</small><div className="xp-bar"><i style={{width:(p/STAT_PROGRESS_PER_POINT*100)+'%'}}/></div><small>{p}/{STAT_PROGRESS_PER_POINT} mastery · complete more {name.toLowerCase()} actions to gain +1</small></div>})}</div>
-  <div className="panel character-rules"><span className="eyebrow">YOUR CURRENT BUILD</span><div><b>STAT GROWTH</b> Stats increase through mastery, not every individual quest. Most stat-aligned actions add 1 mastery point; 5 points become +1 permanent stat. Only 2 mastery points per stat can be earned from ordinary actions each day.</div><div><b>IDENTITY</b> {identity.title} · {identity.desc}</div><div><b>STRONGEST STAT</b> {strongest.stat} · {getStatTitle(strongest.stat,strongest.value)}</div><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> self-care + personal development</div><small>Your identity is derived from your build and can evolve as your stats change.</small></div>
+  <div className="stat-cards">{stats.map(([label,value,name,Icon])=>{const p=progressFor(label);return <div className="panel stat-card" key={label}><Icon/><span>{label}</span><strong>{value}</strong><small>{name} · {getStatTitle(label,value)}</small><div className="xp-bar"><i style={{width:(p/statMasteryNeeded(label,Number(statBonus?.[label]||0))*100)+'%'}}/></div><small>{p}/{statMasteryNeeded(label,Number(statBonus?.[label]||0))} mastery · complete more {name.toLowerCase()} actions to gain +1</small></div>})}</div>
+  <div className="panel character-rules"><span className="eyebrow">YOUR CURRENT BUILD</span><div><b>STAT GROWTH</b> Stats increase through mastery, not every individual quest. Most stat-aligned actions add 1 mastery point; 5 mastery points become your first +1 permanent stat; each later point costs one more mastery point than the last. Only 2 mastery points per stat can be earned from ordinary actions each day.</div><div><b>IDENTITY</b> {identity.title} · {identity.desc}</div><div><b>STRONGEST STAT</b> {strongest.stat} · {getStatTitle(strongest.stat,strongest.value)}</div><div><b>VIT</b> workouts + strength PRs</div><div><b>INT</b> quizzes + focused study</div><div><b>SPI</b> journaling + recovery</div><div><b>DIS</b> routines completed</div><div><b>RAD</b> self-care + personal development</div><small>Your identity is derived from your build and can evolve as your stats change.</small></div>
  </div>
 }
 function AstralPage({astralState,stats,completeAstralRitual,setActive,setAstralState}){
