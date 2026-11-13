@@ -735,15 +735,36 @@ export default function App() {
   useEffect(()=>{
     if(!discoveries.includes('starlit-grove'))return
     if(storyEncounter&&!storyEncounter.resolved)return
+
     const now=new Date()
-    const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
-    const lastChoiceAt=campaign.lastEncounterAt?new Date(campaign.lastEncounterAt).getTime():campaign.lastEncounterDate?new Date(campaign.lastEncounterDate+'T00:00:00-05:00').getTime():0
+    const today=getESTDateKey(now)
+    const lastChoiceAt=campaign.lastEncounterAt?new Date(campaign.lastEncounterAt).getTime():0
+
+    // A resolved scene is permanently consumed. The choice history is the
+    // source of truth, so an old/stale local or cloud encounter can never
+    // make an answered scene appear again.
+    const completedScenes=new Set((campaign.choices||[]).map(choice=>choice.scene).filter(Boolean))
+
     if(lastChoiceAt&&now.getTime()-lastChoiceAt<24*60*60*1000)return
-    const scene=getCampaignScene(campaign)
+
+    let scene=getCampaignScene(campaign)
+    if(scene&&completedScenes.has(scene.id)){
+      // Legacy saves may have advanced flags without clearing a stale
+      // encounter. Walk forward until we find the first genuinely new scene.
+      let guard=0
+      while(scene&&completedScenes.has(scene.id)&&guard<30){
+        const nextFlags=new Set([...(campaign.flags||[]),...(scene.choices||[]).flatMap(choice=>choice.flags||[])])
+        const previewCampaign={...campaign,flags:[...nextFlags]}
+        const next=getCampaignScene(previewCampaign)
+        if(!next||next.id===scene.id){scene=null;break}
+        scene=next
+        guard++
+      }
+    }
+
     if(!scene)return
     setStoryEncounter({...scene,date:today,resolved:false})
-    setCampaign(c=>({...c,lastEncounterDate:today}))
-  },[discoveries,campaign.flags,campaign.lastEncounterDate,storyEncounter?.resolved])
+  },[discoveries,campaign.flags,campaign.choices,campaign.lastEncounterAt,storyEncounter?.resolved])
 
   const levelXp=xp
   const levelNeeded=getLevelRequirement(level)
@@ -969,6 +990,7 @@ export default function App() {
     if(reward.xp)addXp(reward.xp)
     if(reward.gold)setGold(g=>g+reward.gold)
     if(reward.item)setInventory(items=>items.includes(reward.item)?items:[...items,reward.item])
+    const resolvedAt=new Date().toISOString()
     setCampaign(c=>({
       ...c,
       chapter:Math.max(c.chapter||1,choice.chapter||c.chapter||1),
@@ -977,7 +999,7 @@ export default function App() {
       relationship:(c.relationship||0)+(choice.relationship||0),
       reputation:(c.reputation||0)+(choice.reputation||0),
       productivity:{xp:0,quests:0},
-      lastEncounterAt:new Date().toISOString(),
+      lastEncounterAt:resolvedAt,
       lastEncounterDate:getESTDateKey()
     }))
     setStoryEncounter(e=>({...e,resolved:true,selectedChoice:choice.label,epilogue:choice.epilogue||'The realm remembers what you chose.'}))
