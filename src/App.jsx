@@ -56,6 +56,7 @@ const STAT_MILESTONES=[
 ]
 const STAT_DAILY_CAP=2
 const STAT_BASE_MASTERY=5
+function statMasteryNeeded(key,currentBonus=0){return STAT_BASE_MASTERY+Number(currentBonus||0)}
 const ASTRAL_RITUALS=[{id:'star-sit',icon:'🌙',title:'Sit Beneath the Stars',detail:'Spend 10 quiet minutes without a screen and let your mind settle.'},{id:'unsaid',icon:'🕯️',title:'Write What You Cannot Say',detail:'Write a few honest lines about something on your mind.'},{id:'return',icon:'🔮',title:'Return to Yourself',detail:'Take an intentional rest or recovery break without turning it into another task.'},{id:'notice',icon:'✨',title:'Notice One Thing',detail:'Pause for five minutes and deliberately notice one detail you normally rush past.'}]
 const ASTRAL_SIGNS=[{id:'unknown-constellation',icon:'✦',title:'The Unknown Constellation',requirement:10,text:'A constellation appears where no star chart says it should. Its shape resembles a road bending toward the horizon.'},{id:'second-reflection',icon:'🌊',title:'The Second Reflection',requirement:15,text:'The Star Pool reflects you twice. The second figure is holding a fragment of the Shattered Atlas.'},{id:'name-in-dreams',icon:'📜',title:'Your Name in the Dream Archive',requirement:20,text:'A page appears bearing your name and tomorrow’s date. Beneath it is a sentence you have not written yet.'},{id:'celestial-gate',icon:'🚪',title:'The Celestial Gate',requirement:30,text:'Three stars align above the Sanctum. A door appears in the night sky, opening onto a road that does not belong to this world.'}]
 
@@ -515,8 +516,7 @@ export default function App() {
   const [statBonus,setStatBonus] = useState(() => load('stat-bonus', {VIT:0,INT:0,SPI:0,RAD:0,DIS:0}))
   const [statGrowth,setStatGrowth] = useState(() => load('stat-growth', {date:'',earned:{}}))
   const [statProgress,setStatProgress] = useState(() => load('stat-progress', {VIT:0,INT:0,SPI:0,RAD:0,DIS:0}))
-  const statMasteryNeeded=(key,currentBonus=0)=>STAT_BASE_MASTERY+Number(currentBonus||0)
-  const [radianceState,setRadianceState] = useState(() => load('radiance-state', {date:'',completed:[]}))
+   const [radianceState,setRadianceState] = useState(() => load('radiance-state', {date:'',completed:[]}))
   const [astralState,setAstralState] = useState(() => load('astral-state', {date:'',completed:[],signs:[],visits:0}))
   const [workouts,setWorkouts] = useState(() => load('workouts', [
     {id:'back-bi',name:'Back + Biceps',icon:'⚔️',exercises:[{id:101,name:'Lat Pulldown',sets:3,reps:10,weight:50,best:50},{id:102,name:'Seated Cable Row',sets:3,reps:10,weight:50,best:50},{id:103,name:'Dumbbell Row',sets:3,reps:10,weight:20,best:20},{id:104,name:'Dumbbell Bicep Curl',sets:3,reps:10,weight:15,best:15}]},
@@ -1691,7 +1691,7 @@ function RadiancePage({radianceState,stats,completeRadianceTask,setActive}){
  </div>
 }
 
-function HeroPage({character,level,xp,gold,stats,statProgress,openCharacterEditor,rewards,customRewards,customRewardDraft,setCustomRewardDraft,addCustomReward,deleteCustomReward,claimCustomReward,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic,companionBonds,companionUses,callCompanion}){
+function HeroPage({character,level,xp,gold,stats,statProgress,statBonus,openCharacterEditor,rewards,customRewards,customRewardDraft,setCustomRewardDraft,addCustomReward,deleteCustomReward,claimCustomReward,buyReward,rollMysteryChest,companions,inventory,achievements,attuneRelic,companionBonds,companionUses,callCompanion}){
  return <div className="content hero-page"><PageIntro eyebrow="YOUR ADVENTURER" title="The Hero's Hall" text="Your character, growing strengths, treasures, companions, and real-life rewards—all in one place."/><CharacterPage character={character} level={level} xp={xp} gold={gold} stats={stats} statProgress={statProgress} statBonus={statBonus} openCharacterEditor={openCharacterEditor}/><InventoryPage gold={gold} rewards={rewards} customRewards={customRewards} customRewardDraft={customRewardDraft} setCustomRewardDraft={setCustomRewardDraft} addCustomReward={addCustomReward} deleteCustomReward={deleteCustomReward} claimCustomReward={claimCustomReward} buyReward={buyReward} rollMysteryChest={rollMysteryChest} companions={companions} inventory={inventory} achievements={achievements} attuneRelic={attuneRelic} companionBonds={companionBonds} companionUses={companionUses} callCompanion={callCompanion}/></div>
 }
 
